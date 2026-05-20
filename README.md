@@ -1,44 +1,52 @@
-# Handoff Interface
-
 <p>
   <img src="./src/assets/icon/icon%20handoff.png" alt="Handoff Interface" width="72" align="left">
 </p>
 
+# Handoff Interface
+
 Frontend workspace for Handoff's visual strategy builder.
 
-
+<br/>
 
 Handoff Interface is a node-based canvas application for designing strategy flows across trading, portfolio management, and risk automation. The current product direction combines visual strategy composition, configurable node sidebars, collaboration comments, and a Figma-like editing experience that can later map into backend agents, exchange execution, or smart contract workflows.
+
+---
 
 ## What This Project Is
 
 Handoff Interface is the visual layer for building strategy logic before execution.
 
-Core goals:
+**Core goals:**
 
-- build strategy flows visually on a canvas
-- configure portfolio, logic, and risk behavior through node sidebars
-- connect assets, conditions, and actions in a single graph
-- support collaboration with inline comments and annotations
-- prepare strategies that can later connect to agents, APIs, or contracts
+- Build strategy flows visually on a canvas
+- Configure portfolio, logic, and risk behavior through node sidebars
+- Connect assets, conditions, and actions in a single graph
+- Support collaboration with inline comments and annotations
+- Prepare strategies that can later connect to agents, APIs, or contracts
 
-Long-term workspace split:
+**Long-term workspace split:**
 
-- `handoff-interface`: frontend canvas, UX, comments, configuration, strategy editing
-- `handoff-contract`: contract-side execution and deployment logic
+| Workspace | Responsibility |
+|---|---|
+| `handoff-interface` | Frontend canvas, UX, comments, configuration, strategy editing |
+| `handoff-contract` | Contract-side execution and deployment logic |
+
+---
 
 ## Current Highlights
 
-- infinite-style strategy canvas
-- light and dark themes using shared design tokens
-- dock-based canvas controls
-- keyboard-friendly dropdown menus
-- node placement, dragging, selection, marquee selection, and edge creation
-- orthogonal edge rendering with preview connections
-- per-node configuration sidebars
-- inline comment threads and collaboration markers
-- editable canvas title
-- grouped logic and execution menus in the dock
+- Infinite-style strategy canvas
+- Light and dark themes using shared design tokens
+- Dock-based canvas controls
+- Keyboard-friendly dropdown menus
+- Node placement, dragging, selection, marquee selection, and edge creation
+- Orthogonal edge rendering with preview connections
+- Per-node configuration sidebars
+- Inline comment threads and collaboration markers
+- Editable canvas title
+- Grouped logic and execution menus in the dock
+
+---
 
 ## Tech Stack
 
@@ -46,6 +54,8 @@ Long-term workspace split:
 - TypeScript
 - Vite
 - Phosphor Icons
+
+---
 
 ## Installation
 
@@ -79,6 +89,8 @@ Create a production build:
 npm run build
 ```
 
+---
+
 ## Environment Notes
 
 This project uses env-backed configuration for some external assets and integrations.
@@ -89,7 +101,11 @@ For example:
 
 Do not place secret frontend keys in client-side env files.
 
+---
+
 ## Main Routes
+
+The app exposes a set of routes for the canvas workspace, strategy management, and dashboard. The `/canvas/staging` and `/strategies/staging` routes serve as the primary working environments during development.
 
 <table width="100%">
   <thead>
@@ -109,25 +125,29 @@ Do not place secret frontend keys in client-side env files.
   </tbody>
 </table>
 
+---
+
 ## Canvas Interaction Model
 
-The canvas is designed to feel close to Figma-style interaction.
+The canvas is designed to feel close to a Figma-style interaction model — spatial, direct, and keyboard-accessible. Users can freely navigate the canvas, place and connect nodes, and configure behavior through sidebars without leaving the main editing surface.
 
-Supported behavior:
+**Supported behavior:**
 
-- pan and zoom
-- click selection
-- marquee selection
-- drag nodes
-- connect nodes from all four sides
-- preview edges before placement
-- keyboard shortcuts for undo and redo
-- alignment guides while dragging
-- sidebars for selected node configuration
+- Pan and zoom
+- Click selection
+- Marquee selection
+- Drag nodes
+- Connect nodes from all four sides
+- Preview edges before placement
+- Keyboard shortcuts for undo and redo
+- Alignment guides while dragging
+- Sidebars for selected node configuration
+
+---
 
 ## Dock Menus
 
-The dock is the main control surface for editing on canvas.
+The dock is the primary control surface for editing on the canvas. It groups all node types and tools into focused menus, keeping the canvas surface clean while keeping every action accessible from one place.
 
 <table width="100%">
   <thead>
@@ -143,11 +163,13 @@ The dock is the main control surface for editing on canvas.
     <tr><td>3</td><td><code>Logic</code></td><td><code>If</code>, <code>Else</code>, <code>Filter</code></td></tr>
     <tr><td>4</td><td><code>Asset Type</code></td><td><code>Stock</code>, <code>Token</code></td></tr>
     <tr><td>5</td><td><code>Execution</code></td><td><code>Buy</code>, <code>Sell</code>, <code>Rebalance</code>, <code>Allocate</code>, <code>Scale Out</code>, <code>Take Profit</code>, <code>Stop Loss</code></td></tr>
-    <tr><td>6</td><td><code>Zoom</code></td><td>zoom controls</td></tr>
+    <tr><td>6</td><td><code>Zoom</code></td><td>Zoom controls</td></tr>
   </tbody>
 </table>
 
 ### Execution Dropdown Groups
+
+The Execution menu is further organized into three groups — Actions, Portfolio, and Risk — to separate trade-level actions from portfolio management and risk control behaviors.
 
 <table width="100%">
   <thead>
@@ -164,7 +186,11 @@ The dock is the main control surface for editing on canvas.
   </tbody>
 </table>
 
+---
+
 ## Canvas Nodes
+
+Nodes are the core building blocks of every strategy. Each node belongs to a group — Flow, Logic, Asset, or Execution — and carries a specific role in how capital is allocated, conditions are evaluated, and actions are triggered across the graph.
 
 <table width="100%">
   <thead>
@@ -194,9 +220,17 @@ The dock is the main control surface for editing on canvas.
   </tbody>
 </table>
 
+---
+
 ## Detailed Node Documentation
 
+Each node exposes a configurable sidebar when selected on the canvas. The sections below document the available fields, behavior modes, and example configurations for every node type.
+
+---
+
 ### 1. Start
+
+The `Start` node is the entry point of any strategy. It defines the initial allocation logic applied to connected assets before any downstream execution or decision nodes are evaluated.
 
 <table width="100%">
   <thead><tr><th>No</th><th>Field</th><th>Details</th></tr></thead>
@@ -212,7 +246,11 @@ The dock is the main control surface for editing on canvas.
   </tbody>
 </table>
 
+---
+
 ### 2. Loop
+
+The `Loop` node controls when a strategy repeats or checks conditions again. It supports time-based intervals, drift-triggered rebalancing, and deposit-driven re-evaluation — making it the primary mechanism for recurring strategy behavior.
 
 <table width="100%">
   <thead><tr><th>No</th><th>Field</th><th>Details</th></tr></thead>
@@ -228,7 +266,11 @@ The dock is the main control surface for editing on canvas.
   </tbody>
 </table>
 
+---
+
 ### 3. End
+
+The `End` node defines exit conditions for a strategy. It supports a wide range of termination triggers — from price targets to drawdown limits — allowing precise control over when the strategy should stop running.
 
 <table width="100%">
   <thead><tr><th>No</th><th>Field</th><th>Details</th></tr></thead>
@@ -248,7 +290,11 @@ The dock is the main control surface for editing on canvas.
   </tbody>
 </table>
 
+---
+
 ### 4. If
+
+The `If` node introduces conditional branching into the strategy graph. It evaluates a market metric against a chosen value or another metric and routes the flow based on the result.
 
 <table width="100%">
   <thead><tr><th>No</th><th>Field</th><th>Details</th></tr></thead>
@@ -263,7 +309,11 @@ The dock is the main control surface for editing on canvas.
   </tbody>
 </table>
 
+---
+
 ### 5. Else
+
+The `Else` node defines what happens when the preceding condition is not met. It mirrors the `If` node's comparison structure and provides a consistent way to handle fallback paths in the strategy graph.
 
 <table width="100%">
   <thead><tr><th>No</th><th>Field</th><th>Details</th></tr></thead>
@@ -277,7 +327,11 @@ The dock is the main control surface for editing on canvas.
   </tbody>
 </table>
 
+---
+
 ### 6. Filter
+
+The `Filter` node narrows a group of connected assets down to a ranked subset before passing them to the next step. It is particularly useful for strategies that select top performers dynamically rather than targeting fixed assets.
 
 <table width="100%">
   <thead><tr><th>No</th><th>Field</th><th>Details</th></tr></thead>
@@ -292,7 +346,11 @@ The dock is the main control surface for editing on canvas.
   </tbody>
 </table>
 
+---
+
 ### 7. Stock
+
+The `Stock` node represents a traditional equity asset in the strategy graph. It acts as a data source and connection point for allocation, logic, filtering, and execution nodes throughout the flow.
 
 <table width="100%">
   <thead><tr><th>No</th><th>Field</th><th>Details</th></tr></thead>
@@ -306,7 +364,11 @@ The dock is the main control surface for editing on canvas.
   </tbody>
 </table>
 
+---
+
 ### 8. Token
+
+The `Token` node represents a crypto or on-chain asset in the strategy graph. It functions the same way as the `Stock` node but is intended for digital assets and can be used in both centralized and decentralized strategy workflows.
 
 <table width="100%">
   <thead><tr><th>No</th><th>Field</th><th>Details</th></tr></thead>
@@ -320,7 +382,11 @@ The dock is the main control surface for editing on canvas.
   </tbody>
 </table>
 
+---
+
 ### 9. Buy
+
+The `Buy` node represents an entry or position-increase action in the strategy flow. It targets a specific connected asset and supports both percentage-based and value-based amount configuration.
 
 <table width="100%">
   <thead><tr><th>No</th><th>Field</th><th>Details</th></tr></thead>
@@ -337,7 +403,11 @@ The dock is the main control surface for editing on canvas.
   </tbody>
 </table>
 
+---
+
 ### 10. Sell
+
+The `Sell` node represents a position reduction or exit action in the strategy flow. Like `Buy`, it targets a connected asset and supports both percentage and value modes for defining the amount to sell.
 
 <table width="100%">
   <thead><tr><th>No</th><th>Field</th><th>Details</th></tr></thead>
@@ -354,7 +424,11 @@ The dock is the main control surface for editing on canvas.
   </tbody>
 </table>
 
+---
+
 ### 11. Rebalance
+
+The `Rebalance` node restores the portfolio to a target allocation after it has drifted due to price changes or new activity. Unlike the `Start` node which sets the initial allocation, `Rebalance` is a maintenance step that runs while the strategy is already active.
 
 <table width="100%">
   <thead><tr><th>No</th><th>Field</th><th>Details</th></tr></thead>
@@ -371,7 +445,11 @@ The dock is the main control surface for editing on canvas.
   </tbody>
 </table>
 
+---
+
 ### 12. Allocate
+
+The `Allocate` node applies a deliberate capital allocation to a branch of the strategy. It is used when a specific amount — either as a percentage of the portfolio or a fixed value — needs to be directed into a chosen path.
 
 <table width="100%">
   <thead><tr><th>No</th><th>Field</th><th>Details</th></tr></thead>
@@ -387,7 +465,11 @@ The dock is the main control surface for editing on canvas.
   </tbody>
 </table>
 
+---
+
 ### 13. Scale Out
+
+The `Scale Out` node reduces an active position in stages rather than all at once. It is intended for de-risking strategies that benefit from gradual exits — locking in partial gains or reducing exposure while keeping part of the position active.
 
 <table width="100%">
   <thead><tr><th>No</th><th>Field</th><th>Details</th></tr></thead>
@@ -402,7 +484,11 @@ The dock is the main control surface for editing on canvas.
   </tbody>
 </table>
 
+---
+
 ### 14. Take Profit
+
+The `Take Profit` node monitors a connected asset and signals a profit-taking action when a defined upside threshold is crossed. It sits in the gain-capture or exit branch of the strategy graph and is typically positioned after a position-entry path.
 
 <table width="100%">
   <thead><tr><th>No</th><th>Field</th><th>Details</th></tr></thead>
@@ -419,7 +505,11 @@ The dock is the main control surface for editing on canvas.
   </tbody>
 </table>
 
+---
+
 ### 15. Stop Loss
+
+The `Stop Loss` node monitors a connected asset and triggers a protective action when a downside threshold is breached. It is typically placed in the defensive branch of the graph to limit exposure when the market moves against the strategy.
 
 <table width="100%">
   <thead><tr><th>No</th><th>Field</th><th>Details</th></tr></thead>
@@ -436,55 +526,28 @@ The dock is the main control surface for editing on canvas.
   </tbody>
 </table>
 
-## Keyboard Notes
+---
 
-Canvas supports keyboard-based interaction for several actions.
+## Keyboard Shortcuts
 
-Examples:
+The canvas supports keyboard-driven interaction for common editing actions, keeping the workflow fast without reaching for the mouse.
 
-- `Ctrl+Z` for undo
-- `Ctrl+Y` for redo
-- dropdown navigation with arrow keys
-- `Enter` to select menu items
-- `Esc` to close menus
+| Action | Shortcut |
+|---|---|
+| Undo | `Ctrl+Z` |
+| Redo | `Ctrl+Y` |
+| Navigate dropdown | `Arrow Keys` |
+| Select menu item | `Enter` |
+| Close menu | `Esc` |
 
-## Project Structure
-
-Important directories:
-
-- `src/components/canvas/`
-  - canvas viewport, dock, sidebars, shared canvas UI
-- `src/components/nodes/`
-  - individual node components
-- `src/components/dropdown/`
-  - shared dropdown menu logic
-- `src/pages/canvas/staging/`
-  - canvas staging page and sidebar routing
-- `src/pages/dashboard/`
-  - dashboard layout and route content
-- `src/state/`
-  - canvas graph, node, edge, theme, and UI state
+---
 
 ## Development Notes
 
-Design principles in the current app:
+Design principles guiding the current implementation:
 
-- token-driven light and dark theme
-- reusable node shell for consistent visuals
-- reusable sidebar header and field sections
-- dock-first interaction instead of large permanent tool panels
-- horizontal node summaries with badge segments
-
-## Build Status
-
-The canvas feature set is functional, but the repository may still contain unrelated TypeScript issues in other dashboard or support areas. If `npm run build` fails, those failures may be outside the canvas strategy builder scope.
-
-## Next Ideas
-
-Potential next improvements:
-
-1. add persistence for canvas strategies and comments
-2. refine execution nodes with richer configuration per asset set
-3. connect strategies to backend runners or smart-contract execution
-4. add testing around node configuration and summary rendering
-5. expand portfolio and risk logic beyond MVP fields
+- **Token-driven theming** — light and dark modes share a single set of design tokens
+- **Reusable node shell** — all nodes use a consistent visual container for uniform appearance
+- **Reusable sidebar components** — sidebar headers and field sections are shared across all node types
+- **Dock-first interaction** — grouped menus in the dock replace large permanent tool panels
+- **Horizontal node summaries** — nodes display badge-style summaries of their configuration inline on the canvas
