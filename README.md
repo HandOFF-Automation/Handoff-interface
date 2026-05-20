@@ -1,9 +1,11 @@
+# Handoff Interface - Web Interface
+---
 <p>
   <img src="./src/assets/icon/icon%20handoff.png" alt="Handoff Interface" width="72" align="left">
 </p>
 
+---
 # Handoff Interface
-## Node based risk management
 
 Frontend workspace for Handoff's visual strategy builder.
 
