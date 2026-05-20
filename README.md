@@ -91,14 +91,23 @@ Do not place secret frontend keys in client-side env files.
 
 ## Main Routes
 
-| No | Route | Purpose |
-|---|---|---|
-| 1 | `/` | Main app entry |
-| 2 | `/canvas/staging` | Strategy canvas staging workspace |
-| 3 | `/canvas/:id` | Reserved canvas route pattern |
-| 4 | `/strategies/staging` | Strategy staging page |
-| 5 | `/strategies/:id` | Reserved strategy detail route pattern |
-| 6 | `/dashboard/...` | Dashboard workspace routes |
+<table width="100%">
+  <thead>
+    <tr>
+      <th>No</th>
+      <th>Route</th>
+      <th>Purpose</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>1</td><td><code>/</code></td><td>Main app entry</td></tr>
+    <tr><td>2</td><td><code>/canvas/staging</code></td><td>Strategy canvas staging workspace</td></tr>
+    <tr><td>3</td><td><code>/canvas/:id</code></td><td>Reserved canvas route pattern</td></tr>
+    <tr><td>4</td><td><code>/strategies/staging</code></td><td>Strategy staging page</td></tr>
+    <tr><td>5</td><td><code>/strategies/:id</code></td><td>Reserved strategy detail route pattern</td></tr>
+    <tr><td>6</td><td><code>/dashboard/...</code></td><td>Dashboard workspace routes</td></tr>
+  </tbody>
+</table>
 
 ## Canvas Interaction Model
 
@@ -120,239 +129,312 @@ Supported behavior:
 
 The dock is the main control surface for editing on canvas.
 
-| No | Dock Menu | Items |
-|---|---|---|
-| 1 | `Tool` | `Click`, `Hand` |
-| 2 | `Nodes` | `Start`, `Loop`, `End` |
-| 3 | `Logic` | `If`, `Else`, `Filter` |
-| 4 | `Asset Type` | `Stock`, `Token` |
-| 5 | `Execution` | `Buy`, `Sell`, `Rebalance`, `Allocate`, `Scale Out`, `Take Profit`, `Stop Loss` |
-| 6 | `Zoom` | zoom controls |
+<table width="100%">
+  <thead>
+    <tr>
+      <th>No</th>
+      <th>Dock Menu</th>
+      <th>Items</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>1</td><td><code>Tool</code></td><td><code>Click</code>, <code>Hand</code></td></tr>
+    <tr><td>2</td><td><code>Nodes</code></td><td><code>Start</code>, <code>Loop</code>, <code>End</code></td></tr>
+    <tr><td>3</td><td><code>Logic</code></td><td><code>If</code>, <code>Else</code>, <code>Filter</code></td></tr>
+    <tr><td>4</td><td><code>Asset Type</code></td><td><code>Stock</code>, <code>Token</code></td></tr>
+    <tr><td>5</td><td><code>Execution</code></td><td><code>Buy</code>, <code>Sell</code>, <code>Rebalance</code>, <code>Allocate</code>, <code>Scale Out</code>, <code>Take Profit</code>, <code>Stop Loss</code></td></tr>
+    <tr><td>6</td><td><code>Zoom</code></td><td>zoom controls</td></tr>
+  </tbody>
+</table>
 
 ### Execution Dropdown Groups
 
-| No | Group | Items |
-|---|---|---|
-| 1 | `Actions` | `Buy`, `Sell`, `Rebalance` |
-| 2 | `Portfolio` | `Allocate`, `Scale Out` |
-| 3 | `Risk` | `Take Profit`, `Stop Loss` |
+<table width="100%">
+  <thead>
+    <tr>
+      <th>No</th>
+      <th>Group</th>
+      <th>Items</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>1</td><td><code>Actions</code></td><td><code>Buy</code>, <code>Sell</code>, <code>Rebalance</code></td></tr>
+    <tr><td>2</td><td><code>Portfolio</code></td><td><code>Allocate</code>, <code>Scale Out</code></td></tr>
+    <tr><td>3</td><td><code>Risk</code></td><td><code>Take Profit</code>, <code>Stop Loss</code></td></tr>
+  </tbody>
+</table>
 
 ## Canvas Nodes
 
-| No | Node Name | Group | Function |
-|---|---|---|---|
-| 1 | `Start` | Flow | Defines how the strategy begins allocating into connected assets. |
-| 2 | `Loop` | Flow | Defines repeated strategy behavior over time or by trigger. |
-| 3 | `End` | Flow | Defines completion, exit, or risk-stop conditions for the strategy. |
-| 4 | `If` | Logic | Compares a metric against a value or another metric. |
-| 5 | `Else` | Logic | Defines the fallback conditional branch. |
-| 6 | `Filter` | Logic | Sorts and narrows connected assets before continuing the flow. |
-| 7 | `Stock` | Asset | Represents a stock asset node used by other nodes. |
-| 8 | `Token` | Asset | Represents a token or crypto asset node used by other nodes. |
-| 9 | `Buy` | Execution / Actions | Buys a selected connected asset by percentage or value. |
-| 10 | `Sell` | Execution / Actions | Sells a selected connected asset by percentage or value. |
-| 11 | `Rebalance` | Execution / Actions | Rebalances the portfolio toward a mode when a threshold is reached. |
-| 12 | `Allocate` | Execution / Portfolio | Applies an allocation amount using percentage or value mode. |
-| 13 | `Scale Out` | Execution / Portfolio | Reduces exposure gradually by percentage. |
-| 14 | `Take Profit` | Execution / Risk | Triggers profit-taking when an asset crosses a threshold. |
-| 15 | `Stop Loss` | Execution / Risk | Triggers protection when an asset crosses a loss threshold. |
+<table width="100%">
+  <thead>
+    <tr>
+      <th>No</th>
+      <th>Node Name</th>
+      <th>Group</th>
+      <th>Function</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>1</td><td><code>Start</code></td><td>Flow</td><td>Defines how the strategy begins allocating into connected assets.</td></tr>
+    <tr><td>2</td><td><code>Loop</code></td><td>Flow</td><td>Defines repeated strategy behavior over time or by trigger.</td></tr>
+    <tr><td>3</td><td><code>End</code></td><td>Flow</td><td>Defines completion, exit, or risk-stop conditions for the strategy.</td></tr>
+    <tr><td>4</td><td><code>If</code></td><td>Logic</td><td>Compares a metric against a value or another metric.</td></tr>
+    <tr><td>5</td><td><code>Else</code></td><td>Logic</td><td>Defines the fallback conditional branch.</td></tr>
+    <tr><td>6</td><td><code>Filter</code></td><td>Logic</td><td>Sorts and narrows connected assets before continuing the flow.</td></tr>
+    <tr><td>7</td><td><code>Stock</code></td><td>Asset</td><td>Represents a stock asset node used by other nodes.</td></tr>
+    <tr><td>8</td><td><code>Token</code></td><td>Asset</td><td>Represents a token or crypto asset node used by other nodes.</td></tr>
+    <tr><td>9</td><td><code>Buy</code></td><td>Execution / Actions</td><td>Buys a selected connected asset by percentage or value.</td></tr>
+    <tr><td>10</td><td><code>Sell</code></td><td>Execution / Actions</td><td>Sells a selected connected asset by percentage or value.</td></tr>
+    <tr><td>11</td><td><code>Rebalance</code></td><td>Execution / Actions</td><td>Rebalances the portfolio toward a mode when a threshold is reached.</td></tr>
+    <tr><td>12</td><td><code>Allocate</code></td><td>Execution / Portfolio</td><td>Applies an allocation amount using percentage or value mode.</td></tr>
+    <tr><td>13</td><td><code>Scale Out</code></td><td>Execution / Portfolio</td><td>Reduces exposure gradually by percentage.</td></tr>
+    <tr><td>14</td><td><code>Take Profit</code></td><td>Execution / Risk</td><td>Triggers profit-taking when an asset crosses a threshold.</td></tr>
+    <tr><td>15</td><td><code>Stop Loss</code></td><td>Execution / Risk</td><td>Triggers protection when an asset crosses a loss threshold.</td></tr>
+  </tbody>
+</table>
 
 ## Detailed Node Documentation
 
 ### 1. Start
 
-| No | Field | Details |
-|---|---|---|
-| 1 | Purpose | Defines the initial allocation logic for the strategy. |
-| 2 | Input Flow | Usually sits near the beginning of the graph and connects to one or more asset nodes. |
-| 3 | `Equal` | Splits starting allocation equally across connected assets. |
-| 4 | `Specific Percentage` | Allows manual percentages per connected asset. |
-| 5 | `Market Cap` | Weights based on market capitalization logic. |
-| 6 | Output Behavior | Passes the selected starting allocation logic into the next connected step in the strategy. |
-| 7 | Typical Use | Begin a strategy with portfolio construction rules. |
-| 8 | Example | Start with `Specific Percentage` across BTC 50%, ETH 30%, SOL 20%. |
+<table width="100%">
+  <thead><tr><th>No</th><th>Field</th><th>Details</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>Purpose</td><td>Defines the initial allocation logic for the strategy.</td></tr>
+    <tr><td>2</td><td>Input Flow</td><td>Usually sits near the beginning of the graph and connects to one or more asset nodes.</td></tr>
+    <tr><td>3</td><td><code>Equal</code></td><td>Splits starting allocation equally across connected assets.</td></tr>
+    <tr><td>4</td><td><code>Specific Percentage</code></td><td>Allows manual percentages per connected asset.</td></tr>
+    <tr><td>5</td><td><code>Market Cap</code></td><td>Weights based on market capitalization logic.</td></tr>
+    <tr><td>6</td><td>Output Behavior</td><td>Passes the selected starting allocation logic into the next connected step in the strategy.</td></tr>
+    <tr><td>7</td><td>Typical Use</td><td>Begin a strategy with portfolio construction rules.</td></tr>
+    <tr><td>8</td><td>Example</td><td>Start with <code>Specific Percentage</code> across BTC 50%, ETH 30%, SOL 20%.</td></tr>
+  </tbody>
+</table>
 
 ### 2. Loop
 
-| No | Field | Details |
-|---|---|---|
-| 1 | Purpose | Defines when the strategy should repeat or rebalance again. |
-| 2 | Input Flow | Usually appears after `Start` or after execution logic that needs to run again over time. |
-| 3 | `Time Interval` | Rebalance every selected interval. |
-| 4 | `Drift Threshold` | Rebalance when allocation drift reaches a chosen percentage. |
-| 5 | `On New Deposit` | React when new capital enters the strategy. |
-| 6 | Sub-options | Interval value and time unit, drift threshold value, deposit timing behavior. |
-| 7 | Output Behavior | Re-runs or continues the strategy path when the chosen trigger condition is met. |
-| 8 | Example | Rebalance every 7 days or when portfolio drift reaches 5%. |
+<table width="100%">
+  <thead><tr><th>No</th><th>Field</th><th>Details</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>Purpose</td><td>Defines when the strategy should repeat or rebalance again.</td></tr>
+    <tr><td>2</td><td>Input Flow</td><td>Usually appears after <code>Start</code> or after execution logic that needs to run again over time.</td></tr>
+    <tr><td>3</td><td><code>Time Interval</code></td><td>Rebalance every selected interval.</td></tr>
+    <tr><td>4</td><td><code>Drift Threshold</code></td><td>Rebalance when allocation drift reaches a chosen percentage.</td></tr>
+    <tr><td>5</td><td><code>On New Deposit</code></td><td>React when new capital enters the strategy.</td></tr>
+    <tr><td>6</td><td>Sub-options</td><td>Interval value and time unit, drift threshold value, deposit timing behavior.</td></tr>
+    <tr><td>7</td><td>Output Behavior</td><td>Re-runs or continues the strategy path when the chosen trigger condition is met.</td></tr>
+    <tr><td>8</td><td>Example</td><td>Rebalance every 7 days or when portfolio drift reaches 5%.</td></tr>
+  </tbody>
+</table>
 
 ### 3. End
 
-| No | Field | Details |
-|---|---|---|
-| 1 | Purpose | Defines when the flow should stop, exit, or close out. |
-| 2 | Asset Support | Can monitor connected asset nodes or portfolio-level conditions, depending on mode. |
-| 3 | `Price Reaches` | Stop when a watched asset reaches a target price. |
-| 4 | `Portfolio Value` | Stop when total portfolio value reaches a threshold. |
-| 5 | `Time Based` | Stop after a duration. |
-| 6 | `Max Drawdown` | Stop when drawdown reaches a threshold. |
-| 7 | `Daily Loss` | Stop when daily loss reaches a threshold. |
-| 8 | `Exposure Limit` | Stop when exposure breaches a limit. |
-| 9 | `Position Concentration` | Stop when a position becomes too concentrated. |
-| 10 | `Volatility Limit` | Stop when volatility exceeds a threshold. |
-| 11 | Output Behavior | Terminates the current strategy path when the selected exit condition is satisfied. |
-| 12 | Example | End when BTC reaches $80,000 or when max drawdown exceeds 12%. |
+<table width="100%">
+  <thead><tr><th>No</th><th>Field</th><th>Details</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>Purpose</td><td>Defines when the flow should stop, exit, or close out.</td></tr>
+    <tr><td>2</td><td>Asset Support</td><td>Can monitor connected asset nodes or portfolio-level conditions, depending on mode.</td></tr>
+    <tr><td>3</td><td><code>Price Reaches</code></td><td>Stop when a watched asset reaches a target price.</td></tr>
+    <tr><td>4</td><td><code>Portfolio Value</code></td><td>Stop when total portfolio value reaches a threshold.</td></tr>
+    <tr><td>5</td><td><code>Time Based</code></td><td>Stop after a duration.</td></tr>
+    <tr><td>6</td><td><code>Max Drawdown</code></td><td>Stop when drawdown reaches a threshold.</td></tr>
+    <tr><td>7</td><td><code>Daily Loss</code></td><td>Stop when daily loss reaches a threshold.</td></tr>
+    <tr><td>8</td><td><code>Exposure Limit</code></td><td>Stop when exposure breaches a limit.</td></tr>
+    <tr><td>9</td><td><code>Position Concentration</code></td><td>Stop when a position becomes too concentrated.</td></tr>
+    <tr><td>10</td><td><code>Volatility Limit</code></td><td>Stop when volatility exceeds a threshold.</td></tr>
+    <tr><td>11</td><td>Output Behavior</td><td>Terminates the current strategy path when the selected exit condition is satisfied.</td></tr>
+    <tr><td>12</td><td>Example</td><td>End when BTC reaches $80,000 or when max drawdown exceeds 12%.</td></tr>
+  </tbody>
+</table>
 
 ### 4. If
 
-| No | Field | Details |
-|---|---|---|
-| 1 | Purpose | Adds a conditional decision node to the flow. |
-| 2 | Input Flow | Usually receives a connected asset and passes the graph into different branches depending on the result. |
-| 3 | Metric Options | `Current Price`, `Current Market Cap`, `Volume`, `Simple Moving Average`, `Exponential Moving Average` |
-| 4 | Comparator Options | `>`, `<`, `>=`, `<=`, `=` |
-| 5 | Compare Against | `Value`, `Metric` |
-| 6 | Output Behavior | Routes the strategy into a condition-based path when the comparison returns true. |
-| 7 | Example | If `Current Price of BTC >= 70000`, continue into a `Take Profit` branch. |
+<table width="100%">
+  <thead><tr><th>No</th><th>Field</th><th>Details</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>Purpose</td><td>Adds a conditional decision node to the flow.</td></tr>
+    <tr><td>2</td><td>Input Flow</td><td>Usually receives a connected asset and passes the graph into different branches depending on the result.</td></tr>
+    <tr><td>3</td><td>Metric Options</td><td><code>Current Price</code>, <code>Current Market Cap</code>, <code>Volume</code>, <code>Simple Moving Average</code>, <code>Exponential Moving Average</code></td></tr>
+    <tr><td>4</td><td>Comparator Options</td><td><code>&gt;</code>, <code>&lt;</code>, <code>&gt;=</code>, <code>&lt;=</code>, <code>=</code></td></tr>
+    <tr><td>5</td><td>Compare Against</td><td><code>Value</code>, <code>Metric</code></td></tr>
+    <tr><td>6</td><td>Output Behavior</td><td>Routes the strategy into a condition-based path when the comparison returns true.</td></tr>
+    <tr><td>7</td><td>Example</td><td>If <code>Current Price of BTC &gt;= 70000</code>, continue into a <code>Take Profit</code> branch.</td></tr>
+  </tbody>
+</table>
 
 ### 5. Else
 
-| No | Field | Details |
-|---|---|---|
-| 1 | Purpose | Defines the alternate branch after a condition fails or needs fallback handling. |
-| 2 | Input Flow | Usually pairs with a prior condition-driven branch. |
-| 3 | Current Behavior | Mirrors the configurable compare structure used by `If`. |
-| 4 | Comparison Support | Supports metric vs value and metric vs metric comparison. |
-| 5 | Output Behavior | Continues the fallback route when the primary branch does not satisfy its intended condition. |
-| 6 | Example | Else send the flow into `Scale Out` or `Stop Loss` handling. |
+<table width="100%">
+  <thead><tr><th>No</th><th>Field</th><th>Details</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>Purpose</td><td>Defines the alternate branch after a condition fails or needs fallback handling.</td></tr>
+    <tr><td>2</td><td>Input Flow</td><td>Usually pairs with a prior condition-driven branch.</td></tr>
+    <tr><td>3</td><td>Current Behavior</td><td>Mirrors the configurable compare structure used by <code>If</code>.</td></tr>
+    <tr><td>4</td><td>Comparison Support</td><td>Supports metric vs value and metric vs metric comparison.</td></tr>
+    <tr><td>5</td><td>Output Behavior</td><td>Continues the fallback route when the primary branch does not satisfy its intended condition.</td></tr>
+    <tr><td>6</td><td>Example</td><td>Else send the flow into <code>Scale Out</code> or <code>Stop Loss</code> handling.</td></tr>
+  </tbody>
+</table>
 
 ### 6. Filter
 
-| No | Field | Details |
-|---|---|---|
-| 1 | Purpose | Narrows a set of connected assets before the next step in the flow. |
-| 2 | Input Flow | Usually receives one or more connected assets that need to be ranked or filtered. |
-| 3 | Sort Functions | `Current Price`, `Current Market Cap`, `Volume`, `Percent Gain` |
-| 4 | Ordering | `Top`, `Bottom` |
-| 5 | Other Inputs | Target asset source and result limit. |
-| 6 | Output Behavior | Passes only the filtered subset into the next node in the flow. |
-| 7 | Example | Filter the top 3 assets by `Percent Gain` before triggering `Buy`. |
+<table width="100%">
+  <thead><tr><th>No</th><th>Field</th><th>Details</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>Purpose</td><td>Narrows a set of connected assets before the next step in the flow.</td></tr>
+    <tr><td>2</td><td>Input Flow</td><td>Usually receives one or more connected assets that need to be ranked or filtered.</td></tr>
+    <tr><td>3</td><td>Sort Functions</td><td><code>Current Price</code>, <code>Current Market Cap</code>, <code>Volume</code>, <code>Percent Gain</code></td></tr>
+    <tr><td>4</td><td>Ordering</td><td><code>Top</code>, <code>Bottom</code></td></tr>
+    <tr><td>5</td><td>Other Inputs</td><td>Target asset source and result limit.</td></tr>
+    <tr><td>6</td><td>Output Behavior</td><td>Passes only the filtered subset into the next node in the flow.</td></tr>
+    <tr><td>7</td><td>Example</td><td>Filter the top 3 assets by <code>Percent Gain</code> before triggering <code>Buy</code>.</td></tr>
+  </tbody>
+</table>
 
 ### 7. Stock
 
-| No | Field | Details |
-|---|---|---|
-| 1 | Purpose | Represents a stock asset in the graph. |
-| 2 | Current Examples | `AAPL`, `NVDA`, `MSFT`, `TSLA` |
-| 3 | Strategy Role | Works as a connected asset source for allocation, filtering, comparisons, and execution nodes. |
-| 4 | Data Usage | Can supply symbol-specific context for logic, execution, and risk nodes. |
-| 5 | Typical Use | Feed market data into `Start`, `If`, `Filter`, `Buy`, `Sell`, `Take Profit`, or `Stop Loss`. |
-| 6 | Example | Use `AAPL` as the watched asset for a momentum or breakout rule. |
+<table width="100%">
+  <thead><tr><th>No</th><th>Field</th><th>Details</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>Purpose</td><td>Represents a stock asset in the graph.</td></tr>
+    <tr><td>2</td><td>Current Examples</td><td><code>AAPL</code>, <code>NVDA</code>, <code>MSFT</code>, <code>TSLA</code></td></tr>
+    <tr><td>3</td><td>Strategy Role</td><td>Works as a connected asset source for allocation, filtering, comparisons, and execution nodes.</td></tr>
+    <tr><td>4</td><td>Data Usage</td><td>Can supply symbol-specific context for logic, execution, and risk nodes.</td></tr>
+    <tr><td>5</td><td>Typical Use</td><td>Feed market data into <code>Start</code>, <code>If</code>, <code>Filter</code>, <code>Buy</code>, <code>Sell</code>, <code>Take Profit</code>, or <code>Stop Loss</code>.</td></tr>
+    <tr><td>6</td><td>Example</td><td>Use <code>AAPL</code> as the watched asset for a momentum or breakout rule.</td></tr>
+  </tbody>
+</table>
 
 ### 8. Token
 
-| No | Field | Details |
-|---|---|---|
-| 1 | Purpose | Represents a token or crypto asset in the graph. |
-| 2 | Current Examples | `BTC`, `ETH`, `SOL`, `USDC` |
-| 3 | Strategy Role | Works as a connected asset source for allocation, filtering, comparisons, and execution nodes. |
-| 4 | Data Usage | Can supply symbol-specific context for logic, execution, and risk nodes. |
-| 5 | Typical Use | Feed market data into `Start`, `If`, `Filter`, `Buy`, `Sell`, `Take Profit`, or `Stop Loss`. |
-| 6 | Example | Use `BTC` or `ETH` as the base asset in a rebalancing or breakout strategy. |
+<table width="100%">
+  <thead><tr><th>No</th><th>Field</th><th>Details</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>Purpose</td><td>Represents a token or crypto asset in the graph.</td></tr>
+    <tr><td>2</td><td>Current Examples</td><td><code>BTC</code>, <code>ETH</code>, <code>SOL</code>, <code>USDC</code></td></tr>
+    <tr><td>3</td><td>Strategy Role</td><td>Works as a connected asset source for allocation, filtering, comparisons, and execution nodes.</td></tr>
+    <tr><td>4</td><td>Data Usage</td><td>Can supply symbol-specific context for logic, execution, and risk nodes.</td></tr>
+    <tr><td>5</td><td>Typical Use</td><td>Feed market data into <code>Start</code>, <code>If</code>, <code>Filter</code>, <code>Buy</code>, <code>Sell</code>, <code>Take Profit</code>, or <code>Stop Loss</code>.</td></tr>
+    <tr><td>6</td><td>Example</td><td>Use <code>BTC</code> or <code>ETH</code> as the base asset in a rebalancing or breakout strategy.</td></tr>
+  </tbody>
+</table>
 
 ### 9. Buy
 
-| No | Field | Details |
-|---|---|---|
-| 1 | Purpose | Buys a chosen connected asset. |
-| 2 | Target Asset | Select a connected asset node. |
-| 3 | Amount Mode | `Percentage`, `Value` |
-| 4 | Amount Value | Manual amount entry based on the selected mode. |
-| 5 | How It Works | Uses the selected asset and amount configuration to represent a buy action in the flow. |
-| 6 | Input Flow | Typically follows a selection or decision node such as `Filter` or `If`. |
-| 7 | Output Behavior | Represents entering or increasing a position in the chosen asset. |
-| 8 | Typical Use | Enter a position after a filter or condition node decides the asset should be bought. |
-| 9 | Example | Buy BTC by `Value` using `$1000`, or buy SOL by `Percentage` using `20%`. |
+<table width="100%">
+  <thead><tr><th>No</th><th>Field</th><th>Details</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>Purpose</td><td>Buys a chosen connected asset.</td></tr>
+    <tr><td>2</td><td>Target Asset</td><td>Select a connected asset node.</td></tr>
+    <tr><td>3</td><td>Amount Mode</td><td><code>Percentage</code>, <code>Value</code></td></tr>
+    <tr><td>4</td><td>Amount Value</td><td>Manual amount entry based on the selected mode.</td></tr>
+    <tr><td>5</td><td>How It Works</td><td>Uses the selected asset and amount configuration to represent a buy action in the flow.</td></tr>
+    <tr><td>6</td><td>Input Flow</td><td>Typically follows a selection or decision node such as <code>Filter</code> or <code>If</code>.</td></tr>
+    <tr><td>7</td><td>Output Behavior</td><td>Represents entering or increasing a position in the chosen asset.</td></tr>
+    <tr><td>8</td><td>Typical Use</td><td>Enter a position after a filter or condition node decides the asset should be bought.</td></tr>
+    <tr><td>9</td><td>Example</td><td>Buy BTC by <code>Value</code> using $1000, or buy SOL by <code>Percentage</code> using 20%.</td></tr>
+  </tbody>
+</table>
 
 ### 10. Sell
 
-| No | Field | Details |
-|---|---|---|
-| 1 | Purpose | Sells a chosen connected asset. |
-| 2 | Target Asset | Select a connected asset node. |
-| 3 | Amount Mode | `Percentage`, `Value` |
-| 4 | Amount Value | Manual amount entry based on the selected mode. |
-| 5 | How It Works | Uses the selected asset and amount configuration to represent a sell action in the flow. |
-| 6 | Input Flow | Typically follows a branch, rebalance decision, or risk-management condition. |
-| 7 | Output Behavior | Represents reducing or closing a position in the chosen asset. |
-| 8 | Typical Use | Reduce or close a position after a logic branch, execution rule, or risk trigger. |
-| 9 | Example | Sell ETH by `Percentage` using `50%`, or sell NVDA by `Value` using `$500`. |
+<table width="100%">
+  <thead><tr><th>No</th><th>Field</th><th>Details</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>Purpose</td><td>Sells a chosen connected asset.</td></tr>
+    <tr><td>2</td><td>Target Asset</td><td>Select a connected asset node.</td></tr>
+    <tr><td>3</td><td>Amount Mode</td><td><code>Percentage</code>, <code>Value</code></td></tr>
+    <tr><td>4</td><td>Amount Value</td><td>Manual amount entry based on the selected mode.</td></tr>
+    <tr><td>5</td><td>How It Works</td><td>Uses the selected asset and amount configuration to represent a sell action in the flow.</td></tr>
+    <tr><td>6</td><td>Input Flow</td><td>Typically follows a branch, rebalance decision, or risk-management condition.</td></tr>
+    <tr><td>7</td><td>Output Behavior</td><td>Represents reducing or closing a position in the chosen asset.</td></tr>
+    <tr><td>8</td><td>Typical Use</td><td>Reduce or close a position after a logic branch, execution rule, or risk trigger.</td></tr>
+    <tr><td>9</td><td>Example</td><td>Sell ETH by <code>Percentage</code> using 50%, or sell NVDA by <code>Value</code> using $500.</td></tr>
+  </tbody>
+</table>
 
 ### 11. Rebalance
 
-| No | Field | Details |
-|---|---|---|
-| 1 | Purpose | Rebalances the current portfolio state. |
-| 2 | Mode | `Equal`, `Target` |
-| 3 | Trigger Threshold | Percentage value that triggers rebalance. |
-| 4 | How It Works | Waits for portfolio drift or rule conditions, then re-aligns allocation according to the chosen mode. |
-| 5 | Difference From `Start` | `Start` defines initial allocation, while `Rebalance` adjusts the portfolio after the strategy is already running. |
-| 6 | Input Flow | Usually appears after initial allocation and before later execution or monitoring steps. |
-| 7 | Output Behavior | Applies maintenance logic to bring positions back toward the intended portfolio shape. |
-| 8 | Typical Use | Maintain allocation discipline after price changes, deposits, or portfolio drift. |
-| 9 | Example | Rebalance to `Equal` when drift reaches `5%`. |
+<table width="100%">
+  <thead><tr><th>No</th><th>Field</th><th>Details</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>Purpose</td><td>Rebalances the current portfolio state.</td></tr>
+    <tr><td>2</td><td>Mode</td><td><code>Equal</code>, <code>Target</code></td></tr>
+    <tr><td>3</td><td>Trigger Threshold</td><td>Percentage value that triggers rebalance.</td></tr>
+    <tr><td>4</td><td>How It Works</td><td>Waits for portfolio drift or rule conditions, then re-aligns allocation according to the chosen mode.</td></tr>
+    <tr><td>5</td><td>Difference From <code>Start</code></td><td><code>Start</code> defines initial allocation, while <code>Rebalance</code> adjusts the portfolio after the strategy is already running.</td></tr>
+    <tr><td>6</td><td>Input Flow</td><td>Usually appears after initial allocation and before later execution or monitoring steps.</td></tr>
+    <tr><td>7</td><td>Output Behavior</td><td>Applies maintenance logic to bring positions back toward the intended portfolio shape.</td></tr>
+    <tr><td>8</td><td>Typical Use</td><td>Maintain allocation discipline after price changes, deposits, or portfolio drift.</td></tr>
+    <tr><td>9</td><td>Example</td><td>Rebalance to <code>Equal</code> when drift reaches <code>5%</code>.</td></tr>
+  </tbody>
+</table>
 
 ### 12. Allocate
 
-| No | Field | Details |
-|---|---|---|
-| 1 | Purpose | Applies a portfolio allocation amount. |
-| 2 | Weighting Mode | `Percentage`, `Value` |
-| 3 | Amount Value | Manual allocation entry based on the selected mode. |
-| 4 | How It Works | Represents a deliberate allocation step using either a percent-based or value-based amount. |
-| 5 | Input Flow | Usually follows a branch that decides where capital should be routed. |
-| 6 | Output Behavior | Pushes a defined allocation amount into the next connected portfolio path. |
-| 7 | Typical Use | Add capital to a portfolio branch or route a defined amount into a chosen strategy path. |
-| 8 | Example | Allocate `25%` of the portfolio or allocate `$2000` to a selected branch. |
+<table width="100%">
+  <thead><tr><th>No</th><th>Field</th><th>Details</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>Purpose</td><td>Applies a portfolio allocation amount.</td></tr>
+    <tr><td>2</td><td>Weighting Mode</td><td><code>Percentage</code>, <code>Value</code></td></tr>
+    <tr><td>3</td><td>Amount Value</td><td>Manual allocation entry based on the selected mode.</td></tr>
+    <tr><td>4</td><td>How It Works</td><td>Represents a deliberate allocation step using either a percent-based or value-based amount.</td></tr>
+    <tr><td>5</td><td>Input Flow</td><td>Usually follows a branch that decides where capital should be routed.</td></tr>
+    <tr><td>6</td><td>Output Behavior</td><td>Pushes a defined allocation amount into the next connected portfolio path.</td></tr>
+    <tr><td>7</td><td>Typical Use</td><td>Add capital to a portfolio branch or route a defined amount into a chosen strategy path.</td></tr>
+    <tr><td>8</td><td>Example</td><td>Allocate <code>25%</code> of the portfolio or allocate <code>$2000</code> to a selected branch.</td></tr>
+  </tbody>
+</table>
 
 ### 13. Scale Out
 
-| No | Field | Details |
-|---|---|---|
-| 1 | Purpose | Gradually reduces exposure instead of exiting all at once. |
-| 2 | Reduce By | Percentage amount used to reduce the position. |
-| 3 | How It Works | Reduces the active position in smaller staged amounts rather than performing a full exit. |
-| 4 | Input Flow | Usually appears after a bullish branch, target hit, or staged de-risking plan. |
-| 5 | Output Behavior | Cuts position size partially while leaving the strategy active for the remaining balance. |
-| 6 | Typical Use | Lock in gains or reduce risk progressively while keeping part of the position active. |
-| 7 | Example | Scale out by `20%` after the asset reaches an intermediate target. |
+<table width="100%">
+  <thead><tr><th>No</th><th>Field</th><th>Details</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>Purpose</td><td>Gradually reduces exposure instead of exiting all at once.</td></tr>
+    <tr><td>2</td><td>Reduce By</td><td>Percentage amount used to reduce the position.</td></tr>
+    <tr><td>3</td><td>How It Works</td><td>Reduces the active position in smaller staged amounts rather than performing a full exit.</td></tr>
+    <tr><td>4</td><td>Input Flow</td><td>Usually appears after a bullish branch, target hit, or staged de-risking plan.</td></tr>
+    <tr><td>5</td><td>Output Behavior</td><td>Cuts position size partially while leaving the strategy active for the remaining balance.</td></tr>
+    <tr><td>6</td><td>Typical Use</td><td>Lock in gains or reduce risk progressively while keeping part of the position active.</td></tr>
+    <tr><td>7</td><td>Example</td><td>Scale out by <code>20%</code> after the asset reaches an intermediate target.</td></tr>
+  </tbody>
+</table>
 
 ### 14. Take Profit
 
-| No | Field | Details |
-|---|---|---|
-| 1 | Purpose | Triggers a profit-taking condition. |
-| 2 | Target Asset | Select a connected asset node. |
-| 3 | Comparator | `>`, `<`, `>=`, `<=` |
-| 4 | Threshold Value | Manual threshold value for the trigger. |
-| 5 | How It Works | Watches the selected asset and triggers a profit-oriented execution decision when the comparator rule is satisfied. |
-| 6 | Input Flow | Usually follows a position-entry path and sits in the risk or exit branch of the graph. |
-| 7 | Output Behavior | Signals that the strategy should capture gains once the defined upside condition is reached. |
-| 8 | Typical Use | Lock in gains after price appreciation or when a target level has been reached. |
-| 9 | Example | `Take Profit when BTC >= 75000` or `Take Profit when AAPL > 220`. |
+<table width="100%">
+  <thead><tr><th>No</th><th>Field</th><th>Details</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>Purpose</td><td>Triggers a profit-taking condition.</td></tr>
+    <tr><td>2</td><td>Target Asset</td><td>Select a connected asset node.</td></tr>
+    <tr><td>3</td><td>Comparator</td><td><code>&gt;</code>, <code>&lt;</code>, <code>&gt;=</code>, <code>&lt;=</code></td></tr>
+    <tr><td>4</td><td>Threshold Value</td><td>Manual threshold value for the trigger.</td></tr>
+    <tr><td>5</td><td>How It Works</td><td>Watches the selected asset and triggers a profit-oriented execution decision when the comparator rule is satisfied.</td></tr>
+    <tr><td>6</td><td>Input Flow</td><td>Usually follows a position-entry path and sits in the risk or exit branch of the graph.</td></tr>
+    <tr><td>7</td><td>Output Behavior</td><td>Signals that the strategy should capture gains once the defined upside condition is reached.</td></tr>
+    <tr><td>8</td><td>Typical Use</td><td>Lock in gains after price appreciation or when a target level has been reached.</td></tr>
+    <tr><td>9</td><td>Example</td><td><code>Take Profit when BTC &gt;= 75000</code> or <code>Take Profit when AAPL &gt; 220</code>.</td></tr>
+  </tbody>
+</table>
 
 ### 15. Stop Loss
 
-| No | Field | Details |
-|---|---|---|
-| 1 | Purpose | Triggers a downside protection condition. |
-| 2 | Target Asset | Select a connected asset node. |
-| 3 | Comparator | `>`, `<`, `>=`, `<=` |
-| 4 | Threshold Value | Manual threshold value for the trigger. |
-| 5 | How It Works | Watches the selected asset and triggers a protective execution decision when the comparator rule is satisfied. |
-| 6 | Input Flow | Usually follows a position-entry path and sits in the protection or defensive branch of the graph. |
-| 7 | Output Behavior | Signals that the strategy should reduce or close exposure when downside conditions are met. |
-| 8 | Typical Use | Limit losses or reduce downside exposure when price moves against the strategy. |
-| 9 | Example | `Stop Loss when ETH <= 2800` or `Stop Loss when NVDA < 1000`. |
+<table width="100%">
+  <thead><tr><th>No</th><th>Field</th><th>Details</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>Purpose</td><td>Triggers a downside protection condition.</td></tr>
+    <tr><td>2</td><td>Target Asset</td><td>Select a connected asset node.</td></tr>
+    <tr><td>3</td><td>Comparator</td><td><code>&gt;</code>, <code>&lt;</code>, <code>&gt;=</code>, <code>&lt;=</code></td></tr>
+    <tr><td>4</td><td>Threshold Value</td><td>Manual threshold value for the trigger.</td></tr>
+    <tr><td>5</td><td>How It Works</td><td>Watches the selected asset and triggers a protective execution decision when the comparator rule is satisfied.</td></tr>
+    <tr><td>6</td><td>Input Flow</td><td>Usually follows a position-entry path and sits in the protection or defensive branch of the graph.</td></tr>
+    <tr><td>7</td><td>Output Behavior</td><td>Signals that the strategy should reduce or close exposure when downside conditions are met.</td></tr>
+    <tr><td>8</td><td>Typical Use</td><td>Limit losses or reduce downside exposure when price moves against the strategy.</td></tr>
+    <tr><td>9</td><td>Example</td><td><code>Stop Loss when ETH &lt;= 2800</code> or <code>Stop Loss when NVDA &lt; 1000</code>.</td></tr>
+  </tbody>
+</table>
 
 ## Keyboard Notes
 
