@@ -1,0 +1,153 @@
+.dropdownMenu {
+  position: absolute;
+  left: 50%;
+  min-width: 240px;
+  padding: 6px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--canvas-surface) 92%, transparent);
+  border: 1px solid var(--canvas-panel-divider);
+  box-shadow: 0 16px 40px var(--canvas-shadow-soft);
+  backdrop-filter: blur(16px);
+  pointer-events: none;
+  z-index: 20;
+}
+
+.dropdownMenuPortal {
+  position: fixed;
+}
+
+.dropdownMenuHeader {
+  padding: 8px 8px 10px;
+  border-bottom: 1px solid var(--canvas-panel-divider);
+  margin: -6px -6px 6px;
+}
+
+.dropdownMenuPositionTop {
+  bottom: calc(100% + 18px);
+  transform: translateX(-50%);
+}
+
+.dropdownMenuPositionBottom {
+  top: calc(100% + 10px);
+  transform: translateX(-50%);
+}
+
+.dropdownMenuItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 18px;
+  color: var(--canvas-text-primary);
+  font-family: var(--canvas-font-sans);
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background-color 140ms ease, color 140ms ease, transform 140ms ease;
+  background: transparent;
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  border: none;
+  text-align: left;
+  outline: none;
+}
+
+.dropdownMenuLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
+
+.dropdownMenuIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  min-width: 20px;
+}
+
+.dropdownMenuItemActive {
+  background: var(--canvas-accent);
+  color: #ffffff;
+}
+
+.dropdownMenuItemHighlighted,
+.dropdownMenuItemHighlighted.dropdownMenuItemActive,
+.dropdownMenuItem:focus-visible {
+  background: var(--canvas-accent);
+  color: #ffffff;
+  transform: translateX(1px);
+}
+
+.dropdownMenuItemHighlighted .dropdownMenuShortcut,
+.dropdownMenuItemHighlighted.dropdownMenuItemActive .dropdownMenuShortcut,
+.dropdownMenuItem:focus-visible .dropdownMenuShortcut {
+  color: #ffffff;
+}
+
+.dropdownMenuItemActive .dropdownMenuShortcut {
+  color: #ffffff;
+}
+
+.dropdownMenu:hover .dropdownMenuItemActive:not(:hover) {
+  background: transparent;
+  color: var(--canvas-text-primary);
+  transform: none;
+}
+
+.dropdownMenu:hover .dropdownMenuItemActive:not(:hover) .dropdownMenuShortcut {
+  color: var(--canvas-text-secondary);
+}
+
+.dropdownMenuItem:hover,
+.dropdownMenuItemActive:hover {
+  background: var(--canvas-accent);
+  color: #ffffff;
+  transform: translateX(1px);
+}
+
+.dropdownMenuShortcut {
+  color: var(--canvas-text-secondary);
+}
+
+.dropdownMenuItem:hover .dropdownMenuShortcut {
+  color: #ffffff;
+}
+
+.dropdownMenuItem:disabled {
+  cursor: not-allowed;
+}
+
+.dropdownMenuItem:disabled:hover {
+  background: transparent;
+  color: var(--canvas-text-primary);
+  transform: none;
+}
+
+.dropdownMenuGroupDivider {
+  height: 1px;
+  margin: 6px 6px;
+  background: var(--canvas-panel-divider);
+}
+
+.dropdownMenuGroupHeading {
+  padding: 8px 12px 6px;
+  color: var(--canvas-text-secondary);
+  font-family: var(--canvas-font-sans);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dropdownMenuScrollableGroup {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  overflow-y: auto;
+}
+
+.dropdownMenuScrollableGroup::-webkit-scrollbar {
+  display: none;
+}

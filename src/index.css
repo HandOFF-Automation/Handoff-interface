@@ -1,0 +1,355 @@
+:root {
+  --canvas-bg: #000000;
+  --canvas-font-sans: 'Poppins', system-ui, sans-serif;
+  --canvas-grid-color: rgba(255, 255, 255, 0.08);
+  --canvas-dot-color: rgba(255, 255, 255, 0.08);
+  --canvas-vignette-color: rgba(0, 0, 0, 0.28);
+  --canvas-selection-bg: #070c13;
+  --canvas-selection-border: #1f4072;
+  --canvas-dock-bg: #111111;
+  --canvas-dock-border: #333333;
+  --canvas-dock-shadow: rgba(0, 0, 0, 0.45);
+  --canvas-dock-active-bg: #333333;
+  --canvas-dock-active-icon: #ffffff;
+  --canvas-dock-inactive-icon: #888888;
+  --canvas-accent: #00a4ff;
+  --canvas-surface: rgba(10, 10, 10, 0.96);
+  --canvas-surface-strong: rgba(17, 17, 17, 0.96);
+  --canvas-surface-muted: rgba(255, 255, 255, 0.045);
+  --canvas-dashboard-card-bg: #080808;
+  --canvas-panel-border: rgba(255, 255, 255, 0.1);
+  --canvas-panel-divider: rgba(255, 255, 255, 0.08);
+  --canvas-text-primary: #ffffff;
+  --canvas-text-secondary: rgba(255, 255, 255, 0.68);
+  --canvas-text-tertiary: rgba(255, 255, 255, 0.5);
+  --canvas-text-on-accent: #ffffff;
+  --canvas-negative: #ff6b6b;
+  --canvas-surface-soft: rgba(255, 255, 255, 0.02);
+  --canvas-surface-soft-strong: rgba(255, 255, 255, 0.04);
+  --canvas-surface-soft-subtle: rgba(255, 255, 255, 0.015);
+  --canvas-surface-soft-border: rgba(255, 255, 255, 0.03);
+  --canvas-hover-accent-soft: rgba(0, 164, 255, 0.25);
+  --canvas-hover-accent-strong: rgba(0, 164, 255, 0.35);
+  --canvas-hover-accent-faint: rgba(0, 164, 255, 0.05);
+  --canvas-shadow-floating: 0 18px 34px rgba(0, 0, 0, 0.28);
+  --canvas-shadow-inset-soft: inset 0 1px 0 rgba(255, 255, 255, 0.03), inset 0 0 28px rgba(0, 0, 0, 0.18);
+  --canvas-overlay-scrim: rgba(0, 0, 0, 0.14);
+  --canvas-chart-accent: #00a4ff;
+  --canvas-chart-accent-soft: rgba(0, 164, 255, 0.18);
+  --canvas-chart-accent-faint: rgba(0, 164, 255, 0.12);
+  --canvas-chart-accent-glow: rgba(0, 164, 255, 0.16);
+  --canvas-chart-accent-line: rgba(0, 164, 255, 0.78);
+  --canvas-chart-negative-line: rgba(255, 107, 107, 0.58);
+  --canvas-chart-marker-border: rgba(255, 255, 255, 0.92);
+  --canvas-bubble-muted: rgba(255, 255, 255, 0.08);
+}
+
+:root[data-theme='light'] {
+  --canvas-bg: #f3f5f8;
+  --canvas-grid-color: rgba(15, 23, 42, 0.08);
+  --canvas-dot-color: rgba(15, 23, 42, 0.14);
+  --canvas-vignette-color: rgba(148, 163, 184, 0.14);
+  --canvas-selection-bg: rgba(0, 164, 255, 0.08);
+  --canvas-selection-border: rgba(0, 164, 255, 0.55);
+  --canvas-dock-bg: #ffffff;
+  --canvas-dock-border: rgba(15, 23, 42, 0.08);
+  --canvas-dock-shadow: rgba(15, 23, 42, 0);
+  --canvas-dock-active-bg: #f3f3f3;
+  --canvas-dock-active-icon: #222222;
+  --canvas-dock-inactive-icon: #888888;
+  --canvas-surface: #f3f3f3;
+  --canvas-surface-strong: #f3f3f3;
+  --canvas-surface-muted: #f3f3f3;
+  --canvas-dashboard-card-bg: #ffffff;
+  --canvas-panel-border: rgba(15, 23, 42, 0.1);
+  --canvas-panel-divider: rgba(15, 23, 42, 0.08);
+  --canvas-text-primary: #111827;
+  --canvas-text-secondary: rgba(17, 24, 39, 0.72);
+  --canvas-text-tertiary: rgba(17, 24, 39, 0.52);
+  --canvas-text-on-accent: #ffffff;
+  --canvas-negative: #dc5a5a;
+  --canvas-surface-soft: rgba(15, 23, 42, 0.03);
+  --canvas-surface-soft-strong: rgba(15, 23, 42, 0.06);
+  --canvas-surface-soft-subtle: rgba(15, 23, 42, 0.025);
+  --canvas-surface-soft-border: rgba(15, 23, 42, 0.05);
+  --canvas-hover-accent-soft: rgba(0, 164, 255, 0.16);
+  --canvas-hover-accent-strong: rgba(0, 164, 255, 0.28);
+  --canvas-hover-accent-faint: rgba(0, 164, 255, 0.08);
+  --canvas-shadow-floating: 0 18px 34px rgba(15, 23, 42, 0.12);
+  --canvas-shadow-inset-soft: inset 0 1px 0 rgba(15, 23, 42, 0.03), inset 0 0 18px rgba(15, 23, 42, 0.04);
+  --canvas-overlay-scrim: rgba(15, 23, 42, 0.1);
+  --canvas-chart-accent: #00a4ff;
+  --canvas-chart-accent-soft: rgba(0, 164, 255, 0.14);
+  --canvas-chart-accent-faint: rgba(0, 164, 255, 0.1);
+  --canvas-chart-accent-glow: rgba(0, 164, 255, 0.14);
+  --canvas-chart-accent-line: rgba(0, 164, 255, 0.78);
+  --canvas-chart-negative-line: rgba(220, 90, 90, 0.5);
+  --canvas-chart-marker-border: rgba(17, 24, 39, 0.82);
+  --canvas-bubble-muted: rgba(15, 23, 42, 0.06);
+  --canvas-light-soft-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+  --canvas-light-floating-shadow: 0 14px 30px rgba(15, 23, 42, 0.06);
+}
+
+:root[data-theme='light'] body {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] body {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+html,
+body {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+#root::-webkit-scrollbar {
+  display: none;
+}
+
+body {
+  margin: 0;
+  background: var(--canvas-bg);
+  font-family: var(--canvas-font-sans);
+}
+
+button {
+  transition: transform 140ms ease, opacity 140ms ease, background-color 140ms ease, border-color 140ms ease, color 140ms ease, box-shadow 140ms ease;
+}
+
+button,
+a,
+input[type='button'],
+input[type='submit'],
+input[type='reset'],
+[role='button'],
+[data-clickable='true'] {
+  cursor: pointer;
+}
+
+button:disabled,
+input:disabled,
+[aria-disabled='true'] {
+  cursor: default;
+}
+
+button:not(:disabled):hover {
+  transform: translateY(-1px);
+  opacity: 0.96;
+}
+
+button:not(:disabled):active {
+  transform: translateY(0) scale(0.985);
+  opacity: 0.9;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button {
+    transition: none;
+  }
+
+  button:not(:disabled):hover,
+  button:not(:disabled):active {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+#root {
+  background: var(--canvas-bg);
+}
+
+.dashboardContentScrollArea {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.dashboardContentScrollArea::-webkit-scrollbar {
+  display: none;
+}
+
+.interactiveTableRow td {
+  transition: background-color 180ms ease, color 180ms ease;
+}
+
+.interactiveTableRow {
+  cursor: pointer;
+}
+
+.interactiveTableRow * {
+  cursor: pointer;
+}
+
+.interactiveTableRow:hover td {
+  background: var(--canvas-hover-accent-soft);
+}
+
+.settingsSocialCardButton > div {
+  transition: background-color 180ms ease, border-color 180ms ease, transform 180ms ease;
+}
+
+.settingsSocialCardButton:hover > div {
+  background: var(--canvas-hover-accent-soft) !important;
+  border-color: var(--canvas-hover-accent-strong) !important;
+}
+
+.pointTaskCardButton > div {
+  transition: background-color 180ms ease, border-color 180ms ease, transform 180ms ease;
+}
+
+.pointTaskCardButton:hover > div {
+  background: var(--canvas-hover-accent-soft) !important;
+  border-color: var(--canvas-hover-accent-strong) !important;
+}
+
+.dataTableBodyScrollArea {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.dataTableBodyScrollArea::-webkit-scrollbar {
+  display: none;
+}
+
+:root[data-theme='light'] .dataTableBodyScrollArea {
+  box-shadow: var(--canvas-shadow-inset-soft) !important;
+}
+
+:root[data-theme='light'] .dropdownMenu {
+  box-shadow: var(--canvas-light-floating-shadow);
+}
+
+:root[data-theme='light'] .settingsSocialCardButton > div,
+:root[data-theme='light'] .interactiveTableRow td,
+:root[data-theme='light'] .dashboardContentScrollArea {
+  box-shadow: none;
+}
+
+@keyframes commentTypingBounce {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.45;
+  }
+
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+.brandMenuItem:hover {
+  background: var(--canvas-accent) !important;
+  color: var(--canvas-text-on-accent) !important;
+  transform: translateX(1px);
+}
+
+.aiProviderRow,
+.aiModelRow {
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.aiProviderRow:hover,
+.aiModelRow:hover {
+  background: var(--canvas-accent) !important;
+  color: var(--canvas-text-on-accent) !important;
+}
+
+@keyframes marketTickerCarouselScroll {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.marketTickerCarouselTrack {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-width: max-content;
+  animation: marketTickerCarouselScroll 28s linear infinite;
+  will-change: transform;
+}
+
+.marketTickerCarouselTrack > button:hover {
+  background: var(--canvas-hover-accent-faint) !important;
+}
+
+.marketTickerBadgeButton:hover,
+.marketTickerBadgeButton:active {
+  transform: none !important;
+}
+
+@keyframes appSkeletonPulse {
+  0% {
+    opacity: 0.5;
+  }
+
+  50% {
+    opacity: 0.9;
+  }
+
+  100% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes loadingLogoDrift {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+
+  14% {
+    transform: translate3d(-2px, 1px, 0) rotate(-1.4deg);
+  }
+
+  29% {
+    transform: translate3d(1px, -2px, 0) rotate(1deg);
+  }
+
+  43% {
+    transform: translate3d(2px, 1px, 0) rotate(1.6deg);
+  }
+
+  58% {
+    transform: translate3d(-1px, 2px, 0) rotate(-0.8deg);
+  }
+
+  74% {
+    transform: translate3d(1px, -1px, 0) rotate(1.2deg);
+  }
+
+  88% {
+    transform: translate3d(-2px, -1px, 0) rotate(-1deg);
+  }
+
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+}
+
+.appSkeleton {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.11) 50%, rgba(255, 255, 255, 0.04) 100%);
+  animation: appSkeletonPulse 1.15s ease-in-out infinite;
+}
+
+:root[data-theme='light'] .appSkeleton {
+  background: linear-gradient(90deg, rgba(15, 23, 42, 0.05) 0%, rgba(15, 23, 42, 0.1) 50%, rgba(15, 23, 42, 0.05) 100%);
+}
