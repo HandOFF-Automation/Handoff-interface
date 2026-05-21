@@ -2,7 +2,7 @@ import { useSyncExternalStore } from 'react'
 
 export type CanvasTool = 'hand' | 'scale' | 'click' | 'comment' | 'node'
 export type CanvasZoomAction = 'zoom' | 'zoomIn' | 'zoomOut' | 'zoom100' | 'zoomFit' | 'zoomSelection'
-export type CanvasNodeType = 'start' | 'loop' | 'end' | 'if' | 'else' | 'filter' | 'stock' | 'token' | 'buy' | 'sell' | 'rebalance' | 'allocate' | 'scaleOut' | 'takeProfit' | 'stopLoss'
+export type CanvasNodeType = 'start' | 'loop' | 'end' | 'if' | 'else' | 'and' | 'or' | 'not' | 'xor' | 'intersect' | 'union' | 'exclude' | 'filter' | 'portfolioCondition' | 'stock' | 'token' | 'buy' | 'sell' | 'rebalance' | 'allocate' | 'scaleOut' | 'takeProfit' | 'stopLoss' | 'cooldown' | 'positionLimit' | 'exposureLimit'
 
 const listeners = new Set<() => void>()
 

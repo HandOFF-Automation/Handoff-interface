@@ -1,18 +1,31 @@
 import { CaretDown } from '@phosphor-icons/react'
 import { useEffect, useRef, useState } from 'react'
 
-import type { CanvasComparisonTargetType, CanvasIfComparator, CanvasIfFunction, CanvasNodeRecord } from '../../state/canvas-node-store'
+import type { CanvasComparisonTargetType, CanvasIfComparator, CanvasIfConditionType, CanvasIfCrossoverEvent, CanvasIfFunction, CanvasIfSourceType, CanvasNodeRecord } from '../../state/canvas-node-store'
 import { CanvasAssetLogo } from './canvas-asset-options'
 import CanvasSidebarFieldSection from './canvas-sidebar-field-section'
 import CanvasNodeSidebarHeader from './canvas-node-sidebar-header'
 import DropdownMenu, { type DropdownMenuItem } from '../dropdown/dropdown-menu'
 
+const conditionTypeOptions: Array<{ value: CanvasIfConditionType; label: string }> = [
+  { value: 'threshold', label: 'Threshold' },
+  { value: 'relative', label: 'Relative' },
+  { value: 'crossover', label: 'Crossover' },
+  { value: 'range', label: 'Range' },
+  { value: 'advanced', label: 'Advanced' },
+]
+
 const ifFunctionOptions: Array<{ value: CanvasIfFunction; label: string }> = [
   { value: 'currentPrice', label: 'Current Price' },
   { value: 'currentMarketCap', label: 'Current Market Cap' },
   { value: 'volume', label: 'Volume' },
-  { value: 'simpleMovingAverage', label: 'Simple Moving Average' },
-  { value: 'exponentialMovingAverage', label: 'Exponential Moving Average' },
+  { value: 'simpleMovingAverage', label: 'SMA' },
+  { value: 'exponentialMovingAverage', label: 'EMA' },
+  { value: 'rsi', label: 'RSI' },
+  { value: 'macdLine', label: 'MACD Line' },
+  { value: 'macdSignal', label: 'MACD Signal' },
+  { value: 'macdHistogram', label: 'MACD Histogram' },
+  { value: 'atr', label: 'ATR' },
 ]
 
 const comparatorOptions: Array<{ value: CanvasIfComparator; label: string }> = [
@@ -28,6 +41,17 @@ const comparisonTargetOptions: Array<{ value: CanvasComparisonTargetType; label:
   { value: 'metric', label: 'Metric' },
 ]
 
+const sourceTypeOptions: Array<{ value: CanvasIfSourceType; label: string }> = [
+  { value: 'market', label: 'Market' },
+  { value: 'portfolio', label: 'Portfolio' },
+  { value: 'position', label: 'Position' },
+]
+
+const crossoverEventOptions: Array<{ value: CanvasIfCrossoverEvent; label: string }> = [
+  { value: 'crossesAbove', label: 'Crosses Above' },
+  { value: 'crossesBelow', label: 'Crosses Below' },
+]
+
 type AssetOption = {
   id: string
   type: 'stock' | 'token'
@@ -40,6 +64,8 @@ type CanvasIfSidebarProps = {
   node: CanvasNodeRecord | null
   assetNodeOptions: AssetOption[]
   onClose: () => void
+  onSourceTypeChange: (value: CanvasIfSourceType) => void
+  onConditionTypeChange: (value: CanvasIfConditionType) => void
   onPrimaryFunctionChange: (value: CanvasIfFunction) => void
   onPrimaryAssetChange: (value: string) => void
   onComparatorChange: (value: CanvasIfComparator) => void
@@ -47,6 +73,23 @@ type CanvasIfSidebarProps = {
   onComparisonValueChange: (value: string) => void
   onSecondaryFunctionChange: (value: CanvasIfFunction) => void
   onSecondaryAssetChange: (value: string) => void
+  onPrimaryPeriodChange: (value: string) => void
+  onSecondaryPeriodChange: (value: string) => void
+  onRangeMinValueChange: (value: string) => void
+  onRangeMaxValueChange: (value: string) => void
+  onCrossoverEventChange: (value: CanvasIfCrossoverEvent) => void
+}
+
+function metricNeedsPeriod(value?: CanvasIfFunction) {
+  return value === 'simpleMovingAverage' || value === 'exponentialMovingAverage' || value === 'rsi' || value === 'atr'
+}
+
+function metricValuePrefix(value?: CanvasIfFunction) {
+  if (value === 'currentPrice' || value === 'currentMarketCap') {
+    return '$'
+  }
+
+  return ''
 }
 
 export default function CanvasIfSidebar({
@@ -54,6 +97,8 @@ export default function CanvasIfSidebar({
   node,
   assetNodeOptions,
   onClose,
+  onSourceTypeChange,
+  onConditionTypeChange,
   onPrimaryFunctionChange,
   onPrimaryAssetChange,
   onComparatorChange,
@@ -61,27 +106,42 @@ export default function CanvasIfSidebar({
   onComparisonValueChange,
   onSecondaryFunctionChange,
   onSecondaryAssetChange,
+  onPrimaryPeriodChange,
+  onSecondaryPeriodChange,
+  onRangeMinValueChange,
+  onRangeMaxValueChange,
+  onCrossoverEventChange,
 }: CanvasIfSidebarProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
+  const conditionTypeTriggerRef = useRef<HTMLButtonElement | null>(null)
   const primaryFunctionTriggerRef = useRef<HTMLButtonElement | null>(null)
   const primaryAssetTriggerRef = useRef<HTMLButtonElement | null>(null)
   const comparatorTriggerRef = useRef<HTMLButtonElement | null>(null)
   const comparisonTargetTriggerRef = useRef<HTMLButtonElement | null>(null)
   const secondaryFunctionTriggerRef = useRef<HTMLButtonElement | null>(null)
   const secondaryAssetTriggerRef = useRef<HTMLButtonElement | null>(null)
+  const crossoverEventTriggerRef = useRef<HTMLButtonElement | null>(null)
+  const [isConditionTypeOpen, setIsConditionTypeOpen] = useState(false)
+  const [isSourceTypeOpen, setIsSourceTypeOpen] = useState(false)
   const [isPrimaryFunctionOpen, setIsPrimaryFunctionOpen] = useState(false)
   const [isPrimaryAssetOpen, setIsPrimaryAssetOpen] = useState(false)
   const [isComparatorOpen, setIsComparatorOpen] = useState(false)
   const [isComparisonTargetOpen, setIsComparisonTargetOpen] = useState(false)
   const [isSecondaryFunctionOpen, setIsSecondaryFunctionOpen] = useState(false)
   const [isSecondaryAssetOpen, setIsSecondaryAssetOpen] = useState(false)
+  const [isCrossoverEventOpen, setIsCrossoverEventOpen] = useState(false)
 
-  const selectedPrimaryFunction = ifFunctionOptions.find((option) => option.value === node?.ifPrimaryFunction) ?? null
+  const selectedConditionType = conditionTypeOptions.find((option) => option.value === (node?.ifConditionType ?? 'threshold')) ?? conditionTypeOptions[0]
+  const selectedSourceType = sourceTypeOptions.find((option) => option.value === (node?.ifSourceType ?? 'market')) ?? sourceTypeOptions[0]
+  const selectedPrimaryFunction = ifFunctionOptions.find((option) => option.value === node?.ifPrimaryFunction) ?? ifFunctionOptions[0]
   const selectedPrimaryAsset = assetNodeOptions.find((option) => option.id === node?.ifPrimaryAssetNodeId) ?? null
-  const selectedComparator = comparatorOptions.find((option) => option.value === node?.ifComparator) ?? null
+  const selectedComparator = comparatorOptions.find((option) => option.value === node?.ifComparator) ?? comparatorOptions[0]
   const selectedComparisonTarget = comparisonTargetOptions.find((option) => option.value === (node?.ifComparisonTargetType ?? 'metric')) ?? comparisonTargetOptions[1]
-  const selectedSecondaryFunction = ifFunctionOptions.find((option) => option.value === node?.ifSecondaryFunction) ?? null
+  const selectedSecondaryFunction = ifFunctionOptions.find((option) => option.value === node?.ifSecondaryFunction) ?? ifFunctionOptions[1]
   const selectedSecondaryAsset = assetNodeOptions.find((option) => option.id === node?.ifSecondaryAssetNodeId) ?? null
+  const selectedCrossoverEvent = crossoverEventOptions.find((option) => option.value === (node?.ifCrossoverEvent ?? 'crossesAbove')) ?? crossoverEventOptions[0]
+
+  const inputPrefix = metricValuePrefix(node?.ifPrimaryFunction)
 
   const functionMenuGroups = (selectedValue?: CanvasIfFunction | null) => [
     {
@@ -89,6 +149,7 @@ export default function CanvasIfSidebar({
         label: option.label,
         value: option.value,
         active: option.value === selectedValue,
+        trailingIcon: option.value === selectedValue ? '✓' : undefined,
       })),
     },
   ]
@@ -109,6 +170,7 @@ export default function CanvasIfSidebar({
         disabled: !option.id,
         active: option.id === selectedId,
         icon: option.id && option.assetSymbol ? <CanvasAssetLogo assetType={option.type} symbol={option.assetSymbol} size={20} /> : null,
+        trailingIcon: option.id === selectedId ? '✓' : undefined,
       })),
     },
   ]
@@ -118,8 +180,8 @@ export default function CanvasIfSidebar({
       items: comparatorOptions.map<DropdownMenuItem>((option) => ({
         label: option.label,
         value: option.value,
-        active: option.value === selectedComparator?.value,
-        trailingIcon: option.value === selectedComparator?.value ? '✓' : undefined,
+        active: option.value === selectedComparator.value,
+        trailingIcon: option.value === selectedComparator.value ? '✓' : undefined,
       })),
     },
   ]
@@ -135,23 +197,58 @@ export default function CanvasIfSidebar({
     },
   ]
 
-  const inputPrefix = node?.ifPrimaryFunction === 'currentPrice' || node?.ifPrimaryFunction === 'currentMarketCap'
-    ? '$'
-    : ''
+  const conditionTypeMenuGroups = [
+    {
+      heading: 'Condition Type',
+      items: conditionTypeOptions.map<DropdownMenuItem>((option) => ({
+        label: option.label,
+        value: option.value,
+        active: option.value === selectedConditionType.value,
+        trailingIcon: option.value === selectedConditionType.value ? '✓' : undefined,
+      })),
+    },
+  ]
+
+  const sourceTypeMenuGroups = [
+    {
+      heading: 'Condition Source',
+      items: sourceTypeOptions.map<DropdownMenuItem>((option) => ({
+        label: option.label,
+        value: option.value,
+        active: option.value === selectedSourceType.value,
+        trailingIcon: option.value === selectedSourceType.value ? '✓' : undefined,
+      })),
+    },
+  ]
+
+  const crossoverEventGroups = [
+    {
+      heading: 'Crossover Event',
+      items: crossoverEventOptions.map<DropdownMenuItem>((option) => ({
+        label: option.label,
+        value: option.value,
+        active: option.value === selectedCrossoverEvent.value,
+        trailingIcon: option.value === selectedCrossoverEvent.value ? '✓' : undefined,
+      })),
+    },
+  ]
 
   useEffect(() => {
     if (!active) {
+      setIsConditionTypeOpen(false)
+      setIsSourceTypeOpen(false)
       setIsPrimaryFunctionOpen(false)
       setIsPrimaryAssetOpen(false)
       setIsComparatorOpen(false)
       setIsComparisonTargetOpen(false)
       setIsSecondaryFunctionOpen(false)
       setIsSecondaryAssetOpen(false)
+      setIsCrossoverEventOpen(false)
     }
   }, [active])
 
   useEffect(() => {
-    if (!isPrimaryFunctionOpen && !isPrimaryAssetOpen && !isComparatorOpen && !isComparisonTargetOpen && !isSecondaryFunctionOpen && !isSecondaryAssetOpen) {
+    if (!isConditionTypeOpen && !isSourceTypeOpen && !isPrimaryFunctionOpen && !isPrimaryAssetOpen && !isComparatorOpen && !isComparisonTargetOpen && !isSecondaryFunctionOpen && !isSecondaryAssetOpen && !isCrossoverEventOpen) {
       return
     }
 
@@ -160,12 +257,15 @@ export default function CanvasIfSidebar({
         return
       }
 
+      setIsConditionTypeOpen(false)
+      setIsSourceTypeOpen(false)
       setIsPrimaryFunctionOpen(false)
       setIsPrimaryAssetOpen(false)
       setIsComparatorOpen(false)
       setIsComparisonTargetOpen(false)
       setIsSecondaryFunctionOpen(false)
       setIsSecondaryAssetOpen(false)
+      setIsCrossoverEventOpen(false)
     }
 
     document.addEventListener('pointerdown', handlePointerDown)
@@ -173,14 +273,14 @@ export default function CanvasIfSidebar({
     return () => {
       document.removeEventListener('pointerdown', handlePointerDown)
     }
-  }, [isComparatorOpen, isComparisonTargetOpen, isPrimaryAssetOpen, isPrimaryFunctionOpen, isSecondaryAssetOpen, isSecondaryFunctionOpen])
+  }, [isComparisonTargetOpen, isComparatorOpen, isConditionTypeOpen, isCrossoverEventOpen, isPrimaryAssetOpen, isPrimaryFunctionOpen, isSecondaryAssetOpen, isSecondaryFunctionOpen, isSourceTypeOpen])
 
   const renderDropdown = (
     triggerRef: React.RefObject<HTMLButtonElement | null>,
     isOpen: boolean,
     setOpen: (value: boolean | ((current: boolean) => boolean)) => void,
     label: string,
-    groups: { items: DropdownMenuItem[]; style?: React.CSSProperties; className?: string }[],
+    groups: { heading?: string; items: DropdownMenuItem[]; style?: React.CSSProperties; className?: string }[],
     onItemClick: (value: string) => void,
   ) => (
     <div style={{ position: 'relative' }}>
@@ -253,6 +353,59 @@ export default function CanvasIfSidebar({
     </div>
   )
 
+  const renderTextInput = (
+    value: string | undefined,
+    placeholder: string,
+    onChange: (value: string) => void,
+    prefix?: string,
+  ) => (
+    <div
+      style={{
+        minHeight: 54,
+        borderRadius: 16,
+        border: '1px solid var(--canvas-panel-divider)',
+        background: 'var(--canvas-surface-soft)',
+        padding: '0 14px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+      }}
+    >
+      {prefix ? (
+        <span
+          style={{
+            color: 'var(--canvas-text-secondary)',
+            fontFamily: 'var(--canvas-font-sans)',
+            fontSize: 14,
+            fontWeight: 700,
+            lineHeight: 1,
+            flex: 'none',
+          }}
+        >
+          {prefix}
+        </span>
+      ) : null}
+      <input
+        value={value ?? ''}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        inputMode="decimal"
+        style={{
+          width: '100%',
+          border: 'none',
+          background: 'transparent',
+          color: 'var(--canvas-text-primary)',
+          fontFamily: 'var(--canvas-font-sans)',
+          fontSize: 13,
+          fontWeight: 700,
+          outline: 'none',
+        }}
+      />
+    </div>
+  )
+
+  const selectedType = selectedConditionType.value
+
   return (
     <aside
       aria-hidden={!active}
@@ -280,26 +433,54 @@ export default function CanvasIfSidebar({
     >
       <CanvasNodeSidebarHeader
         title="If Node"
-        description="Adds a conditional branch to the strategy flow."
+        description="Builds a stronger decision rule with typed strategy conditions."
         helpTitle="If Node"
-        helpBody="The If node compares two values and decides whether the strategy should continue down a conditional branch."
+        helpBody="The If node now supports threshold, relative, crossover, range, and advanced conditions so the strategy can express more natural trading logic."
         closeLabel="Close if sidebar"
         onClose={onClose}
       />
 
       <div ref={containerRef} style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <CanvasSidebarFieldSection title="Metric" description="Choose the primary metric used for this condition.">
+        <CanvasSidebarFieldSection title="Condition Type" description="Choose the kind of decision rule this If node should evaluate.">
+          {renderDropdown(
+            conditionTypeTriggerRef,
+            isConditionTypeOpen,
+            setIsConditionTypeOpen,
+            selectedConditionType.label,
+            conditionTypeMenuGroups,
+            (value) => onConditionTypeChange(value as CanvasIfConditionType),
+          )}
+        </CanvasSidebarFieldSection>
+
+        <CanvasSidebarFieldSection title="Condition Source" description="Choose whether this decision should read market, portfolio, or position context.">
+          {renderDropdown(
+            primaryAssetTriggerRef,
+            isSourceTypeOpen,
+            setIsSourceTypeOpen,
+            selectedSourceType.label,
+            sourceTypeMenuGroups,
+            (value) => onSourceTypeChange(value as CanvasIfSourceType),
+          )}
+        </CanvasSidebarFieldSection>
+
+        <CanvasSidebarFieldSection title="Primary Metric" description="Choose the main indicator or metric for this condition.">
           {renderDropdown(
             primaryFunctionTriggerRef,
             isPrimaryFunctionOpen,
             setIsPrimaryFunctionOpen,
-            selectedPrimaryFunction?.label ?? 'Current Price',
-            functionMenuGroups(selectedPrimaryFunction?.value ?? null),
+            selectedPrimaryFunction.label,
+            functionMenuGroups(selectedPrimaryFunction.value),
             (value) => onPrimaryFunctionChange(value as CanvasIfFunction),
           )}
         </CanvasSidebarFieldSection>
 
-        <CanvasSidebarFieldSection title="Asset" description="Choose which connected asset should provide the primary metric.">
+        {metricNeedsPeriod(node?.ifPrimaryFunction) ? (
+          <CanvasSidebarFieldSection title="Primary Period" description="Set the lookback period for indicators like RSI, SMA, EMA, or ATR.">
+            {renderTextInput(node?.ifPrimaryPeriod, '14', onPrimaryPeriodChange)}
+          </CanvasSidebarFieldSection>
+        ) : null}
+
+        <CanvasSidebarFieldSection title="Primary Asset" description="Choose which connected asset should provide the primary signal.">
           {renderDropdown(
             primaryAssetTriggerRef,
             isPrimaryAssetOpen,
@@ -312,92 +493,54 @@ export default function CanvasIfSidebar({
           )}
         </CanvasSidebarFieldSection>
 
-        <CanvasSidebarFieldSection title="Comparator" description="Choose how the primary metric should be compared.">
-          {renderDropdown(
-            comparatorTriggerRef,
-            isComparatorOpen,
-            setIsComparatorOpen,
-            selectedComparator?.label ?? '>',
-            comparatorMenuGroups,
-            (value) => onComparatorChange(value as CanvasIfComparator),
-          )}
-        </CanvasSidebarFieldSection>
+        {selectedType === 'threshold' ? (
+          <>
+            <CanvasSidebarFieldSection title="Comparator" description="Choose how the primary metric should be compared against the threshold.">
+              {renderDropdown(
+                comparatorTriggerRef,
+                isComparatorOpen,
+                setIsComparatorOpen,
+                selectedComparator.label,
+                comparatorMenuGroups,
+                (value) => onComparatorChange(value as CanvasIfComparator),
+              )}
+            </CanvasSidebarFieldSection>
 
-        <CanvasSidebarFieldSection title="Compare Against" description="Choose whether to compare the metric against a manual value or another metric.">
-          {renderDropdown(
-            comparisonTargetTriggerRef,
-            isComparisonTargetOpen,
-            setIsComparisonTargetOpen,
-            selectedComparisonTarget.label,
-            comparisonTargetMenuGroups,
-            (value) => onComparisonTargetTypeChange(value as CanvasComparisonTargetType),
-          )}
-        </CanvasSidebarFieldSection>
-
-        {selectedComparisonTarget.value === 'value' ? (
-          <CanvasSidebarFieldSection
-            title="Value"
-            description="Enter a manual threshold to compare against the selected metric."
-            showDivider={false}
-          >
-            <div
-              style={{
-                minHeight: 54,
-                borderRadius: 16,
-                border: '1px solid var(--canvas-panel-divider)',
-                background: 'var(--canvas-surface-soft)',
-                padding: '0 14px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-              }}
-            >
-              {inputPrefix ? (
-                <span
-                  style={{
-                    color: 'var(--canvas-text-secondary)',
-                    fontFamily: 'var(--canvas-font-sans)',
-                    fontSize: 14,
-                    fontWeight: 700,
-                    lineHeight: 1,
-                    flex: 'none',
-                  }}
-                >
-                  {inputPrefix}
-                </span>
-              ) : null}
-              <input
-                value={node?.ifComparisonValue ?? ''}
-                onChange={(event) => onComparisonValueChange(event.target.value)}
-                placeholder="Enter value"
-                inputMode="decimal"
-                style={{
-                  width: '100%',
-                  border: 'none',
-                  background: 'transparent',
-                  color: 'var(--canvas-text-primary)',
-                  fontFamily: 'var(--canvas-font-sans)',
-                  fontSize: 13,
-                  fontWeight: 700,
-                  outline: 'none',
-                }}
-              />
-            </div>
-          </CanvasSidebarFieldSection>
+            <CanvasSidebarFieldSection title="Threshold Value" description="Enter the numeric value that should trigger this branch." showDivider={false}>
+              {renderTextInput(node?.ifComparisonValue, 'Enter threshold', onComparisonValueChange, inputPrefix)}
+            </CanvasSidebarFieldSection>
+          </>
         ) : null}
 
-        {selectedComparisonTarget.value === 'metric' ? (
+        {selectedType === 'relative' ? (
           <>
-            <CanvasSidebarFieldSection title="Secondary Metric" description="Choose the comparison metric used on the right side of the condition.">
+            <CanvasSidebarFieldSection title="Comparator" description="Compare the primary metric against another metric.">
+              {renderDropdown(
+                comparatorTriggerRef,
+                isComparatorOpen,
+                setIsComparatorOpen,
+                selectedComparator.label,
+                comparatorMenuGroups,
+                (value) => onComparatorChange(value as CanvasIfComparator),
+              )}
+            </CanvasSidebarFieldSection>
+
+            <CanvasSidebarFieldSection title="Secondary Metric" description="Choose the comparison metric that should sit on the right side of the rule.">
               {renderDropdown(
                 secondaryFunctionTriggerRef,
                 isSecondaryFunctionOpen,
                 setIsSecondaryFunctionOpen,
-                selectedSecondaryFunction?.label ?? 'Current Market Cap',
-                functionMenuGroups(selectedSecondaryFunction?.value ?? null),
+                selectedSecondaryFunction.label,
+                functionMenuGroups(selectedSecondaryFunction.value),
                 (value) => onSecondaryFunctionChange(value as CanvasIfFunction),
               )}
             </CanvasSidebarFieldSection>
+
+            {metricNeedsPeriod(node?.ifSecondaryFunction) ? (
+              <CanvasSidebarFieldSection title="Secondary Period" description="Set the period for the comparison indicator when needed.">
+                {renderTextInput(node?.ifSecondaryPeriod, '14', onSecondaryPeriodChange)}
+              </CanvasSidebarFieldSection>
+            ) : null}
 
             <CanvasSidebarFieldSection title="Secondary Asset" description="Choose which connected asset should provide the comparison metric." showDivider={false}>
               {renderDropdown(
@@ -413,8 +556,130 @@ export default function CanvasIfSidebar({
             </CanvasSidebarFieldSection>
           </>
         ) : null}
-      </div>
 
+        {selectedType === 'crossover' ? (
+          <>
+            <CanvasSidebarFieldSection title="Event" description="Choose whether the primary metric should cross above or below the comparison metric.">
+              {renderDropdown(
+                crossoverEventTriggerRef,
+                isCrossoverEventOpen,
+                setIsCrossoverEventOpen,
+                selectedCrossoverEvent.label,
+                crossoverEventGroups,
+                (value) => onCrossoverEventChange(value as CanvasIfCrossoverEvent),
+              )}
+            </CanvasSidebarFieldSection>
+
+            <CanvasSidebarFieldSection title="Secondary Metric" description="Choose the line or metric that the primary metric should cross.">
+              {renderDropdown(
+                secondaryFunctionTriggerRef,
+                isSecondaryFunctionOpen,
+                setIsSecondaryFunctionOpen,
+                selectedSecondaryFunction.label,
+                functionMenuGroups(selectedSecondaryFunction.value),
+                (value) => onSecondaryFunctionChange(value as CanvasIfFunction),
+              )}
+            </CanvasSidebarFieldSection>
+
+            {metricNeedsPeriod(node?.ifSecondaryFunction) ? (
+              <CanvasSidebarFieldSection title="Secondary Period" description="Set the period for the secondary indicator when needed.">
+                {renderTextInput(node?.ifSecondaryPeriod, '14', onSecondaryPeriodChange)}
+              </CanvasSidebarFieldSection>
+            ) : null}
+
+            <CanvasSidebarFieldSection title="Secondary Asset" description="Choose which connected asset provides the comparison line." showDivider={false}>
+              {renderDropdown(
+                secondaryAssetTriggerRef,
+                isSecondaryAssetOpen,
+                setIsSecondaryAssetOpen,
+                selectedSecondaryAsset?.assetName && selectedSecondaryAsset.assetSymbol
+                  ? `${selectedSecondaryAsset.assetName} ${selectedSecondaryAsset.assetSymbol}`
+                  : 'Select asset',
+                assetMenuGroups(selectedSecondaryAsset?.id ?? null),
+                onSecondaryAssetChange,
+              )}
+            </CanvasSidebarFieldSection>
+          </>
+        ) : null}
+
+        {selectedType === 'range' ? (
+          <>
+            <CanvasSidebarFieldSection title="Range Minimum" description="Enter the lower bound of the acceptable range.">
+              {renderTextInput(node?.ifRangeMinValue, 'Min value', onRangeMinValueChange, inputPrefix)}
+            </CanvasSidebarFieldSection>
+
+            <CanvasSidebarFieldSection title="Range Maximum" description="Enter the upper bound of the acceptable range." showDivider={false}>
+              {renderTextInput(node?.ifRangeMaxValue, 'Max value', onRangeMaxValueChange, inputPrefix)}
+            </CanvasSidebarFieldSection>
+          </>
+        ) : null}
+
+        {selectedType === 'advanced' ? (
+          <>
+            <CanvasSidebarFieldSection title="Compare Against" description="Use the legacy advanced compare mode for value or metric comparisons.">
+              {renderDropdown(
+                comparisonTargetTriggerRef,
+                isComparisonTargetOpen,
+                setIsComparisonTargetOpen,
+                selectedComparisonTarget.label,
+                comparisonTargetMenuGroups,
+                (value) => onComparisonTargetTypeChange(value as CanvasComparisonTargetType),
+              )}
+            </CanvasSidebarFieldSection>
+
+            <CanvasSidebarFieldSection title="Comparator" description="Choose how the primary metric should be compared.">
+              {renderDropdown(
+                comparatorTriggerRef,
+                isComparatorOpen,
+                setIsComparatorOpen,
+                selectedComparator.label,
+                comparatorMenuGroups,
+                (value) => onComparatorChange(value as CanvasIfComparator),
+              )}
+            </CanvasSidebarFieldSection>
+
+            {selectedComparisonTarget.value === 'value' ? (
+              <CanvasSidebarFieldSection title="Value" description="Enter a manual threshold for the advanced comparison.">
+                {renderTextInput(node?.ifComparisonValue, 'Enter value', onComparisonValueChange, inputPrefix)}
+              </CanvasSidebarFieldSection>
+            ) : null}
+
+            {selectedComparisonTarget.value === 'metric' ? (
+              <>
+                <CanvasSidebarFieldSection title="Secondary Metric" description="Choose the comparison metric for advanced mode.">
+                  {renderDropdown(
+                    secondaryFunctionTriggerRef,
+                    isSecondaryFunctionOpen,
+                    setIsSecondaryFunctionOpen,
+                    selectedSecondaryFunction.label,
+                    functionMenuGroups(selectedSecondaryFunction.value),
+                    (value) => onSecondaryFunctionChange(value as CanvasIfFunction),
+                  )}
+                </CanvasSidebarFieldSection>
+
+                {metricNeedsPeriod(node?.ifSecondaryFunction) ? (
+                  <CanvasSidebarFieldSection title="Secondary Period" description="Set the period for the secondary indicator when needed.">
+                    {renderTextInput(node?.ifSecondaryPeriod, '14', onSecondaryPeriodChange)}
+                  </CanvasSidebarFieldSection>
+                ) : null}
+
+                <CanvasSidebarFieldSection title="Secondary Asset" description="Choose which connected asset should provide the comparison metric." showDivider={false}>
+                  {renderDropdown(
+                    secondaryAssetTriggerRef,
+                    isSecondaryAssetOpen,
+                    setIsSecondaryAssetOpen,
+                    selectedSecondaryAsset?.assetName && selectedSecondaryAsset.assetSymbol
+                      ? `${selectedSecondaryAsset.assetName} ${selectedSecondaryAsset.assetSymbol}`
+                      : 'Select asset',
+                    assetMenuGroups(selectedSecondaryAsset?.id ?? null),
+                    onSecondaryAssetChange,
+                  )}
+                </CanvasSidebarFieldSection>
+              </>
+            ) : null}
+          </>
+        ) : null}
+      </div>
     </aside>
   )
 }

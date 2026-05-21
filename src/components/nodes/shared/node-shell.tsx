@@ -15,8 +15,11 @@ type NodeShellProps = {
   labelBadge?: string
   labelBadges?: string[]
   labelSegments?: NodeShellLabelSegment[]
+  inlineControl?: ReactNode
   selected?: boolean
   activeConnectorSide?: CanvasConnectorSide | null
+  invalidConnectorSide?: CanvasConnectorSide | null
+  connectedConnectorSides?: CanvasConnectorSide[]
   onConnectorPointerDown?: (side: CanvasConnectorSide, event: React.PointerEvent<HTMLButtonElement>) => void
   onMeasure?: (size: { width: number; height: number }) => void
 }
@@ -35,12 +38,14 @@ const connectorButtonStyle: React.CSSProperties = {
   WebkitAppearance: 'none',
 }
 
-export default function NodeShell({ icon, label, labelBadge, labelBadges, labelSegments, selected = false, activeConnectorSide = null, onConnectorPointerDown, onMeasure }: NodeShellProps) {
+export default function NodeShell({ icon, label, labelBadge, labelBadges, labelSegments, inlineControl, selected = false, activeConnectorSide = null, invalidConnectorSide = null, connectedConnectorSides = [], onConnectorPointerDown, onMeasure }: NodeShellProps) {
   const rootRef = useRef<HTMLDivElement | null>(null)
   const badges = labelBadges && labelBadges.length > 0 ? labelBadges : labelBadge ? [labelBadge] : []
   const segments: NodeShellLabelSegment[] = labelSegments && labelSegments.length > 0
     ? labelSegments
     : [{ kind: 'text' as const, text: label }, ...badges.map((badge) => ({ kind: 'badge' as const, text: badge }))]
+  const isConnectorHighlighted = (side: CanvasConnectorSide) => connectedConnectorSides.includes(side) || activeConnectorSide === side
+  const isConnectorInvalid = (side: CanvasConnectorSide) => invalidConnectorSide === side
 
   useEffect(() => {
     const element = rootRef.current
@@ -97,8 +102,8 @@ export default function NodeShell({ icon, label, labelBadge, labelBadges, labelS
         onPointerDown={(event) => onConnectorPointerDown?.('top', event)}
         style={{
           ...connectorButtonStyle,
-          border: `1px solid ${(selected || activeConnectorSide === 'top') ? 'var(--canvas-accent)' : 'var(--canvas-panel-divider)'}`,
-          background: (selected || activeConnectorSide === 'top') ? 'var(--canvas-accent)' : 'var(--canvas-dashboard-card-bg)',
+          border: `1px solid ${isConnectorInvalid('top') ? 'var(--color-status-critical)' : isConnectorHighlighted('top') ? 'var(--canvas-accent)' : 'var(--canvas-panel-divider)'}`,
+          background: isConnectorInvalid('top') ? 'color-mix(in srgb, var(--color-status-critical) 22%, var(--canvas-dashboard-card-bg))' : isConnectorHighlighted('top') ? 'var(--canvas-accent)' : 'var(--canvas-dashboard-card-bg)',
           left: '50%',
           top: 0,
           transform: 'translate(-50%, -50%)',
@@ -111,8 +116,8 @@ export default function NodeShell({ icon, label, labelBadge, labelBadges, labelS
         onPointerDown={(event) => onConnectorPointerDown?.('right', event)}
         style={{
           ...connectorButtonStyle,
-          border: `1px solid ${(selected || activeConnectorSide === 'right') ? 'var(--canvas-accent)' : 'var(--canvas-panel-divider)'}`,
-          background: (selected || activeConnectorSide === 'right') ? 'var(--canvas-accent)' : 'var(--canvas-dashboard-card-bg)',
+          border: `1px solid ${isConnectorInvalid('right') ? 'var(--color-status-critical)' : isConnectorHighlighted('right') ? 'var(--canvas-accent)' : 'var(--canvas-panel-divider)'}`,
+          background: isConnectorInvalid('right') ? 'color-mix(in srgb, var(--color-status-critical) 22%, var(--canvas-dashboard-card-bg))' : isConnectorHighlighted('right') ? 'var(--canvas-accent)' : 'var(--canvas-dashboard-card-bg)',
           right: 0,
           top: '50%',
           transform: 'translate(50%, -50%)',
@@ -125,8 +130,8 @@ export default function NodeShell({ icon, label, labelBadge, labelBadges, labelS
         onPointerDown={(event) => onConnectorPointerDown?.('bottom', event)}
         style={{
           ...connectorButtonStyle,
-          border: `1px solid ${(selected || activeConnectorSide === 'bottom') ? 'var(--canvas-accent)' : 'var(--canvas-panel-divider)'}`,
-          background: (selected || activeConnectorSide === 'bottom') ? 'var(--canvas-accent)' : 'var(--canvas-dashboard-card-bg)',
+          border: `1px solid ${isConnectorInvalid('bottom') ? 'var(--color-status-critical)' : isConnectorHighlighted('bottom') ? 'var(--canvas-accent)' : 'var(--canvas-panel-divider)'}`,
+          background: isConnectorInvalid('bottom') ? 'color-mix(in srgb, var(--color-status-critical) 22%, var(--canvas-dashboard-card-bg))' : isConnectorHighlighted('bottom') ? 'var(--canvas-accent)' : 'var(--canvas-dashboard-card-bg)',
           left: '50%',
           bottom: 0,
           transform: 'translate(-50%, 50%)',
@@ -139,8 +144,8 @@ export default function NodeShell({ icon, label, labelBadge, labelBadges, labelS
         onPointerDown={(event) => onConnectorPointerDown?.('left', event)}
         style={{
           ...connectorButtonStyle,
-          border: `1px solid ${(selected || activeConnectorSide === 'left') ? 'var(--canvas-accent)' : 'var(--canvas-panel-divider)'}`,
-          background: (selected || activeConnectorSide === 'left') ? 'var(--canvas-accent)' : 'var(--canvas-dashboard-card-bg)',
+          border: `1px solid ${isConnectorInvalid('left') ? 'var(--color-status-critical)' : isConnectorHighlighted('left') ? 'var(--canvas-accent)' : 'var(--canvas-panel-divider)'}`,
+          background: isConnectorInvalid('left') ? 'color-mix(in srgb, var(--color-status-critical) 22%, var(--canvas-dashboard-card-bg))' : isConnectorHighlighted('left') ? 'var(--canvas-accent)' : 'var(--canvas-dashboard-card-bg)',
           left: 0,
           top: '50%',
           transform: 'translate(-50%, -50%)',
@@ -164,6 +169,7 @@ export default function NodeShell({ icon, label, labelBadge, labelBadges, labelS
       </span>
 
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, minWidth: 0, flexWrap: 'nowrap', whiteSpace: 'nowrap' }}>
+        {inlineControl ? <span style={{ display: 'inline-flex', alignItems: 'center', flex: 'none' }}>{inlineControl}</span> : null}
         {segments.map((segment, index) =>
           segment.kind === 'badge' ? (
             <span

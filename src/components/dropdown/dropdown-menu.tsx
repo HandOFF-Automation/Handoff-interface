@@ -107,9 +107,9 @@ export default function DropdownMenu({ open, groups, position = 'top', anchorRef
         left: anchorRect.left + anchorRect.width / 2,
         top: nextPosition === 'bottom' ? anchorRect.bottom + 10 : undefined,
         bottom: nextPosition === 'top' ? window.innerHeight - anchorRect.top + 18 : undefined,
-        width: anchorRect.width,
+        width: 'max-content',
         minWidth: anchorRect.width,
-        maxWidth: anchorRect.width,
+        maxWidth: Math.min(420, window.innerWidth - 24),
         zIndex: 40,
       })
     }
@@ -261,7 +261,7 @@ export default function DropdownMenu({ open, groups, position = 'top', anchorRef
                       {item.label}
                     </span>
                   </span>
-                  {item.trailingIcon ? item.trailingIcon : null}
+                  {item.trailingIcon ? <span className="dropdownMenuTrailingIcon">{item.trailingIcon}</span> : null}
                   {item.shortcut ? <span className="dropdownMenuShortcut">{item.shortcut}</span> : null}
                 </button>
               )

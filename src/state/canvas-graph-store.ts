@@ -3,7 +3,7 @@ import { useSyncExternalStore } from 'react'
 import type { CanvasEdgeRecord } from './canvas-edge-store'
 import type { CanvasNodeRecord } from './canvas-node-store'
 
-type CanvasGraphSnapshot = {
+export type CanvasGraphSnapshot = {
   nodes: CanvasNodeRecord[]
   selectedNodeIds: string[]
   edges: CanvasEdgeRecord[]
@@ -43,6 +43,21 @@ export function commitCanvasGraphMutation(mutator: (current: CanvasGraphSnapshot
   const previous = cloneSnapshot(present)
   const next = mutator(cloneSnapshot(present))
 
+  const isSame = JSON.stringify(previous) === JSON.stringify(next)
+
+  if (isSame) {
+    return
+  }
+
+  undoStack = [...undoStack, previous]
+  redoStack = []
+  present = next
+  emitChange()
+}
+
+export function replaceCanvasGraph(nextSnapshot: CanvasGraphSnapshot) {
+  const previous = cloneSnapshot(present)
+  const next = cloneSnapshot(nextSnapshot)
   const isSame = JSON.stringify(previous) === JSON.stringify(next)
 
   if (isSame) {

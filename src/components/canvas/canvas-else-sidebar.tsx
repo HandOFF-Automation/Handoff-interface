@@ -1,257 +1,16 @@
-import { CaretDown } from '@phosphor-icons/react'
-import { useEffect, useRef, useState } from 'react'
-
-import type { CanvasComparisonTargetType, CanvasIfComparator, CanvasIfFunction, CanvasNodeRecord } from '../../state/canvas-node-store'
-import { CanvasAssetLogo } from './canvas-asset-options'
-import CanvasSidebarFieldSection from './canvas-sidebar-field-section'
+import type { CanvasNodeRecord } from '../../state/canvas-node-store'
 import CanvasNodeSidebarHeader from './canvas-node-sidebar-header'
-import DropdownMenu, { type DropdownMenuItem } from '../dropdown/dropdown-menu'
-
-const elseFunctionOptions: Array<{ value: CanvasIfFunction; label: string }> = [
-  { value: 'currentPrice', label: 'Current Price' },
-  { value: 'currentMarketCap', label: 'Current Market Cap' },
-  { value: 'volume', label: 'Volume' },
-  { value: 'simpleMovingAverage', label: 'Simple Moving Average' },
-  { value: 'exponentialMovingAverage', label: 'Exponential Moving Average' },
-]
-
-const elseComparatorOptions: Array<{ value: CanvasIfComparator; label: string }> = [
-  { value: '>', label: '>' },
-  { value: '<', label: '<' },
-  { value: '>=', label: '>=' },
-  { value: '<=', label: '<=' },
-  { value: '=', label: '=' },
-]
-
-const comparisonTargetOptions: Array<{ value: CanvasComparisonTargetType; label: string }> = [
-  { value: 'value', label: 'Value' },
-  { value: 'metric', label: 'Metric' },
-]
-
-type AssetOption = {
-  id: string
-  type: 'stock' | 'token'
-  assetSymbol?: string
-  assetName?: string
-}
+import CanvasSidebarFieldSection from './canvas-sidebar-field-section'
 
 type CanvasElseSidebarProps = {
   active: boolean
   node: CanvasNodeRecord | null
-  assetNodeOptions: AssetOption[]
   onClose: () => void
-  onPrimaryFunctionChange: (value: CanvasIfFunction) => void
-  onPrimaryAssetChange: (value: string) => void
-  onComparatorChange: (value: CanvasIfComparator) => void
-  onComparisonTargetTypeChange: (value: CanvasComparisonTargetType) => void
-  onComparisonValueChange: (value: string) => void
-  onSecondaryFunctionChange: (value: CanvasIfFunction) => void
-  onSecondaryAssetChange: (value: string) => void
 }
 
-export default function CanvasElseSidebar({
-  active,
-  node,
-  assetNodeOptions,
-  onClose,
-  onPrimaryFunctionChange,
-  onPrimaryAssetChange,
-  onComparatorChange,
-  onComparisonTargetTypeChange,
-  onComparisonValueChange,
-  onSecondaryFunctionChange,
-  onSecondaryAssetChange,
-}: CanvasElseSidebarProps) {
-  const containerRef = useRef<HTMLDivElement | null>(null)
-  const primaryFunctionTriggerRef = useRef<HTMLButtonElement | null>(null)
-  const primaryAssetTriggerRef = useRef<HTMLButtonElement | null>(null)
-  const comparatorTriggerRef = useRef<HTMLButtonElement | null>(null)
-  const comparisonTargetTriggerRef = useRef<HTMLButtonElement | null>(null)
-  const secondaryFunctionTriggerRef = useRef<HTMLButtonElement | null>(null)
-  const secondaryAssetTriggerRef = useRef<HTMLButtonElement | null>(null)
-  const [isPrimaryFunctionOpen, setIsPrimaryFunctionOpen] = useState(false)
-  const [isPrimaryAssetOpen, setIsPrimaryAssetOpen] = useState(false)
-  const [isComparatorOpen, setIsComparatorOpen] = useState(false)
-  const [isComparisonTargetOpen, setIsComparisonTargetOpen] = useState(false)
-  const [isSecondaryFunctionOpen, setIsSecondaryFunctionOpen] = useState(false)
-  const [isSecondaryAssetOpen, setIsSecondaryAssetOpen] = useState(false)
-
-  const selectedPrimaryFunction = elseFunctionOptions.find((option) => option.value === node?.elsePrimaryFunction) ?? null
-  const selectedPrimaryAsset = assetNodeOptions.find((option) => option.id === node?.elsePrimaryAssetNodeId) ?? null
-  const selectedComparator = elseComparatorOptions.find((option) => option.value === node?.elseComparator) ?? null
-  const selectedComparisonTarget = comparisonTargetOptions.find((option) => option.value === (node?.elseComparisonTargetType ?? 'metric')) ?? comparisonTargetOptions[1]
-  const selectedSecondaryFunction = elseFunctionOptions.find((option) => option.value === node?.elseSecondaryFunction) ?? null
-  const selectedSecondaryAsset = assetNodeOptions.find((option) => option.id === node?.elseSecondaryAssetNodeId) ?? null
-
-  const functionMenuGroups = (selectedValue?: CanvasIfFunction | null) => [
-    {
-      items: elseFunctionOptions.map<DropdownMenuItem>((option) => ({
-        label: option.label,
-        value: option.value,
-        active: option.value === selectedValue,
-      })),
-    },
-  ]
-
-  const assetMenuGroups = (selectedId?: string | null) => [
-    {
-      className: 'dropdownMenuScrollableGroup',
-      style: {
-        minHeight: 120,
-        maxHeight: 220,
-      },
-      items: (assetNodeOptions.length > 0
-        ? assetNodeOptions
-        : [{ id: '', type: 'stock' as const, assetName: 'No asset nodes found', assetSymbol: '' }]
-      ).map<DropdownMenuItem>((option) => ({
-        label: option.assetName && option.assetSymbol ? `${option.assetName} ${option.assetSymbol}` : option.assetSymbol || option.assetName || 'Unnamed Asset',
-        value: option.id,
-        disabled: !option.id,
-        active: option.id === selectedId,
-        icon: option.id && option.assetSymbol ? <CanvasAssetLogo assetType={option.type} symbol={option.assetSymbol} size={20} /> : null,
-      })),
-    },
-  ]
-
-  const comparatorMenuGroups = [
-    {
-      items: elseComparatorOptions.map<DropdownMenuItem>((option) => ({
-        label: option.label,
-        value: option.value,
-        active: option.value === selectedComparator?.value,
-        trailingIcon: option.value === selectedComparator?.value ? '✓' : undefined,
-      })),
-    },
-  ]
-
-  const comparisonTargetMenuGroups = [
-    {
-      items: comparisonTargetOptions.map<DropdownMenuItem>((option) => ({
-        label: option.label,
-        value: option.value,
-        active: option.value === selectedComparisonTarget.value,
-        trailingIcon: option.value === selectedComparisonTarget.value ? '✓' : undefined,
-      })),
-    },
-  ]
-
-  const inputPrefix = node?.elsePrimaryFunction === 'currentPrice' || node?.elsePrimaryFunction === 'currentMarketCap'
-    ? '$'
-    : ''
-
-  useEffect(() => {
-    if (!active) {
-      setIsPrimaryFunctionOpen(false)
-      setIsPrimaryAssetOpen(false)
-      setIsComparatorOpen(false)
-      setIsComparisonTargetOpen(false)
-      setIsSecondaryFunctionOpen(false)
-      setIsSecondaryAssetOpen(false)
-    }
-  }, [active])
-
-  useEffect(() => {
-    if (!isPrimaryFunctionOpen && !isPrimaryAssetOpen && !isComparatorOpen && !isComparisonTargetOpen && !isSecondaryFunctionOpen && !isSecondaryAssetOpen) {
-      return
-    }
-
-    const handlePointerDown = (event: PointerEvent) => {
-      if (containerRef.current?.contains(event.target as Node)) {
-        return
-      }
-
-      setIsPrimaryFunctionOpen(false)
-      setIsPrimaryAssetOpen(false)
-      setIsComparatorOpen(false)
-      setIsComparisonTargetOpen(false)
-      setIsSecondaryFunctionOpen(false)
-      setIsSecondaryAssetOpen(false)
-    }
-
-    document.addEventListener('pointerdown', handlePointerDown)
-
-    return () => {
-      document.removeEventListener('pointerdown', handlePointerDown)
-    }
-  }, [isComparatorOpen, isComparisonTargetOpen, isPrimaryAssetOpen, isPrimaryFunctionOpen, isSecondaryAssetOpen, isSecondaryFunctionOpen])
-
-  const renderDropdown = (
-    triggerRef: React.RefObject<HTMLButtonElement | null>,
-    isOpen: boolean,
-    setOpen: (value: boolean | ((current: boolean) => boolean)) => void,
-    label: string,
-    groups: { items: DropdownMenuItem[]; style?: React.CSSProperties; className?: string }[],
-    onItemClick: (value: string) => void,
-  ) => (
-    <div style={{ position: 'relative' }}>
-      <button
-        ref={triggerRef}
-        type="button"
-        onClick={() => setOpen((current) => !current)}
-        style={{
-          width: '100%',
-          minHeight: 54,
-          borderRadius: 16,
-          border: '1px solid var(--canvas-panel-divider)',
-          background: 'var(--canvas-surface-soft)',
-          padding: '0 14px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 12,
-          cursor: 'pointer',
-        }}
-      >
-        <span
-          style={{
-            color: 'var(--canvas-text-primary)',
-            fontFamily: 'var(--canvas-font-sans)',
-            fontSize: 13,
-            fontWeight: 700,
-            lineHeight: 1.2,
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-          }}
-        >
-          {label}
-        </span>
-
-        <CaretDown
-          size={14}
-          weight="bold"
-          style={{
-            color: 'var(--canvas-text-secondary)',
-            flex: 'none',
-            transform: `rotate(${isOpen ? '180deg' : '0deg'})`,
-            transition: 'transform 160ms ease',
-          }}
-        />
-      </button>
-
-      {isOpen ? (
-        <DropdownMenu
-          open={isOpen}
-          anchorRef={triggerRef}
-          boundaryRef={containerRef}
-          groups={groups}
-          position="bottom"
-          portalToBody
-          style={{
-            minHeight: 188,
-            maxHeight: 320,
-          }}
-          onItemClick={(item) => {
-            if (item.value) {
-              onItemClick(item.value)
-            }
-
-            setOpen(false)
-          }}
-        />
-      ) : null}
-    </div>
-  )
+export default function CanvasElseSidebar({ active, node, onClose }: CanvasElseSidebarProps) {
+  const fallbackLabel = node?.type === 'else' ? 'Otherwise' : 'Fallback'
+  const fallbackDescription = node?.type === 'else' ? 'Runs when the paired If condition fails.' : 'Runs as the alternate branch.'
 
   return (
     <aside
@@ -280,141 +39,100 @@ export default function CanvasElseSidebar({
     >
       <CanvasNodeSidebarHeader
         title="Else Node"
-        description="Defines the fallback branch when the condition is not met."
+        description="Defines the fallback branch when the paired If condition does not pass."
         helpTitle="Else Node"
-        helpBody="The Else node compares the alternate branch values and represents the fallback path when the paired If condition does not pass."
+        helpBody="The Else node no longer mirrors the If condition editor. It represents the alternate path that runs when the paired If condition fails."
         closeLabel="Close else sidebar"
         onClose={onClose}
       />
 
-      <div ref={containerRef} style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <CanvasSidebarFieldSection title="Metric" description="Choose the primary metric used for this condition.">
-          {renderDropdown(
-            primaryFunctionTriggerRef,
-            isPrimaryFunctionOpen,
-            setIsPrimaryFunctionOpen,
-            selectedPrimaryFunction?.label ?? 'Current Price',
-            functionMenuGroups(selectedPrimaryFunction?.value ?? null),
-            (value) => onPrimaryFunctionChange(value as CanvasIfFunction),
-          )}
-        </CanvasSidebarFieldSection>
-
-        <CanvasSidebarFieldSection title="Asset" description="Choose which connected asset should provide the primary metric.">
-          {renderDropdown(
-            primaryAssetTriggerRef,
-            isPrimaryAssetOpen,
-            setIsPrimaryAssetOpen,
-            selectedPrimaryAsset?.assetName && selectedPrimaryAsset.assetSymbol
-              ? `${selectedPrimaryAsset.assetName} ${selectedPrimaryAsset.assetSymbol}`
-              : 'Select asset',
-            assetMenuGroups(selectedPrimaryAsset?.id ?? null),
-            onPrimaryAssetChange,
-          )}
-        </CanvasSidebarFieldSection>
-
-        <CanvasSidebarFieldSection title="Comparator" description="Choose how the primary metric should be compared.">
-          {renderDropdown(
-            comparatorTriggerRef,
-            isComparatorOpen,
-            setIsComparatorOpen,
-            selectedComparator?.label ?? '<',
-            comparatorMenuGroups,
-            (value) => onComparatorChange(value as CanvasIfComparator),
-          )}
-        </CanvasSidebarFieldSection>
-
-        <CanvasSidebarFieldSection title="Compare Against" description="Choose whether to compare the metric against a manual value or another metric.">
-          {renderDropdown(
-            comparisonTargetTriggerRef,
-            isComparisonTargetOpen,
-            setIsComparisonTargetOpen,
-            selectedComparisonTarget.label,
-            comparisonTargetMenuGroups,
-            (value) => onComparisonTargetTypeChange(value as CanvasComparisonTargetType),
-          )}
-        </CanvasSidebarFieldSection>
-
-        {selectedComparisonTarget.value === 'value' ? (
-          <CanvasSidebarFieldSection
-            title="Value"
-            description="Enter a manual threshold to compare against the selected metric."
-            showDivider={false}
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <CanvasSidebarFieldSection title="Branch Role" description="This node acts as the fallback route after an If node evaluates to false.">
+          <div
+            style={{
+              borderRadius: 16,
+              border: '1px solid var(--canvas-panel-divider)',
+              background: 'var(--canvas-surface-soft)',
+              padding: 14,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-start',
+              gap: 10,
+            }}
           >
-            <div
+            <span
               style={{
-                minHeight: 54,
-                borderRadius: 16,
+                minHeight: 24,
+                padding: '0 8px',
+                borderRadius: 999,
                 border: '1px solid var(--canvas-panel-divider)',
-                background: 'var(--canvas-surface-soft)',
-                padding: '0 14px',
-                display: 'flex',
+                background: 'var(--canvas-surface)',
+                color: 'var(--canvas-text-secondary)',
+                fontFamily: 'var(--canvas-font-sans)',
+                fontSize: 11,
+                fontWeight: 700,
+                lineHeight: 1,
+                display: 'inline-flex',
                 alignItems: 'center',
-                gap: 8,
+                justifyContent: 'center',
+                whiteSpace: 'nowrap',
+                flex: 'none',
               }}
             >
-              {inputPrefix ? (
-                <span
-                  style={{
-                    color: 'var(--canvas-text-secondary)',
-                    fontFamily: 'var(--canvas-font-sans)',
-                    fontSize: 14,
-                    fontWeight: 700,
-                    lineHeight: 1,
-                    flex: 'none',
-                  }}
-                >
-                  {inputPrefix}
-                </span>
-              ) : null}
-              <input
-                value={node?.elseComparisonValue ?? ''}
-                onChange={(event) => onComparisonValueChange(event.target.value)}
-                placeholder="Enter value"
-                inputMode="decimal"
+              {fallbackLabel}
+            </span>
+            <span
+              style={{
+                color: 'var(--canvas-text-primary)',
+                fontFamily: 'var(--canvas-font-sans)',
+                fontSize: 12,
+                fontWeight: 600,
+                lineHeight: 1.5,
+                display: 'block',
+                maxWidth: '100%',
+              }}
+            >
+              {fallbackDescription}
+            </span>
+          </div>
+        </CanvasSidebarFieldSection>
+
+        <CanvasSidebarFieldSection
+          title="Behavior"
+          description="Connect this node to the actions or logic that should run when the If branch does not continue."
+          showDivider={false}
+        >
+          <div
+            style={{
+              borderRadius: 16,
+              border: '1px solid var(--canvas-panel-divider)',
+              background: 'var(--canvas-surface-soft)',
+              padding: 14,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 8,
+            }}
+          >
+            {[
+              'Use Else for fallback execution such as Scale Out or Stop Loss.',
+              'Keep the actual comparison logic inside the paired If node.',
+              'Treat Else as the alternate path, not a second condition editor.',
+            ].map((item) => (
+              <span
+                key={item}
                 style={{
-                  width: '100%',
-                  border: 'none',
-                  background: 'transparent',
-                  color: 'var(--canvas-text-primary)',
+                  color: 'var(--canvas-text-secondary)',
                   fontFamily: 'var(--canvas-font-sans)',
-                  fontSize: 13,
-                  fontWeight: 700,
-                  outline: 'none',
+                  fontSize: 11,
+                  lineHeight: 1.5,
                 }}
-              />
-            </div>
-          </CanvasSidebarFieldSection>
-        ) : null}
-
-        {selectedComparisonTarget.value === 'metric' ? (
-          <>
-            <CanvasSidebarFieldSection title="Secondary Metric" description="Choose the comparison metric used on the right side of the condition.">
-              {renderDropdown(
-                secondaryFunctionTriggerRef,
-                isSecondaryFunctionOpen,
-                setIsSecondaryFunctionOpen,
-                selectedSecondaryFunction?.label ?? 'Current Market Cap',
-                functionMenuGroups(selectedSecondaryFunction?.value ?? null),
-                (value) => onSecondaryFunctionChange(value as CanvasIfFunction),
-              )}
-            </CanvasSidebarFieldSection>
-
-            <CanvasSidebarFieldSection title="Secondary Asset" description="Choose which connected asset should provide the comparison metric." showDivider={false}>
-              {renderDropdown(
-                secondaryAssetTriggerRef,
-                isSecondaryAssetOpen,
-                setIsSecondaryAssetOpen,
-                selectedSecondaryAsset?.assetName && selectedSecondaryAsset.assetSymbol
-                  ? `${selectedSecondaryAsset.assetName} ${selectedSecondaryAsset.assetSymbol}`
-                  : 'Select asset',
-                assetMenuGroups(selectedSecondaryAsset?.id ?? null),
-                onSecondaryAssetChange,
-              )}
-            </CanvasSidebarFieldSection>
-          </>
-        ) : null}
+              >
+                {item}
+              </span>
+            ))}
+          </div>
+        </CanvasSidebarFieldSection>
       </div>
-
     </aside>
   )
 }

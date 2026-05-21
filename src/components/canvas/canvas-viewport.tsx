@@ -5,13 +5,21 @@ import type { PointerEvent as ReactPointerEvent } from 'react'
 import DotsPattern from '../background/dots/dots-pattern'
 import GridPattern from '../background/grid/grid-pattern'
 import { CanvasAssetLogo } from './canvas-asset-options'
+import DropdownMenu, { type DropdownMenuItem } from '../dropdown/dropdown-menu'
 import AllocateNode from '../nodes/allocate/allocate-node'
+import AndNode from '../nodes/and/and-node'
 import BuyNode from '../nodes/buy/buy-node'
 import ElseNode from '../nodes/else/else-node'
 import EndNode from '../nodes/end/end-node'
+import ExcludeNode from '../nodes/exclude/exclude-node'
 import FilterNode from '../nodes/filter/filter-node'
 import IfNode from '../nodes/if/if-node'
+import IntersectNode from '../nodes/intersect/intersect-node'
 import LoopNode from '../nodes/loop/loop-node'
+import NotNode from '../nodes/not/not-node'
+import OrNode from '../nodes/or/or-node'
+import PortfolioConditionNode from '../nodes/portfolio-condition/portfolio-condition-node'
+import PositionLimitNode from '../nodes/position-limit/position-limit-node'
 import RebalanceNode from '../nodes/rebalance/rebalance-node'
 import ScaleOutNode from '../nodes/scale-out/scale-out-node'
 import SellNode from '../nodes/sell/sell-node'
@@ -20,12 +28,17 @@ import StopLossNode from '../nodes/stop-loss/stop-loss-node'
 import StockNode from '../nodes/stock/stock-node'
 import TakeProfitNode from '../nodes/take-profit/take-profit-node'
 import TokenNode from '../nodes/token/token-node'
+import UnionNode from '../nodes/union/union-node'
+import XorNode from '../nodes/xor/xor-node'
+import CooldownNode from '../nodes/cooldown/cooldown-node'
+import ExposureLimitNode from '../nodes/exposure-limit/exposure-limit-node'
 import CommentThreadLayer from '../comment/comment-thread-layer'
 import Skeleton from '../loading/skeleton'
 import { useAppLoading } from '../../state/app-loading-store'
 import { addCanvasEdge, removeCanvasEdges, setSelectedCanvasEdgeIds, useCanvasEdges, type CanvasConnectorSide } from '../../state/canvas-edge-store'
 import { redoCanvasGraph, undoCanvasGraph } from '../../state/canvas-graph-store'
-import { addCanvasNode, moveCanvasNodes, removeCanvasNodes, setSelectedCanvasNodeId, setSelectedCanvasNodeIds, useCanvasNodes } from '../../state/canvas-node-store'
+import { addCanvasNode, moveCanvasNodes, removeCanvasNodes, setCanvasFilterAssetNodeId, setSelectedCanvasNodeId, setSelectedCanvasNodeIds, useCanvasNodes, type CanvasIfFunction, type CanvasNodeRecord } from '../../state/canvas-node-store'
+import { getCanvasEdgeLabelForNode } from '../../config/canvas-nodes/config'
 import { canvasActionShortcuts } from '../../config/keybinding/canvas-keybindings'
 import { executeCanvasZoomAction, setCanvasScale, setCanvasTool, useCanvasNodeType, useCanvasScale, useCanvasTool, type CanvasTool } from '../../state/canvas-tool-store'
 import { toggleCanvasTheme } from '../../state/theme-store'
@@ -137,6 +150,9 @@ export default function CanvasViewport() {
   const [nodeSizes, setNodeSizes] = useState<Record<string, { width: number; height: number }>>({})
   const [connectorPreviewPoint, setConnectorPreviewPoint] = useState<Point | null>(null)
   const [connectorHoverTarget, setConnectorHoverTarget] = useState<{ nodeId: string; side: CanvasConnectorSide } | null>(null)
+  const [invalidConnectorHoverTarget, setInvalidConnectorHoverTarget] = useState<{ nodeId: string; side: CanvasConnectorSide; reason?: string } | null>(null)
+  const [invalidConnectionMessage, setInvalidConnectionMessage] = useState<string | null>(null)
+  const [openFilterViewNodeId, setOpenFilterViewNodeId] = useState<string | null>(null)
   const skeletonOpacity = Math.max(0, 1 - progress / 100)
   const alignmentGuide: AlignmentGuide | null = (() => {
     const nodeDragState = nodeDragStateRef.current
@@ -221,7 +237,51 @@ export default function CanvasViewport() {
     }
 
     if (value === 'exponentialMovingAverage') {
-      return 'Exponential Moving Average'
+      return 'EMA'
+    }
+
+    if (value === 'rsi') {
+      return 'RSI'
+    }
+
+    if (value === 'macdLine') {
+      return 'MACD Line'
+    }
+
+    if (value === 'macdSignal') {
+      return 'MACD Signal'
+    }
+
+    if (value === 'macdHistogram') {
+      return 'MACD Histogram'
+    }
+
+    if (value === 'atr') {
+      return 'ATR'
+    }
+
+    if (value === 'cashPercent') {
+      return 'Cash %'
+    }
+
+    if (value === 'portfolioExposure') {
+      return 'Portfolio Exposure %'
+    }
+
+    if (value === 'openPositions') {
+      return 'Open Positions'
+    }
+
+    if (value === 'unrealizedPnl') {
+      return 'Unrealized PnL %'
+    }
+
+    if (value === 'drawdownPercent') {
+      return 'Drawdown %'
+    }
+
+    if (value === 'positionSizePercent') {
+      return 'Position Size %'
     }
 
     return ''
@@ -233,6 +293,108 @@ export default function CanvasViewport() {
     }
 
     return ''
+  }
+
+  const getIfMetricBadgeLabel = (value?: CanvasIfFunction, period?: string) => {
+    const baseLabel = getIfFunctionLabel(value)
+
+    if (!baseLabel) {
+      return ''
+    }
+
+    const trimmedPeriod = period?.trim()
+
+    if (!trimmedPeriod) {
+      return baseLabel
+    }
+
+    if (value === 'simpleMovingAverage' || value === 'exponentialMovingAverage' || value === 'rsi' || value === 'atr') {
+      return `${baseLabel} ${trimmedPeriod}`
+    }
+
+    return baseLabel
+  }
+
+  const getIfConditionSegments = (node: CanvasNodeRecord): NodeShellLabelSegment[] => {
+    const primaryAssetLabel = getLinkedAssetLabel(node.ifPrimaryAssetNodeId)
+    const primaryAssetIcon = getLinkedAssetIcon(node.ifPrimaryAssetNodeId)
+    const secondaryAssetLabel = getLinkedAssetLabel(node.ifSecondaryAssetNodeId)
+    const secondaryAssetIcon = getLinkedAssetIcon(node.ifSecondaryAssetNodeId)
+    const conditionType = node.ifConditionType ?? 'threshold'
+    const primaryMetricLabel = getIfMetricBadgeLabel(node.ifPrimaryFunction, node.ifPrimaryPeriod)
+    const secondaryMetricLabel = getIfMetricBadgeLabel(node.ifSecondaryFunction, node.ifSecondaryPeriod)
+    const valuePrefix = getIfValuePrefix(node.ifPrimaryFunction)
+    const rangeMin = node.ifRangeMinValue?.trim() ?? ''
+    const rangeMax = node.ifRangeMaxValue?.trim() ?? ''
+    const comparisonValue = node.ifComparisonValue?.trim() ?? ''
+    const crossoverLabel = node.ifCrossoverEvent === 'crossesBelow' ? 'crosses below' : 'crosses above'
+    const sourceLabel = node.ifSourceType === 'portfolio' ? 'Portfolio' : node.ifSourceType === 'position' ? 'Position' : 'Market'
+    const segments: NodeShellLabelSegment[] = [{ kind: 'text', text: 'If' }, { kind: 'badge', text: sourceLabel }, { kind: 'badge', text: 'When' }]
+
+    if (!primaryMetricLabel) {
+      return segments
+    }
+
+    segments.push({ kind: 'badge', text: primaryMetricLabel })
+
+    if (primaryAssetLabel !== 'Asset') {
+      segments.push({ kind: 'badge', text: primaryAssetLabel, icon: primaryAssetIcon })
+    }
+
+    if (conditionType === 'threshold') {
+      segments.push({ kind: 'text', text: 'is' })
+      segments.push({ kind: 'badge', text: node.ifComparator ?? '>' })
+      segments.push({ kind: 'badge', text: `${valuePrefix}${comparisonValue || '0'}` })
+      return segments
+    }
+
+    if (conditionType === 'relative') {
+      segments.push({ kind: 'text', text: 'is' })
+      segments.push({ kind: 'badge', text: node.ifComparator ?? '>' })
+      if (secondaryMetricLabel) {
+        segments.push({ kind: 'badge', text: secondaryMetricLabel })
+      }
+      if (secondaryAssetLabel !== 'Asset') {
+        segments.push({ kind: 'badge', text: secondaryAssetLabel, icon: secondaryAssetIcon })
+      }
+      return segments
+    }
+
+    if (conditionType === 'crossover') {
+      segments.push({ kind: 'text', text: crossoverLabel })
+      if (secondaryMetricLabel) {
+        segments.push({ kind: 'badge', text: secondaryMetricLabel })
+      }
+      if (secondaryAssetLabel !== 'Asset') {
+        segments.push({ kind: 'badge', text: secondaryAssetLabel, icon: secondaryAssetIcon })
+      }
+      return segments
+    }
+
+    if (conditionType === 'range') {
+      segments.push({ kind: 'text', text: 'stays in' })
+      segments.push({ kind: 'badge', text: `${valuePrefix}${rangeMin || '0'}` })
+      segments.push({ kind: 'text', text: 'to' })
+      segments.push({ kind: 'badge', text: `${valuePrefix}${rangeMax || '0'}` })
+      return segments
+    }
+
+    segments.push({ kind: 'badge', text: 'Advanced' })
+    segments.push({ kind: 'text', text: 'uses' })
+    segments.push({ kind: 'badge', text: node.ifComparator ?? '>' })
+
+    if ((node.ifComparisonTargetType ?? 'metric') === 'value') {
+      segments.push({ kind: 'badge', text: `${valuePrefix}${comparisonValue || '0'}` })
+    } else {
+      if (secondaryMetricLabel) {
+        segments.push({ kind: 'badge', text: secondaryMetricLabel })
+      }
+      if (secondaryAssetLabel !== 'Asset') {
+        segments.push({ kind: 'badge', text: secondaryAssetLabel, icon: secondaryAssetIcon })
+      }
+    }
+
+    return segments
   }
 
   const getLinkedAssetNode = (nodeId?: string) => placedNodes.find((placedNode) => placedNode.id === nodeId)
@@ -278,35 +440,178 @@ export default function CanvasViewport() {
       : connectorHoverTarget?.nodeId === nodeId
         ? connectorHoverTarget.side
         : null,
+    invalidConnectorSide: invalidConnectorHoverTarget?.nodeId === nodeId ? invalidConnectorHoverTarget.side : null,
+    connectedConnectorSides: edges.flatMap((edge) => {
+      if (edge.fromNodeId === nodeId) {
+        return [edge.fromSide]
+      }
+
+      if (edge.toNodeId === nodeId) {
+        return [edge.toSide]
+      }
+
+      return []
+    }),
     onConnectorPointerDown: (side: CanvasConnectorSide, event: React.PointerEvent<HTMLButtonElement>) => handleConnectorPointerDown(event, nodeId, side),
     onMeasure: (size: { width: number; height: number }) => handleNodeMeasure(nodeId, size),
   })
+
+  const getNodeCategory = (node: CanvasNodeRecord) => {
+    if (node.type === 'stock' || node.type === 'token') {
+      return 'asset'
+    }
+
+    if (node.type === 'filter' || node.type === 'start') {
+      return 'assetSet'
+    }
+
+    if (node.type === 'if' || node.type === 'portfolioCondition' || node.type === 'and' || node.type === 'or' || node.type === 'not' || node.type === 'xor') {
+      return 'boolean'
+    }
+
+    if (node.type === 'intersect' || node.type === 'union' || node.type === 'exclude') {
+      return 'assetSet'
+    }
+
+    if (node.type === 'else' || node.type === 'loop' || node.type === 'cooldown') {
+      return 'branch'
+    }
+
+    if (node.type === 'buy' || node.type === 'sell' || node.type === 'rebalance' || node.type === 'allocate' || node.type === 'scaleOut' || node.type === 'takeProfit' || node.type === 'stopLoss' || node.type === 'positionLimit' || node.type === 'exposureLimit') {
+      return 'execution'
+    }
+
+    return 'terminal'
+  }
+
+  const getConnectionValidation = (sourceNodeId: string, targetNodeId: string) => {
+    const sourceNode = placedNodes.find((node) => node.id === sourceNodeId)
+    const targetNode = placedNodes.find((node) => node.id === targetNodeId)
+
+    if (!sourceNode || !targetNode) {
+      return { valid: false, reason: 'Missing source or target node.' }
+    }
+
+    if (sourceNode.id === targetNode.id) {
+      return { valid: false, reason: 'Cannot connect a node to itself.' }
+    }
+
+    if (targetNode.type === 'start') {
+      return { valid: false, reason: 'Start cannot receive incoming connections.' }
+    }
+
+    if (sourceNode.type === 'end') {
+      return { valid: false, reason: 'End cannot continue to another node.' }
+    }
+
+    const sourceCategory = getNodeCategory(sourceNode)
+
+    if (sourceNode.type === 'start') {
+      return targetNode.type === 'stock' || targetNode.type === 'token' || targetNode.type === 'filter' || targetNode.type === 'portfolioCondition'
+        ? { valid: true }
+        : { valid: false, reason: 'Start should connect into assets or a filter stage.' }
+    }
+
+    if (sourceCategory === 'asset') {
+      return targetNode.type === 'filter' || targetNode.type === 'if' || targetNode.type === 'portfolioCondition' || targetNode.type === 'intersect' || targetNode.type === 'union' || targetNode.type === 'exclude'
+        ? { valid: true }
+        : { valid: false, reason: 'Assets should connect into Filter, If, or asset-set logic nodes.' }
+    }
+
+    if (sourceNode.type === 'filter') {
+      return targetNode.type === 'filter' || targetNode.type === 'if' || targetNode.type === 'portfolioCondition' || targetNode.type === 'intersect' || targetNode.type === 'union' || targetNode.type === 'exclude'
+        ? { valid: true }
+        : { valid: false, reason: 'Filter results should continue into another Filter, an If node, or asset-set logic.' }
+    }
+
+    if (sourceCategory === 'boolean') {
+      return targetNode.type === 'and' || targetNode.type === 'or' || targetNode.type === 'not' || targetNode.type === 'xor' || targetNode.type === 'else' || getNodeCategory(targetNode) === 'execution'
+        ? { valid: true }
+        : { valid: false, reason: 'Condition results should connect into All Of, Any Of, Not, Only One, Else, or execution nodes.' }
+    }
+
+    if (sourceNode.type === 'else' || sourceNode.type === 'loop') {
+      return getNodeCategory(targetNode) === 'execution' || targetNode.type === 'end' || targetNode.type === 'loop' || targetNode.type === 'filter' || targetNode.type === 'if' || targetNode.type === 'portfolioCondition'
+        ? { valid: true }
+        : { valid: false, reason: `${sourceNode.type === 'else' ? 'Else' : 'Loop'} should continue into filtering, evaluation, execution, loop, or end.` }
+    }
+
+    if (sourceCategory === 'execution') {
+      return getNodeCategory(targetNode) === 'execution' || targetNode.type === 'loop' || targetNode.type === 'end' || targetNode.type === 'cooldown'
+        ? { valid: true }
+        : { valid: false, reason: 'Execution nodes should continue into execution, loop, or end nodes.' }
+    }
+
+    return { valid: false, reason: 'This connection is not allowed by the current flow rules.' }
+  }
 
   const getOrthogonalEdgeGeometry = (
     fromPoint: Point,
     toPoint: Point,
     fromSide: CanvasConnectorSide,
     toSide: CanvasConnectorSide,
+    sourceOffset = 0,
+    targetOffset = 0,
   ): OrthogonalEdgeGeometry => {
     const points: Point[] = [{ ...fromPoint }]
     const isHorizontalStart = fromSide === 'left' || fromSide === 'right'
     const isHorizontalEnd = toSide === 'left' || toSide === 'right'
-    const directCorner = isHorizontalStart
-      ? { x: toPoint.x, y: fromPoint.y }
-      : { x: fromPoint.x, y: toPoint.y }
+    const stubLength = 24
+    const getOutwardStub = (point: Point, side: CanvasConnectorSide) => {
+      if (side === 'top') {
+        return { x: point.x, y: point.y - stubLength }
+      }
 
-    if ((directCorner.x !== fromPoint.x || directCorner.y !== fromPoint.y) && (directCorner.x !== toPoint.x || directCorner.y !== toPoint.y)) {
+      if (side === 'right') {
+        return { x: point.x + stubLength, y: point.y }
+      }
+
+      if (side === 'bottom') {
+        return { x: point.x, y: point.y + stubLength }
+      }
+
+      return { x: point.x - stubLength, y: point.y }
+    }
+    const fromStub = getOutwardStub(fromPoint, fromSide)
+    const toStub = getOutwardStub(toPoint, toSide)
+    const adjustedFromPoint = isHorizontalStart
+      ? { x: fromStub.x, y: fromStub.y + sourceOffset }
+      : { x: fromStub.x + sourceOffset, y: fromStub.y }
+    const adjustedToPoint = isHorizontalEnd
+      ? { x: toStub.x, y: toStub.y + targetOffset }
+      : { x: toStub.x + targetOffset, y: toStub.y }
+    const directCorner = isHorizontalStart
+      ? { x: adjustedToPoint.x, y: adjustedFromPoint.y }
+      : { x: adjustedFromPoint.x, y: adjustedToPoint.y }
+
+    if (fromStub.x !== fromPoint.x || fromStub.y !== fromPoint.y) {
+      points.push(fromStub)
+    }
+
+    if (adjustedFromPoint.x !== fromStub.x || adjustedFromPoint.y !== fromStub.y) {
+      points.push(adjustedFromPoint)
+    }
+
+    if ((directCorner.x !== adjustedFromPoint.x || directCorner.y !== adjustedFromPoint.y) && (directCorner.x !== adjustedToPoint.x || directCorner.y !== adjustedToPoint.y)) {
       points.push(directCorner)
     } else {
       const middlePoint = isHorizontalStart && isHorizontalEnd
-        ? { x: (fromPoint.x + toPoint.x) / 2, y: fromPoint.y }
+        ? { x: (adjustedFromPoint.x + adjustedToPoint.x) / 2, y: adjustedFromPoint.y }
         : !isHorizontalStart && !isHorizontalEnd
-          ? { x: fromPoint.x, y: (fromPoint.y + toPoint.y) / 2 }
+          ? { x: adjustedFromPoint.x, y: (adjustedFromPoint.y + adjustedToPoint.y) / 2 }
           : directCorner
 
-      if (middlePoint.x !== fromPoint.x || middlePoint.y !== fromPoint.y) {
+      if (middlePoint.x !== adjustedFromPoint.x || middlePoint.y !== adjustedFromPoint.y) {
         points.push(middlePoint)
       }
+    }
+
+    if (adjustedToPoint.x !== toStub.x || adjustedToPoint.y !== toStub.y) {
+      points.push(adjustedToPoint)
+    }
+
+    if (toStub.x !== toPoint.x || toStub.y !== toPoint.y) {
+      points.push(toStub)
     }
 
     points.push({ ...toPoint })
@@ -398,7 +703,13 @@ export default function CanvasViewport() {
         const dy = point.y - localY
 
         if (Math.hypot(dx, dy) <= threshold) {
-          return { nodeId: node.id, side }
+          const validation = getConnectionValidation(sourceNodeId, node.id)
+
+          if (!validation.valid) {
+            return { nodeId: node.id, side, valid: false as const, reason: validation.reason }
+          }
+
+          return { nodeId: node.id, side, valid: true as const }
         }
       }
     }
@@ -593,7 +904,9 @@ export default function CanvasViewport() {
           x: event.clientX - viewportRect.left,
           y: event.clientY - viewportRect.top,
         })
-        setConnectorHoverTarget(getConnectorDropTarget(event.clientX, event.clientY, connectorDragState.fromNodeId, connectorDragState.fromSide))
+        const nextDropTarget = getConnectorDropTarget(event.clientX, event.clientY, connectorDragState.fromNodeId, connectorDragState.fromSide)
+        setConnectorHoverTarget(nextDropTarget?.valid ? { nodeId: nextDropTarget.nodeId, side: nextDropTarget.side } : null)
+        setInvalidConnectorHoverTarget(nextDropTarget && !nextDropTarget.valid ? { nodeId: nextDropTarget.nodeId, side: nextDropTarget.side, reason: nextDropTarget.reason } : null)
         return
       }
 
@@ -654,7 +967,7 @@ export default function CanvasViewport() {
       if (connectorDragState && event.pointerId === connectorDragState.pointerId) {
         const dropTarget = getConnectorDropTarget(event.clientX, event.clientY, connectorDragState.fromNodeId, connectorDragState.fromSide)
 
-        if (dropTarget) {
+        if (dropTarget?.valid) {
           addCanvasEdge({
             id: `edge-${Date.now()}`,
             fromNodeId: connectorDragState.fromNodeId,
@@ -662,11 +975,17 @@ export default function CanvasViewport() {
             toNodeId: dropTarget.nodeId,
             toSide: dropTarget.side,
           })
+        } else if (dropTarget && !dropTarget.valid) {
+          setInvalidConnectionMessage(dropTarget.reason ?? 'Invalid connection.')
+          window.setTimeout(() => {
+            setInvalidConnectionMessage((current) => (current === dropTarget.reason ? null : current))
+          }, 1800)
         }
 
         connectorDragStateRef.current = null
         setConnectorPreviewPoint(null)
         setConnectorHoverTarget(null)
+        setInvalidConnectorHoverTarget(null)
         return
       }
 
@@ -704,7 +1023,13 @@ export default function CanvasViewport() {
 
               const fromPoint = getConnectorScreenPosition(fromNode.id, fromNode, edge.fromSide)
               const toPoint = getConnectorScreenPosition(toNode.id, toNode, edge.toSide)
-              const geometry = getOrthogonalEdgeGeometry(fromPoint, toPoint, edge.fromSide, edge.toSide)
+              const sourceSiblingEdges = edges.filter((candidate) => candidate.fromNodeId === edge.fromNodeId && candidate.fromSide === edge.fromSide)
+              const targetSiblingEdges = edges.filter((candidate) => candidate.toNodeId === edge.toNodeId && candidate.toSide === edge.toSide)
+              const sourceIndex = sourceSiblingEdges.findIndex((candidate) => candidate.id === edge.id)
+              const targetIndex = targetSiblingEdges.findIndex((candidate) => candidate.id === edge.id)
+              const sourceOffset = sourceSiblingEdges.length > 1 ? (sourceIndex - (sourceSiblingEdges.length - 1) / 2) * 14 * view.scale : 0
+              const targetOffset = targetSiblingEdges.length > 1 ? (targetIndex - (targetSiblingEdges.length - 1) / 2) * 14 * view.scale : 0
+              const geometry = getOrthogonalEdgeGeometry(fromPoint, toPoint, edge.fromSide, edge.toSide, sourceOffset, targetOffset)
 
               return geometry.bounds.maxX >= left && geometry.bounds.minX <= right && geometry.bounds.maxY >= top && geometry.bounds.minY <= bottom
             })
@@ -954,6 +1279,7 @@ export default function CanvasViewport() {
       y: event.clientY - viewportRect.top,
     })
     setConnectorHoverTarget(null)
+    setInvalidConnectorHoverTarget(null)
     event.currentTarget.setPointerCapture(event.pointerId)
   }
 
@@ -1043,6 +1369,30 @@ export default function CanvasViewport() {
       }}
     >
       <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
+        {invalidConnectionMessage ? (
+          <div
+            style={{
+              position: 'absolute',
+              top: 18,
+              right: 18,
+              zIndex: 6,
+              maxWidth: 320,
+              padding: '10px 12px',
+              borderRadius: 12,
+              border: '1px solid var(--canvas-panel-divider)',
+              background: 'color-mix(in srgb, var(--canvas-surface) 94%, transparent)',
+              color: 'var(--canvas-text-primary)',
+              boxShadow: 'var(--canvas-shadow-floating)',
+              fontFamily: 'var(--canvas-font-sans)',
+              fontSize: 12,
+              fontWeight: 600,
+              lineHeight: 1.45,
+              backdropFilter: 'blur(12px)',
+            }}
+          >
+            {invalidConnectionMessage}
+          </div>
+        ) : null}
         <div style={{ position: 'absolute', inset: 0, willChange: 'transform' }}>
           <GridPattern opacity={0.35} offsetX={view.x} offsetY={view.y} scale={view.scale} />
           <DotsPattern opacity={0.35} offsetX={view.x} offsetY={view.y} scale={view.scale} />
@@ -1098,7 +1448,7 @@ export default function CanvasViewport() {
                 }}
               >
                 {node.type === 'start' ? (
-                  <StartNode labelSegments={node.startWeightingType === 'marketCap' ? [{ kind: 'text', text: 'Weight' }, { kind: 'badge', text: 'Market Cap' }] : node.startWeightingType === 'specificPercentage' ? (() => {
+                  <StartNode labelSegments={node.startWeightingType === 'marketCap' ? [{ kind: 'text', text: 'Start with' }, { kind: 'badge', text: 'Market Cap' }] : node.startWeightingType === 'specificPercentage' ? (() => {
                     const specificEntries = Object.entries(node.startSpecificPercentages ?? {})
                       .filter(([, value]) => value.trim().length > 0)
                       .map(([targetNodeId, value]) => {
@@ -1119,14 +1469,14 @@ export default function CanvasViewport() {
 
                     if (specificEntries.length === 0) {
                       return [
-                        { kind: 'text' as const, text: 'Weight' },
+                        { kind: 'text' as const, text: 'Start with' },
                         { kind: 'badge' as const, text: 'Specific %' },
                       ]
                     }
 
                     if (specificEntries.length === 1) {
                       return [
-                        { kind: 'text' as const, text: 'Weight' },
+                        { kind: 'text' as const, text: 'Start with' },
                         { kind: 'badge' as const, text: specificEntries[0].assetText, icon: specificEntries[0].icon },
                         { kind: 'text' as const, text: 'at' },
                         { kind: 'badge' as const, text: specificEntries[0].valueText },
@@ -1134,14 +1484,14 @@ export default function CanvasViewport() {
                     }
 
                     return [
-                      { kind: 'text' as const, text: 'Weight' },
+                      { kind: 'text' as const, text: 'Start with' },
                       { kind: 'badge' as const, text: specificEntries[0].assetText, icon: specificEntries[0].icon },
                       { kind: 'text' as const, text: 'at' },
                       { kind: 'badge' as const, text: specificEntries[0].valueText },
                       { kind: 'text' as const, text: 'with' },
                       { kind: 'badge' as const, text: `+${specificEntries.length - 1}` },
                     ]
-                  })() : node.startWeightingType === 'equal' ? [{ kind: 'text', text: 'Weight' }, { kind: 'badge', text: 'Equal' }] : [{ kind: 'text', text: 'Start' }]} icon={node.startWeightingType === 'marketCap' ? <ChartPieSlice size={18} weight="fill" /> : node.startWeightingType === 'specificPercentage' ? <Percent size={18} weight="bold" /> : node.startWeightingType === 'equal' ? <Play size={18} weight="fill" /> : undefined} selected={selectedNodeIds.includes(node.id)} activeConnectorSide={connectorDragStateRef.current?.fromNodeId === node.id ? connectorDragStateRef.current.fromSide : connectorHoverTarget?.nodeId === node.id ? connectorHoverTarget.side : null} onConnectorPointerDown={(side, event) => handleConnectorPointerDown(event, node.id, side)} onMeasure={(size) => {
+                  })() : node.startWeightingType === 'equal' ? [{ kind: 'text', text: 'Start with' }, { kind: 'badge', text: 'Equal' }] : [{ kind: 'text', text: 'Start' }]} icon={node.startWeightingType === 'marketCap' ? <ChartPieSlice size={18} weight="fill" /> : node.startWeightingType === 'specificPercentage' ? <Percent size={18} weight="bold" /> : node.startWeightingType === 'equal' ? <Play size={18} weight="fill" /> : undefined} selected={selectedNodeIds.includes(node.id)} activeConnectorSide={connectorDragStateRef.current?.fromNodeId === node.id ? connectorDragStateRef.current.fromSide : connectorHoverTarget?.nodeId === node.id ? connectorHoverTarget.side : null} onConnectorPointerDown={(side, event) => handleConnectorPointerDown(event, node.id, side)} onMeasure={(size) => {
                     setNodeSizes((current) => {
                       const previous = current[node.id]
 
@@ -1156,7 +1506,7 @@ export default function CanvasViewport() {
                     })
                   }} />
                 ) : node.type === 'loop' ? (
-                  <LoopNode labelSegments={node.loopType === 'timeInterval' ? [{ kind: 'text', text: 'Every' }, { kind: 'badge', text: `${node.loopIntervalValue && node.loopIntervalValue.trim().length > 0 ? node.loopIntervalValue : '0'} ${node.loopTimeUnit ? node.loopTimeUnit.charAt(0).toUpperCase() + node.loopTimeUnit.slice(1) : 'Unit'}` }] : node.loopType === 'driftThreshold' ? [{ kind: 'text', text: 'Drift' }, { kind: 'badge', text: `> ${node.loopDriftThreshold && node.loopDriftThreshold.trim().length > 0 ? `${node.loopDriftThreshold}%` : '0%'}` }] : node.loopType === 'onNewDeposit' ? node.loopDepositTiming === 'onTime' ? [{ kind: 'text', text: 'Deposit' }, { kind: 'badge', text: 'On Time' }, { kind: 'text', text: 'in' }, { kind: 'badge', text: `${node.loopDepositTimeValue && node.loopDepositTimeValue.trim().length > 0 ? node.loopDepositTimeValue : '0'} ${node.loopDepositTimeUnit ? node.loopDepositTimeUnit.charAt(0).toUpperCase() + node.loopDepositTimeUnit.slice(1) : 'Unit'}` }] : node.loopDepositTiming === 'directly' ? [{ kind: 'text', text: 'Deposit' }, { kind: 'badge', text: 'Directly' }] : [{ kind: 'text', text: 'Deposit' }, { kind: 'badge', text: 'On New Deposit' }] : [{ kind: 'text', text: 'Loop' }]} icon={node.loopType === 'timeInterval' ? <ClockCountdown size={18} weight="fill" /> : node.loopType === 'driftThreshold' ? <FunnelSimple size={18} weight="fill" /> : node.loopType === 'onNewDeposit' ? <Wallet size={18} weight="fill" /> : <ArrowsClockwise size={18} weight="bold" />} selected={selectedNodeIds.includes(node.id)} activeConnectorSide={connectorDragStateRef.current?.fromNodeId === node.id ? connectorDragStateRef.current.fromSide : connectorHoverTarget?.nodeId === node.id ? connectorHoverTarget.side : null} onConnectorPointerDown={(side, event) => handleConnectorPointerDown(event, node.id, side)} onMeasure={(size) => {
+                  <LoopNode labelSegments={node.loopType === 'timeInterval' ? [{ kind: 'text', text: 'Re-check in' }, { kind: 'badge', text: `${node.loopIntervalValue && node.loopIntervalValue.trim().length > 0 ? node.loopIntervalValue : '0'} ${node.loopTimeUnit ? node.loopTimeUnit.charAt(0).toUpperCase() + node.loopTimeUnit.slice(1) : 'Unit'}` }, { kind: 'badge', text: node.loopRunMode === 'oncePerPeriod' ? 'Once Per Period' : 'Always' }, ...(node.loopPostAction && node.loopPostAction !== 'none' ? [{ kind: 'badge' as const, text: node.loopPostAction === 'cooldown' ? 'Cooldown' : 'Wait' }] : [])] : node.loopType === 'driftThreshold' ? [{ kind: 'text', text: 'Re-check at' }, { kind: 'badge', text: `Drift ${node.loopDriftThreshold && node.loopDriftThreshold.trim().length > 0 ? `${node.loopDriftThreshold}%` : '0%'}` }, { kind: 'badge', text: node.loopRunMode === 'oncePerPeriod' ? 'Once Per Period' : 'Always' }] : node.loopType === 'onNewDeposit' ? node.loopDepositTiming === 'onTime' ? [{ kind: 'text', text: 'Re-check' }, { kind: 'badge', text: 'After Deposit' }, { kind: 'text', text: 'in' }, { kind: 'badge', text: `${node.loopDepositTimeValue && node.loopDepositTimeValue.trim().length > 0 ? node.loopDepositTimeValue : '0'} ${node.loopDepositTimeUnit ? node.loopDepositTimeUnit.charAt(0).toUpperCase() + node.loopDepositTimeUnit.slice(1) : 'Unit'}` }] : node.loopDepositTiming === 'directly' ? [{ kind: 'text', text: 'Re-check' }, { kind: 'badge', text: 'After Deposit' }, { kind: 'text', text: 'directly' }] : [{ kind: 'text', text: 'Re-check' }, { kind: 'badge', text: 'On New Deposit' }] : [{ kind: 'text', text: 'Loop' }]} icon={node.loopType === 'timeInterval' ? <ClockCountdown size={18} weight="fill" /> : node.loopType === 'driftThreshold' ? <FunnelSimple size={18} weight="fill" /> : node.loopType === 'onNewDeposit' ? <Wallet size={18} weight="fill" /> : <ArrowsClockwise size={18} weight="bold" />} selected={selectedNodeIds.includes(node.id)} activeConnectorSide={connectorDragStateRef.current?.fromNodeId === node.id ? connectorDragStateRef.current.fromSide : connectorHoverTarget?.nodeId === node.id ? connectorHoverTarget.side : null} onConnectorPointerDown={(side, event) => handleConnectorPointerDown(event, node.id, side)} onMeasure={(size) => {
                     setNodeSizes((current) => {
                       const previous = current[node.id]
 
@@ -1171,61 +1521,7 @@ export default function CanvasViewport() {
                     })
                   }} />
                 ) : node.type === 'if' ? (
-                  <IfNode labelSegments={(() => {
-                    const primaryAssetNode = placedNodes.find((placedNode) => placedNode.id === node.ifPrimaryAssetNodeId)
-                    const secondaryAssetNode = placedNodes.find((placedNode) => placedNode.id === node.ifSecondaryAssetNodeId)
-                    const primaryAssetLabel = primaryAssetNode?.assetSymbol ?? primaryAssetNode?.assetName ?? ''
-                    const secondaryAssetLabel = secondaryAssetNode?.assetSymbol ?? secondaryAssetNode?.assetName ?? ''
-                    const primaryAssetIcon = primaryAssetNode?.type === 'stock' && primaryAssetNode.assetSymbol
-                      ? <CanvasAssetLogo assetType="stock" symbol={primaryAssetNode.assetSymbol} size={14} />
-                      : primaryAssetNode?.type === 'token' && primaryAssetNode.assetSymbol
-                        ? <CanvasAssetLogo assetType="token" symbol={primaryAssetNode.assetSymbol} size={14} />
-                        : undefined
-                    const secondaryAssetIcon = secondaryAssetNode?.type === 'stock' && secondaryAssetNode.assetSymbol
-                      ? <CanvasAssetLogo assetType="stock" symbol={secondaryAssetNode.assetSymbol} size={14} />
-                      : secondaryAssetNode?.type === 'token' && secondaryAssetNode.assetSymbol
-                        ? <CanvasAssetLogo assetType="token" symbol={secondaryAssetNode.assetSymbol} size={14} />
-                        : undefined
-                    const primaryFunctionLabel = getIfFunctionLabel(node.ifPrimaryFunction)
-                    const secondaryFunctionLabel = getIfFunctionLabel(node.ifSecondaryFunction)
-                    const primaryValuePrefix = getIfValuePrefix(node.ifPrimaryFunction)
-                    const comparisonTargetType = node.ifComparisonTargetType ?? 'metric'
-
-                      const segments: NodeShellLabelSegment[] = [{ kind: 'text', text: 'If' }]
-
-                    if (primaryFunctionLabel) {
-                      segments.push({ kind: 'badge' as const, text: primaryFunctionLabel })
-                    }
-
-                    if (primaryAssetLabel) {
-                      segments.push({ kind: 'text' as const, text: 'of' })
-                      segments.push({ kind: 'badge' as const, text: primaryAssetLabel, icon: primaryAssetIcon })
-                    }
-
-                    if (node.ifComparator) {
-                      segments.push({ kind: 'text' as const, text: 'is' })
-                      segments.push({ kind: 'badge' as const, text: node.ifComparator })
-                    }
-
-                    if (comparisonTargetType === 'value') {
-                      if (node.ifComparisonValue && node.ifComparisonValue.trim().length > 0) {
-                        segments.push({ kind: 'text' as const, text: 'value' })
-                        segments.push({ kind: 'badge' as const, text: `${primaryValuePrefix}${node.ifComparisonValue.trim()}` })
-                      }
-                    } else {
-                      if (secondaryFunctionLabel) {
-                        segments.push({ kind: 'text' as const, text: 'metric' })
-                        segments.push({ kind: 'badge' as const, text: secondaryFunctionLabel })
-                      }
-
-                      if (secondaryAssetLabel) {
-                        segments.push({ kind: 'text' as const, text: 'of' })
-                        segments.push({ kind: 'badge' as const, text: secondaryAssetLabel, icon: secondaryAssetIcon })
-                      }
-                    }
-
-                    return segments
-                  })()} selected={selectedNodeIds.includes(node.id)} activeConnectorSide={connectorDragStateRef.current?.fromNodeId === node.id ? connectorDragStateRef.current.fromSide : connectorHoverTarget?.nodeId === node.id ? connectorHoverTarget.side : null} onConnectorPointerDown={(side, event) => handleConnectorPointerDown(event, node.id, side)} onMeasure={(size) => {
+                  <IfNode labelSegments={getIfConditionSegments(node)} selected={selectedNodeIds.includes(node.id)} activeConnectorSide={connectorDragStateRef.current?.fromNodeId === node.id ? connectorDragStateRef.current.fromSide : connectorHoverTarget?.nodeId === node.id ? connectorHoverTarget.side : null} onConnectorPointerDown={(side, event) => handleConnectorPointerDown(event, node.id, side)} onMeasure={(size) => {
                     setNodeSizes((current) => {
                       const previous = current[node.id]
 
@@ -1240,61 +1536,7 @@ export default function CanvasViewport() {
                     })
                   }} />
                 ) : node.type === 'else' ? (
-                  <ElseNode labelSegments={(() => {
-                    const primaryAssetNode = placedNodes.find((placedNode) => placedNode.id === node.elsePrimaryAssetNodeId)
-                    const secondaryAssetNode = placedNodes.find((placedNode) => placedNode.id === node.elseSecondaryAssetNodeId)
-                    const primaryAssetLabel = primaryAssetNode?.assetSymbol ?? primaryAssetNode?.assetName ?? ''
-                    const secondaryAssetLabel = secondaryAssetNode?.assetSymbol ?? secondaryAssetNode?.assetName ?? ''
-                    const primaryAssetIcon = primaryAssetNode?.type === 'stock' && primaryAssetNode.assetSymbol
-                      ? <CanvasAssetLogo assetType="stock" symbol={primaryAssetNode.assetSymbol} size={14} />
-                      : primaryAssetNode?.type === 'token' && primaryAssetNode.assetSymbol
-                        ? <CanvasAssetLogo assetType="token" symbol={primaryAssetNode.assetSymbol} size={14} />
-                        : undefined
-                    const secondaryAssetIcon = secondaryAssetNode?.type === 'stock' && secondaryAssetNode.assetSymbol
-                      ? <CanvasAssetLogo assetType="stock" symbol={secondaryAssetNode.assetSymbol} size={14} />
-                      : secondaryAssetNode?.type === 'token' && secondaryAssetNode.assetSymbol
-                        ? <CanvasAssetLogo assetType="token" symbol={secondaryAssetNode.assetSymbol} size={14} />
-                        : undefined
-                    const primaryFunctionLabel = getIfFunctionLabel(node.elsePrimaryFunction)
-                    const secondaryFunctionLabel = getIfFunctionLabel(node.elseSecondaryFunction)
-                    const primaryValuePrefix = getIfValuePrefix(node.elsePrimaryFunction)
-                    const comparisonTargetType = node.elseComparisonTargetType ?? 'metric'
-
-                      const segments: NodeShellLabelSegment[] = [{ kind: 'text', text: 'Else' }]
-
-                    if (primaryFunctionLabel) {
-                      segments.push({ kind: 'badge' as const, text: primaryFunctionLabel })
-                    }
-
-                    if (primaryAssetLabel) {
-                      segments.push({ kind: 'text' as const, text: 'of' })
-                      segments.push({ kind: 'badge' as const, text: primaryAssetLabel, icon: primaryAssetIcon })
-                    }
-
-                    if (node.elseComparator) {
-                      segments.push({ kind: 'text' as const, text: 'is' })
-                      segments.push({ kind: 'badge' as const, text: node.elseComparator })
-                    }
-
-                    if (comparisonTargetType === 'value') {
-                      if (node.elseComparisonValue && node.elseComparisonValue.trim().length > 0) {
-                        segments.push({ kind: 'text' as const, text: 'value' })
-                        segments.push({ kind: 'badge' as const, text: `${primaryValuePrefix}${node.elseComparisonValue.trim()}` })
-                      }
-                    } else {
-                      if (secondaryFunctionLabel) {
-                        segments.push({ kind: 'text' as const, text: 'metric' })
-                        segments.push({ kind: 'badge' as const, text: secondaryFunctionLabel })
-                      }
-
-                      if (secondaryAssetLabel) {
-                        segments.push({ kind: 'text' as const, text: 'of' })
-                        segments.push({ kind: 'badge' as const, text: secondaryAssetLabel, icon: secondaryAssetIcon })
-                      }
-                    }
-
-                    return segments
-                  })()} selected={selectedNodeIds.includes(node.id)} activeConnectorSide={connectorDragStateRef.current?.fromNodeId === node.id ? connectorDragStateRef.current.fromSide : connectorHoverTarget?.nodeId === node.id ? connectorHoverTarget.side : null} onConnectorPointerDown={(side, event) => handleConnectorPointerDown(event, node.id, side)} onMeasure={(size) => {
+                  <ElseNode labelSegments={[{ kind: 'text', text: 'Else' }, { kind: 'badge', text: 'Otherwise' }, { kind: 'text', text: 'follow fallback path' }]} selected={selectedNodeIds.includes(node.id)} activeConnectorSide={connectorDragStateRef.current?.fromNodeId === node.id ? connectorDragStateRef.current.fromSide : connectorHoverTarget?.nodeId === node.id ? connectorHoverTarget.side : null} onConnectorPointerDown={(side, event) => handleConnectorPointerDown(event, node.id, side)} onMeasure={(size) => {
                     setNodeSizes((current) => {
                       const previous = current[node.id]
 
@@ -1308,70 +1550,269 @@ export default function CanvasViewport() {
                       }
                     })
                   }} />
-                ) : node.type === 'filter' ? (
-                  <FilterNode labelSegments={(() => {
-                    const targetNode = placedNodes.find((placedNode) => placedNode.id === node.filterAssetNodeId)
-                    const targetLabel = targetNode?.assetSymbol ?? targetNode?.assetName ?? ''
-                    const targetIcon = targetNode?.type === 'stock' && targetNode.assetSymbol
-                      ? <CanvasAssetLogo assetType="stock" symbol={targetNode.assetSymbol} size={14} />
-                      : targetNode?.type === 'token' && targetNode.assetSymbol
-                        ? <CanvasAssetLogo assetType="token" symbol={targetNode.assetSymbol} size={14} />
-                        : undefined
-                    const sortLabel = node.filterSortFunction === 'currentPrice'
-                      ? 'Current Price'
-                      : node.filterSortFunction === 'currentMarketCap'
-                        ? 'Current Market Cap'
-                        : node.filterSortFunction === 'volume'
-                          ? 'Volume'
-                          : node.filterSortFunction === 'percentGain'
-                            ? 'Percent Gain'
-                            : ''
-                    const orderingLabel = node.filterOrdering === 'top'
-                      ? 'Top'
-                      : node.filterOrdering === 'bottom'
-                        ? 'Bottom'
-                        : ''
-                    const howManyLabel = node.filterHowMany && node.filterHowMany.trim().length > 0 ? node.filterHowMany : ''
+                ) : node.type === 'and' ? (
+                  <AndNode
+                    labelSegments={[
+                      { kind: 'text', text: 'All' },
+                      { kind: 'badge', text: 'Of' },
+                      { kind: 'text', text: 'conditions pass' },
+                    ]}
+                    {...getCommonNodeProps(node.id)}
+                  />
+                ) : node.type === 'or' ? (
+                  <OrNode
+                    labelSegments={[
+                      { kind: 'text', text: 'Any' },
+                      { kind: 'badge', text: 'Of' },
+                      { kind: 'text', text: 'conditions pass' },
+                    ]}
+                    {...getCommonNodeProps(node.id)}
+                  />
+                ) : node.type === 'not' ? (
+                  <NotNode
+                    labelSegments={[
+                      { kind: 'text', text: 'Not' },
+                      { kind: 'badge', text: 'Invert' },
+                      { kind: 'text', text: 'this result' },
+                    ]}
+                    {...getCommonNodeProps(node.id)}
+                  />
+                ) : node.type === 'xor' ? (
+                  <XorNode
+                    labelSegments={[
+                      { kind: 'text', text: 'Only' },
+                      { kind: 'badge', text: 'One' },
+                      { kind: 'text', text: 'may pass' },
+                    ]}
+                    {...getCommonNodeProps(node.id)}
+                  />
+                ) : node.type === 'intersect' ? (
+                  <IntersectNode
+                    labelSegments={[
+                      { kind: 'text', text: 'Match' },
+                      { kind: 'badge', text: 'All' },
+                      { kind: 'text', text: 'results' },
+                    ]}
+                    {...getCommonNodeProps(node.id)}
+                  />
+                ) : node.type === 'union' ? (
+                  <UnionNode
+                    labelSegments={[
+                      { kind: 'text', text: 'Match' },
+                      { kind: 'badge', text: 'Any' },
+                      { kind: 'text', text: 'result' },
+                    ]}
+                    {...getCommonNodeProps(node.id)}
+                  />
+                ) : node.type === 'exclude' ? (
+                  <ExcludeNode
+                    labelSegments={[
+                      { kind: 'text', text: 'Exclude' },
+                      { kind: 'badge', text: 'Remove' },
+                      { kind: 'text', text: 'matches' },
+                    ]}
+                    {...getCommonNodeProps(node.id)}
+                  />
+                ) : node.type === 'filter' ? (() => {
+                  const incomingAssetNodes = edges
+                    .filter((edge) => edge.toNodeId === node.id)
+                    .map((edge) => placedNodes.find((placedNode) => placedNode.id === edge.fromNodeId))
+                    .filter((placedNode): placedNode is CanvasNodeRecord => Boolean(placedNode && (placedNode.type === 'stock' || placedNode.type === 'token')))
+                  const incomingAssetCount = incomingAssetNodes.length
+                  const configuredAssetIds = Object.keys(node.filterConfigsByAssetNodeId ?? {})
+                  const availableFilterAssetIds = Array.from(new Set([...incomingAssetNodes.map((assetNode) => assetNode.id), ...configuredAssetIds]))
+                  const availableFilterAssetCount = availableFilterAssetIds.length
+                  const activeConfigAsset = node.filterAssetNodeId ? placedNodes.find((placedNode) => placedNode.id === node.filterAssetNodeId) : null
+                  const targetLabel = incomingAssetCount === 1
+                    ? incomingAssetNodes[0]?.assetSymbol ?? incomingAssetNodes[0]?.assetName ?? ''
+                    : incomingAssetCount > 1
+                      ? `${incomingAssetCount} assets`
+                      : ''
+                  const targetIcon = incomingAssetCount === 1 && incomingAssetNodes[0]?.type === 'stock' && incomingAssetNodes[0].assetSymbol
+                    ? <CanvasAssetLogo assetType="stock" symbol={incomingAssetNodes[0].assetSymbol} size={14} />
+                    : incomingAssetCount === 1 && incomingAssetNodes[0]?.type === 'token' && incomingAssetNodes[0].assetSymbol
+                      ? <CanvasAssetLogo assetType="token" symbol={incomingAssetNodes[0].assetSymbol} size={14} />
+                      : undefined
+                  const primaryRuleLabel = node.filterSortFunction === 'currentPrice'
+                    ? 'Current Price'
+                    : node.filterSortFunction === 'currentMarketCap'
+                      ? 'Current Market Cap'
+                      : node.filterSortFunction === 'volume'
+                        ? 'Volume'
+                        : node.filterSortFunction === 'percentGain'
+                          ? 'Percent Gain'
+                          : node.filterSortFunction === 'simpleMovingAverage'
+                            ? `SMA ${node.filterSortPeriod?.trim() ? node.filterSortPeriod.trim() : '14'}`
+                            : node.filterSortFunction === 'exponentialMovingAverage'
+                              ? `EMA ${node.filterSortPeriod?.trim() ? node.filterSortPeriod.trim() : '14'}`
+                              : node.filterSortFunction === 'rsi'
+                                ? `RSI ${node.filterSortPeriod?.trim() ? node.filterSortPeriod.trim() : '14'}`
+                                : node.filterSortFunction === 'macdHistogram'
+                                  ? 'MACD Histogram'
+                                  : node.filterSortFunction === 'atr'
+                                    ? `ATR ${node.filterSortPeriod?.trim() ? node.filterSortPeriod.trim() : '14'}`
+                                    : ''
+                  const secondaryRuleLabel = node.filterSecondarySortFunction === 'currentPrice'
+                    ? 'Current Price'
+                    : node.filterSecondarySortFunction === 'currentMarketCap'
+                      ? 'Current Market Cap'
+                      : node.filterSecondarySortFunction === 'volume'
+                        ? 'Volume'
+                        : node.filterSecondarySortFunction === 'percentGain'
+                          ? 'Percent Gain'
+                          : node.filterSecondarySortFunction === 'simpleMovingAverage'
+                            ? `SMA ${node.filterSecondarySortPeriod?.trim() ? node.filterSecondarySortPeriod.trim() : '14'}`
+                            : node.filterSecondarySortFunction === 'exponentialMovingAverage'
+                              ? `EMA ${node.filterSecondarySortPeriod?.trim() ? node.filterSecondarySortPeriod.trim() : '14'}`
+                              : node.filterSecondarySortFunction === 'rsi'
+                                ? `RSI ${node.filterSecondarySortPeriod?.trim() ? node.filterSecondarySortPeriod.trim() : '14'}`
+                                : node.filterSecondarySortFunction === 'macdHistogram'
+                                  ? 'MACD Histogram'
+                                  : node.filterSecondarySortFunction === 'atr'
+                                    ? `ATR ${node.filterSecondarySortPeriod?.trim() ? node.filterSecondarySortPeriod.trim() : '14'}`
+                                    : ''
+                  const orderingLabel = node.filterOrdering === 'top'
+                    ? 'Top'
+                    : node.filterOrdering === 'bottom'
+                      ? 'Bottom'
+                      : ''
+                  const howManyLabel = node.filterHowMany && node.filterHowMany.trim().length > 0 ? node.filterHowMany : ''
+                  const operatorLabel = node.filterConditionOperator === 'or' ? 'OR' : 'AND'
+                  const segments: NodeShellLabelSegment[] = [{ kind: 'text', text: 'Filter' }]
 
-                      const segments: NodeShellLabelSegment[] = [{ kind: 'text', text: 'Filter' }]
-
-                    if (targetLabel) {
+                    if (availableFilterAssetCount > 1) {
+                      segments.push({ kind: 'badge' as const, text: `${availableFilterAssetCount} assets` })
+                    } else if (targetLabel) {
                       segments.push({ kind: 'badge' as const, text: targetLabel, icon: targetIcon })
                     }
 
-                    if (sortLabel) {
-                      if (targetLabel) {
+                    if (primaryRuleLabel) {
+                      if (targetLabel || availableFilterAssetCount > 1) {
                         segments.push({ kind: 'text' as const, text: 'by' })
                       }
-                      segments.push({ kind: 'badge' as const, text: sortLabel })
+                    segments.push({ kind: 'badge' as const, text: primaryRuleLabel })
+                  }
+
+                  if (secondaryRuleLabel) {
+                    segments.push({ kind: 'badge' as const, text: operatorLabel })
+                    segments.push({ kind: 'badge' as const, text: secondaryRuleLabel })
+                  }
+
+                  if (orderingLabel) {
+                    segments.push({ kind: 'text' as const, text: 'order by' })
+                    segments.push({ kind: 'badge' as const, text: orderingLabel })
+                  }
+
+                  if (howManyLabel) {
+                    segments.push({ kind: 'text' as const, text: 'limit' })
+                    segments.push({ kind: 'badge' as const, text: howManyLabel })
+                  }
+
+                  segments.push({ kind: 'badge' as const, text: node.filterResultMode === 'topOne' ? 'Top 1' : node.filterResultMode === 'allMatches' ? 'All Matches' : 'Top N' })
+
+                  const inlineControl = (() => {
+                    if (availableFilterAssetCount <= 1) {
+                      return null
                     }
 
-                    if (orderingLabel) {
-                      segments.push({ kind: 'text' as const, text: 'order by' })
-                      segments.push({ kind: 'badge' as const, text: orderingLabel })
-                    }
+                    const filterAssetOptions = availableFilterAssetIds
+                      .map((assetNodeId) => placedNodes.find((placedNode) => placedNode.id === assetNodeId))
+                      .filter((placedNode): placedNode is CanvasNodeRecord => Boolean(placedNode && (placedNode.type === 'stock' || placedNode.type === 'token')))
+                    const activeAssetLabel = activeConfigAsset?.assetSymbol ?? activeConfigAsset?.assetName ?? 'Asset'
+                    const activeAssetIcon = activeConfigAsset?.type === 'stock' && activeConfigAsset.assetSymbol
+                      ? <CanvasAssetLogo assetType="stock" symbol={activeConfigAsset.assetSymbol} size={12} />
+                      : activeConfigAsset?.type === 'token' && activeConfigAsset.assetSymbol
+                        ? <CanvasAssetLogo assetType="token" symbol={activeConfigAsset.assetSymbol} size={12} />
+                        : undefined
+                    const assetMenuItems: DropdownMenuItem[] = filterAssetOptions.map((assetNode) => ({
+                      label: assetNode.assetSymbol ?? assetNode.assetName ?? 'Asset',
+                      value: assetNode.id,
+                      active: assetNode.id === node.filterAssetNodeId,
+                      icon: assetNode.assetSymbol && (assetNode.type === 'stock' || assetNode.type === 'token') ? <CanvasAssetLogo assetType={assetNode.type} symbol={assetNode.assetSymbol} size={16} /> : null,
+                      trailingIcon: assetNode.id === node.filterAssetNodeId ? '✓' : undefined,
+                    }))
 
-                    if (howManyLabel) {
-                      segments.push({ kind: 'text' as const, text: 'limit' })
-                      segments.push({ kind: 'badge' as const, text: howManyLabel })
-                    }
+                    return (
+                      <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+                        <button
+                          type="button"
+                          onPointerDown={(event) => {
+                            event.stopPropagation()
+                          }}
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            setOpenFilterViewNodeId((current) => (current === node.id ? null : node.id))
+                          }}
+                          style={{
+                            minHeight: 24,
+                            padding: '0 8px',
+                            borderRadius: 999,
+                            border: `1px solid ${selectedNodeIds.includes(node.id) ? 'var(--canvas-accent)' : 'var(--canvas-panel-divider)'}`,
+                            background: 'var(--canvas-surface-soft)',
+                            color: 'var(--canvas-text-secondary)',
+                            fontFamily: 'var(--canvas-font-sans)',
+                            fontSize: 11,
+                            fontWeight: 700,
+                            lineHeight: 1,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 6,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {activeAssetIcon ? <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>{activeAssetIcon}</span> : null}
+                          <span>{`View ${activeAssetLabel}`}</span>
+                        </button>
+                        {openFilterViewNodeId === node.id ? (
+                          <DropdownMenu
+                            open
+                            groups={[{ items: assetMenuItems }]}
+                            position="bottom"
+                            onClose={() => setOpenFilterViewNodeId(null)}
+                            onItemClick={(item) => {
+                              if (item.value) {
+                                setCanvasFilterAssetNodeId(node.id, item.value)
+                              }
 
-                    return segments
-                  })()} selected={selectedNodeIds.includes(node.id)} activeConnectorSide={connectorDragStateRef.current?.fromNodeId === node.id ? connectorDragStateRef.current.fromSide : connectorHoverTarget?.nodeId === node.id ? connectorHoverTarget.side : null} onConnectorPointerDown={(side, event) => handleConnectorPointerDown(event, node.id, side)} onMeasure={(size) => {
-                    setNodeSizes((current) => {
-                      const previous = current[node.id]
+                              setOpenFilterViewNodeId(null)
+                            }}
+                            style={{
+                              position: 'absolute',
+                              left: '50%',
+                              top: '100%',
+                              marginTop: 8,
+                              transform: 'translateX(-50%)',
+                              minWidth: 120,
+                              zIndex: 30,
+                            }}
+                          />
+                        ) : null}
+                      </span>
+                    )
+                  })()
 
-                      if (previous && previous.width === size.width && previous.height === size.height) {
-                        return current
-                      }
+                  return (
+                    <FilterNode
+                      labelSegments={segments}
+                      inlineControl={inlineControl}
+                      {...getCommonNodeProps(node.id)}
+                      onMeasure={(size) => {
+                        setNodeSizes((current) => {
+                          const previous = current[node.id]
 
-                      return {
-                        ...current,
-                        [node.id]: size,
-                      }
-                    })
-                  }} />
-                ) : node.type === 'buy' ? (
+                          if (previous && previous.width === size.width && previous.height === size.height) {
+                            return current
+                          }
+
+                          return {
+                            ...current,
+                            [node.id]: size,
+                          }
+                        })
+                      }}
+                    />
+                  )
+                })() : node.type === 'buy' ? (
                   <BuyNode
                     labelSegments={(() => {
                       const assetLabel = getLinkedAssetLabel(node.actionAssetNodeId)
@@ -1381,8 +1822,9 @@ export default function CanvasViewport() {
 
                       return [
                         { kind: 'text' as const, text: 'Buy' },
+                        { kind: 'badge' as const, text: node.buyType === 'add' ? 'Add' : node.buyType === 'rotateInto' ? 'Rotate Into' : 'Open' },
                         { kind: 'badge' as const, text: assetLabel, icon: assetIcon },
-                        { kind: 'text' as const, text: 'by' },
+                        { kind: 'text' as const, text: 'with' },
                         { kind: 'badge' as const, text: amountMode },
                         { kind: 'badge' as const, text: node.actionAmountMode === 'value' ? `$${amountValue}` : `${amountValue}%` },
                       ]
@@ -1400,8 +1842,9 @@ export default function CanvasViewport() {
 
                       return [
                         { kind: 'text' as const, text: 'Sell' },
+                        { kind: 'badge' as const, text: node.sellType === 'reduce' ? 'Reduce' : node.sellType === 'takePartial' ? 'Take Partial' : 'Full Exit' },
                         { kind: 'badge' as const, text: assetLabel, icon: assetIcon },
-                        { kind: 'text' as const, text: 'by' },
+                        { kind: 'text' as const, text: 'with' },
                         { kind: 'badge' as const, text: amountMode },
                         { kind: 'badge' as const, text: node.actionAmountMode === 'value' ? `$${amountValue}` : `${amountValue}%` },
                       ]
@@ -1413,6 +1856,8 @@ export default function CanvasViewport() {
                   <RebalanceNode
                     labelSegments={[
                       { kind: 'text', text: 'Rebalance' },
+                      { kind: 'badge', text: node.rebalanceScope === 'selectedAssets' ? 'Selected Assets' : node.rebalanceScope === 'portfolioSet' ? 'Portfolio Set' : 'This Branch' },
+                      { kind: 'text', text: 'branch' },
                       { kind: 'text', text: 'to' },
                       { kind: 'badge', text: node.rebalanceMode === 'target' ? 'Target' : 'Equal' },
                       { kind: 'text', text: 'at' },
@@ -1424,6 +1869,8 @@ export default function CanvasViewport() {
                   <AllocateNode
                     labelSegments={[
                       { kind: 'text', text: 'Allocate' },
+                      { kind: 'badge', text: node.allocateStyle === 'addExposure' ? 'Add Exposure' : 'Target Weight' },
+                      { kind: 'text', text: 'branch' },
                       { kind: 'text', text: 'with' },
                       { kind: 'badge', text: node.allocateWeightingMode === 'value' ? 'Value' : 'Percentage' },
                       { kind: 'badge', text: node.allocateWeightingMode === 'value' ? `$${node.allocateAmountValue?.trim() ? node.allocateAmountValue.trim() : '0'}` : `${node.allocateAmountValue?.trim() ? node.allocateAmountValue.trim() : '0'}%` },
@@ -1434,6 +1881,7 @@ export default function CanvasViewport() {
                   <ScaleOutNode
                     labelSegments={[
                       { kind: 'text', text: 'Scale out' },
+                      { kind: 'text', text: 'branch' },
                       { kind: 'text', text: 'by' },
                       { kind: 'badge', text: `${node.scaleOutPercent?.trim() ? node.scaleOutPercent.trim() : '0'}%` },
                     ]}
@@ -1443,7 +1891,8 @@ export default function CanvasViewport() {
                   <TakeProfitNode
                     labelSegments={[
                       { kind: 'text', text: 'Take profit' },
-                      { kind: 'text', text: 'when' },
+                      { kind: 'badge', text: node.takeProfitMode === 'partial' ? 'Partial' : node.takeProfitMode === 'ladder' ? 'Ladder' : 'Single' },
+                      { kind: 'text', text: 'if' },
                       { kind: 'badge', text: getLinkedAssetLabel(node.riskAssetNodeId), icon: getLinkedAssetIcon(node.riskAssetNodeId) },
                       { kind: 'badge', text: node.riskComparator ?? '>=' },
                       { kind: 'badge', text: `$${node.riskThresholdValue?.trim() ? node.riskThresholdValue.trim() : '0'}` },
@@ -1455,12 +1904,56 @@ export default function CanvasViewport() {
                   <StopLossNode
                     labelSegments={[
                       { kind: 'text', text: 'Stop loss' },
-                      { kind: 'text', text: 'when' },
+                      { kind: 'badge', text: node.stopLossMode === 'trailing' ? 'Trailing' : node.stopLossMode === 'breakEven' ? 'Break-even' : 'Fixed' },
+                      { kind: 'text', text: 'if' },
                       { kind: 'badge', text: getLinkedAssetLabel(node.riskAssetNodeId), icon: getLinkedAssetIcon(node.riskAssetNodeId) },
                       { kind: 'badge', text: node.riskComparator ?? '<=' },
                       { kind: 'badge', text: `$${node.riskThresholdValue?.trim() ? node.riskThresholdValue.trim() : '0'}` },
                     ]}
                     icon={<TrendDown size={18} weight="bold" />}
+                    {...getCommonNodeProps(node.id)}
+                  />
+                ) : node.type === 'portfolioCondition' ? (
+                  <PortfolioConditionNode
+                    labelSegments={[
+                      { kind: 'text', text: 'Portfolio' },
+                      { kind: 'badge', text: 'Condition' },
+                      { kind: 'badge', text: node.portfolioMetric === 'portfolioExposure' ? 'Portfolio Exposure %' : node.portfolioMetric === 'openPositions' ? 'Open Positions' : node.portfolioMetric === 'unrealizedPnl' ? 'Unrealized PnL %' : node.portfolioMetric === 'drawdownPercent' ? 'Drawdown %' : node.portfolioMetric === 'positionSizePercent' ? 'Position Size %' : 'Cash %' },
+                      { kind: 'badge', text: node.portfolioComparator ?? '>=' },
+                      { kind: 'badge', text: node.portfolioValue?.trim() ? node.portfolioValue.trim() : '0' },
+                    ]}
+                    icon={<Wallet size={18} weight="fill" />}
+                    {...getCommonNodeProps(node.id)}
+                  />
+                ) : node.type === 'cooldown' ? (
+                  <CooldownNode
+                    labelSegments={[
+                      { kind: 'text', text: 'Cooldown' },
+                      { kind: 'badge', text: node.cooldownScope === 'strategy' ? 'Whole Strategy' : 'This Branch' },
+                      { kind: 'text', text: 'for' },
+                      { kind: 'badge', text: `${node.cooldownDuration?.trim() ? node.cooldownDuration.trim() : '0'} ${node.cooldownUnit ? node.cooldownUnit.charAt(0).toUpperCase() + node.cooldownUnit.slice(1) : 'Day'}` },
+                    ]}
+                    {...getCommonNodeProps(node.id)}
+                  />
+                ) : node.type === 'positionLimit' ? (
+                  <PositionLimitNode
+                    labelSegments={[
+                      { kind: 'text', text: 'Position' },
+                      { kind: 'badge', text: 'Limit' },
+                      { kind: 'badge', text: node.positionLimitApplyTo === 'branchAssets' ? 'Branch Assets' : 'Single Asset' },
+                      { kind: 'badge', text: node.positionLimitMode === 'value' ? `$${node.positionLimitValue?.trim() ? node.positionLimitValue.trim() : '0'}` : `${node.positionLimitValue?.trim() ? node.positionLimitValue.trim() : '0'}%` },
+                    ]}
+                    {...getCommonNodeProps(node.id)}
+                  />
+                ) : node.type === 'exposureLimit' ? (
+                  <ExposureLimitNode
+                    labelSegments={[
+                      { kind: 'text', text: 'Exposure' },
+                      { kind: 'badge', text: 'Limit' },
+                      { kind: 'badge', text: node.exposureLimitType === 'basket' ? 'Basket' : node.exposureLimitType === 'portfolio' ? 'Portfolio' : 'Asset Class' },
+                      { kind: 'badge', text: node.riskComparator ?? '>=' },
+                      { kind: 'badge', text: `${node.exposureLimitValue?.trim() ? node.exposureLimitValue.trim() : '0'}%` },
+                    ]}
                     {...getCommonNodeProps(node.id)}
                   />
                 ) : node.type === 'stock' ? (
@@ -1549,7 +2042,14 @@ export default function CanvasViewport() {
 
               const fromPoint = getConnectorScreenPosition(fromNode.id, fromNode, edge.fromSide)
               const toPoint = getConnectorScreenPosition(toNode.id, toNode, edge.toSide)
-              const geometry = getOrthogonalEdgeGeometry(fromPoint, toPoint, edge.fromSide, edge.toSide)
+              const sourceSiblingEdges = edges.filter((candidate) => candidate.fromNodeId === edge.fromNodeId && candidate.fromSide === edge.fromSide)
+              const targetSiblingEdges = edges.filter((candidate) => candidate.toNodeId === edge.toNodeId && candidate.toSide === edge.toSide)
+              const sourceIndex = sourceSiblingEdges.findIndex((candidate) => candidate.id === edge.id)
+              const targetIndex = targetSiblingEdges.findIndex((candidate) => candidate.id === edge.id)
+              const sourceOffset = sourceSiblingEdges.length > 1 ? (sourceIndex - (sourceSiblingEdges.length - 1) / 2) * 14 * view.scale : 0
+              const targetOffset = targetSiblingEdges.length > 1 ? (targetIndex - (targetSiblingEdges.length - 1) / 2) * 14 * view.scale : 0
+              const geometry = getOrthogonalEdgeGeometry(fromPoint, toPoint, edge.fromSide, edge.toSide, sourceOffset, targetOffset)
+              const isConnectedToSelectedNode = selectedNodeIds.includes(edge.fromNodeId) || selectedNodeIds.includes(edge.toNodeId)
               const selectEdge = (event: React.PointerEvent<SVGElement>) => {
                 event.stopPropagation()
                 setSelectedCanvasEdgeIds([edge.id])
@@ -1571,8 +2071,8 @@ export default function CanvasViewport() {
                   />
                   <path
                     d={geometry.path}
-                    stroke={selectedEdgeIds.includes(edge.id) ? 'var(--canvas-accent)' : 'var(--canvas-panel-divider)'}
-                    strokeWidth={selectedEdgeIds.includes(edge.id) ? '3' : '2'}
+                    stroke={selectedEdgeIds.includes(edge.id) || isConnectedToSelectedNode ? 'var(--canvas-accent)' : 'var(--canvas-panel-divider)'}
+                    strokeWidth={selectedEdgeIds.includes(edge.id) ? '3' : isConnectedToSelectedNode ? '2.5' : '2'}
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     fill="none"
@@ -1683,7 +2183,14 @@ export default function CanvasViewport() {
 
               const fromPoint = getConnectorScreenPosition(fromNode.id, fromNode, edge.fromSide)
               const toPoint = getConnectorScreenPosition(toNode.id, toNode, edge.toSide)
-              const geometry = getOrthogonalEdgeGeometry(fromPoint, toPoint, edge.fromSide, edge.toSide)
+              const sourceSiblingEdges = edges.filter((candidate) => candidate.fromNodeId === edge.fromNodeId && candidate.fromSide === edge.fromSide)
+              const targetSiblingEdges = edges.filter((candidate) => candidate.toNodeId === edge.toNodeId && candidate.toSide === edge.toSide)
+              const sourceIndex = sourceSiblingEdges.findIndex((candidate) => candidate.id === edge.id)
+              const targetIndex = targetSiblingEdges.findIndex((candidate) => candidate.id === edge.id)
+              const sourceOffset = sourceSiblingEdges.length > 1 ? (sourceIndex - (sourceSiblingEdges.length - 1) / 2) * 14 * view.scale : 0
+              const targetOffset = targetSiblingEdges.length > 1 ? (targetIndex - (targetSiblingEdges.length - 1) / 2) * 14 * view.scale : 0
+              const geometry = getOrthogonalEdgeGeometry(fromPoint, toPoint, edge.fromSide, edge.toSide, sourceOffset, targetOffset)
+              const edgeLabel = getCanvasEdgeLabelForNode(fromNode.type, edge.fromSide)
 
               return (
                 <g key={`edge-hit-${edge.id}`}>
@@ -1715,6 +2222,40 @@ export default function CanvasViewport() {
                       setSelectedCanvasNodeIds([])
                     }}
                   />
+                  {edgeLabel ? (
+                    <g
+                      transform={`translate(${geometry.midPoint.x}, ${geometry.midPoint.y})`}
+                      style={{ pointerEvents: 'none' }}
+                    >
+                      <g transform={`scale(${view.scale})`}>
+                        <rect
+                          x={-(Math.max(60, edgeLabel.length * 7) / 2)}
+                          y={-13}
+                          width={Math.max(60, edgeLabel.length * 7)}
+                          height={26}
+                          rx={13}
+                          fill="var(--canvas-bg)"
+                          stroke="var(--canvas-panel-divider)"
+                          strokeWidth="1"
+                        />
+                        <text
+                          x="0"
+                          y="1"
+                          textAnchor="middle"
+                          dominantBaseline="middle"
+                          fill="var(--canvas-text-secondary)"
+                          style={{
+                            fontFamily: 'var(--canvas-font-sans)',
+                            fontSize: 11,
+                            fontWeight: 700,
+                            letterSpacing: '-0.01em',
+                          }}
+                        >
+                          {edgeLabel}
+                        </text>
+                      </g>
+                    </g>
+                  ) : null}
                 </g>
               )
             })}

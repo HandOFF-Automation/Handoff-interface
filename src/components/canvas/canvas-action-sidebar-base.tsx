@@ -1,7 +1,7 @@
 import { CaretDown } from '@phosphor-icons/react'
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react'
 
-import type { CanvasActionAmountMode, CanvasAllocateWeightingMode, CanvasNodeRecord, CanvasRebalanceMode, CanvasRiskComparator } from '../../state/canvas-node-store'
+import type { CanvasActionAmountMode, CanvasAllocateStyle, CanvasAllocateWeightingMode, CanvasBuyType, CanvasNodeRecord, CanvasRebalanceMode, CanvasRebalanceScope, CanvasRiskComparator, CanvasSellType, CanvasStopLossMode, CanvasTakeProfitMode } from '../../state/canvas-node-store'
 import { CanvasAssetLogo } from './canvas-asset-options'
 import CanvasSidebarFieldSection from './canvas-sidebar-field-section'
 import CanvasNodeSidebarHeader from './canvas-node-sidebar-header'
@@ -39,9 +39,26 @@ const actionAmountModeOptions: Array<{ value: CanvasActionAmountMode; label: str
   { value: 'value', label: 'Value' },
 ]
 
+const buyTypeOptions: Array<{ value: CanvasBuyType; label: string }> = [
+  { value: 'open', label: 'Open' },
+  { value: 'add', label: 'Add' },
+  { value: 'rotateInto', label: 'Rotate Into' },
+]
+
+const sellTypeOptions: Array<{ value: CanvasSellType; label: string }> = [
+  { value: 'fullExit', label: 'Full Exit' },
+  { value: 'reduce', label: 'Reduce' },
+  { value: 'takePartial', label: 'Take Partial' },
+]
+
 const allocateWeightingModeOptions: Array<{ value: CanvasAllocateWeightingMode; label: string }> = [
   { value: 'percentage', label: 'Percentage' },
   { value: 'value', label: 'Value' },
+]
+
+const allocateStyleOptions: Array<{ value: CanvasAllocateStyle; label: string }> = [
+  { value: 'targetWeight', label: 'Target Weight' },
+  { value: 'addExposure', label: 'Add Exposure' },
 ]
 
 const rebalanceModeOptions: Array<{ value: CanvasRebalanceMode; label: string }> = [
@@ -49,11 +66,29 @@ const rebalanceModeOptions: Array<{ value: CanvasRebalanceMode; label: string }>
   { value: 'target', label: 'Target' },
 ]
 
+const rebalanceScopeOptions: Array<{ value: CanvasRebalanceScope; label: string }> = [
+  { value: 'branch', label: 'This Branch' },
+  { value: 'selectedAssets', label: 'Selected Assets' },
+  { value: 'portfolioSet', label: 'Portfolio Set' },
+]
+
 const riskComparatorOptions: Array<{ value: CanvasRiskComparator; label: string }> = [
   { value: '>', label: '>' },
   { value: '<', label: '<' },
   { value: '>=', label: '>=' },
   { value: '<=', label: '<=' },
+]
+
+const takeProfitModeOptions: Array<{ value: CanvasTakeProfitMode; label: string }> = [
+  { value: 'single', label: 'Single' },
+  { value: 'partial', label: 'Partial' },
+  { value: 'ladder', label: 'Ladder' },
+]
+
+const stopLossModeOptions: Array<{ value: CanvasStopLossMode; label: string }> = [
+  { value: 'fixed', label: 'Fixed' },
+  { value: 'trailing', label: 'Trailing' },
+  { value: 'breakEven', label: 'Break-even' },
 ]
 
 function BaseSidebar({ active, title, description, helpTitle, helpBody, closeLabel, onClose, children }: { active: boolean; title: string; description: string; helpTitle: string; helpBody: string; closeLabel: string; onClose: () => void; children: ReactNode }) {
@@ -180,6 +215,7 @@ function getAssetMenuGroups(assetNodeOptions: AssetOption[], selectedId?: string
         disabled: !option.id,
         active: option.id === selectedId,
         icon: option.id && option.assetSymbol ? <CanvasAssetLogo assetType={option.type} symbol={option.assetSymbol} size={20} /> : null,
+        trailingIcon: option.id === selectedId ? '✓' : undefined,
       })),
     },
   ]
@@ -193,40 +229,55 @@ function DropdownLeadingAsset({ option }: { option: AssetOption | null }) {
   return <CanvasAssetLogo assetType={option.type} symbol={option.assetSymbol} size={28} />
 }
 
-export function CanvasTradeSidebar({ active, node, nodeTitle, nodeDescription, helpBody, actionLabel, assetNodeOptions, onClose, onAssetChange, onAmountModeChange, onAmountValueChange }: { active: boolean; node: CanvasNodeRecord | null; nodeTitle: string; nodeDescription: string; helpBody: string; actionLabel: string; assetNodeOptions: AssetOption[]; onClose: () => void; onAssetChange: (value: string) => void; onAmountModeChange: (value: CanvasActionAmountMode) => void; onAmountValueChange: (value: string) => void }) {
+export function CanvasTradeSidebar({ active, node, nodeTitle, nodeDescription, helpBody, actionLabel, assetNodeOptions, onClose, onAssetChange, onAmountModeChange, onAmountValueChange, onBehaviorChange }: { active: boolean; node: CanvasNodeRecord | null; nodeTitle: string; nodeDescription: string; helpBody: string; actionLabel: string; assetNodeOptions: AssetOption[]; onClose: () => void; onAssetChange: (value: string) => void; onAmountModeChange: (value: CanvasActionAmountMode) => void; onAmountValueChange: (value: string) => void; onBehaviorChange: (value: string) => void }) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const assetTriggerRef = useRef<HTMLButtonElement | null>(null)
   const amountModeTriggerRef = useRef<HTMLButtonElement | null>(null)
+  const behaviorTriggerRef = useRef<HTMLButtonElement | null>(null)
   const [isAssetOpen, setIsAssetOpen] = useState(false)
   const [isAmountModeOpen, setIsAmountModeOpen] = useState(false)
+  const [isBehaviorOpen, setIsBehaviorOpen] = useState(false)
   const selectedAsset = assetNodeOptions.find((option) => option.id === node?.actionAssetNodeId) ?? null
   const selectedAmountMode = actionAmountModeOptions.find((option) => option.value === node?.actionAmountMode) ?? actionAmountModeOptions[0]
+  const behaviorOptions = actionLabel === 'Buy' ? buyTypeOptions : sellTypeOptions
+  const selectedBehavior = actionLabel === 'Buy'
+    ? buyTypeOptions.find((option) => option.value === node?.buyType) ?? buyTypeOptions[0]
+    : sellTypeOptions.find((option) => option.value === node?.sellType) ?? sellTypeOptions[0]
   const amountPlaceholder = selectedAmountMode.value === 'percentage' ? '20' : '1000'
 
   const closeAll = () => {
     setIsAssetOpen(false)
     setIsAmountModeOpen(false)
+    setIsBehaviorOpen(false)
   }
 
-  useCloseOnOutside(active, containerRef, closeAll, [isAssetOpen, isAmountModeOpen])
+  useCloseOnOutside(active, containerRef, closeAll, [isAssetOpen, isAmountModeOpen, isBehaviorOpen])
 
   const amountModeGroups = useMemo(
-    () => [{ items: actionAmountModeOptions.map<DropdownMenuItem>((option) => ({ label: option.label, value: option.value, active: option.value === selectedAmountMode.value })) }],
+    () => [{ items: actionAmountModeOptions.map<DropdownMenuItem>((option) => ({ label: option.label, value: option.value, active: option.value === selectedAmountMode.value, trailingIcon: option.value === selectedAmountMode.value ? '✓' : undefined })) }],
     [selectedAmountMode.value],
+  )
+  const behaviorGroups = useMemo(
+    () => [{ items: behaviorOptions.map<DropdownMenuItem>((option) => ({ label: option.label, value: option.value, active: option.value === selectedBehavior.value, trailingIcon: option.value === selectedBehavior.value ? '✓' : undefined })) }],
+    [behaviorOptions, selectedBehavior.value],
   )
 
   return (
     <BaseSidebar active={active} title={nodeTitle} description={nodeDescription} helpTitle={nodeTitle} helpBody={helpBody} closeLabel={`Close ${actionLabel.toLowerCase()} sidebar`} onClose={onClose}>
       <div ref={containerRef} style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <CanvasSidebarFieldSection title="Target Asset" description={`Choose which connected asset should be used for the ${actionLabel.toLowerCase()} action.`}>
+        <CanvasSidebarFieldSection title="Target Asset" description={`Choose which connected asset should execute on this branch when the ${actionLabel.toLowerCase()} step runs.`}>
           <SidebarDropdown containerRef={containerRef} triggerRef={assetTriggerRef} isOpen={isAssetOpen} groups={getAssetMenuGroups(assetNodeOptions, selectedAsset?.id ?? null)} label={selectedAsset?.assetName && selectedAsset.assetSymbol ? `${selectedAsset.assetName} ${selectedAsset.assetSymbol}` : 'Select asset'} leading={<DropdownLeadingAsset option={selectedAsset} />} onToggle={() => setIsAssetOpen((current) => !current)} onItemClick={(value) => { onAssetChange(value); setIsAssetOpen(false) }} />
         </CanvasSidebarFieldSection>
 
-        <CanvasSidebarFieldSection title="Amount Mode" description="Choose whether the amount is entered as a percentage or a fixed value.">
+        <CanvasSidebarFieldSection title="Amount Mode" description="Choose whether this branch should execute with a percentage amount or a fixed value.">
           <SidebarDropdown containerRef={containerRef} triggerRef={amountModeTriggerRef} isOpen={isAmountModeOpen} groups={amountModeGroups} label={selectedAmountMode.label} onToggle={() => setIsAmountModeOpen((current) => !current)} onItemClick={(value) => { onAmountModeChange(value as CanvasActionAmountMode); setIsAmountModeOpen(false) }} />
         </CanvasSidebarFieldSection>
 
-        <CanvasSidebarFieldSection title="Amount" description={`Enter the ${selectedAmountMode.value === 'percentage' ? 'percentage' : 'value'} to ${actionLabel.toLowerCase()}.`} showDivider={false}>
+        <CanvasSidebarFieldSection title={`${actionLabel} Type`} description={`Choose how this branch should ${actionLabel.toLowerCase()} when it runs.`}>
+          <SidebarDropdown containerRef={containerRef} triggerRef={behaviorTriggerRef} isOpen={isBehaviorOpen} groups={behaviorGroups} label={selectedBehavior.label} onToggle={() => setIsBehaviorOpen((current) => !current)} onItemClick={(value) => { onBehaviorChange(value); setIsBehaviorOpen(false) }} />
+        </CanvasSidebarFieldSection>
+
+        <CanvasSidebarFieldSection title="Amount" description={`Enter the ${selectedAmountMode.value === 'percentage' ? 'percentage' : 'value'} this branch should ${actionLabel.toLowerCase()}.`} showDivider={false}>
           <div style={{ minHeight: 54, borderRadius: 16, border: '1px solid var(--canvas-panel-divider)', background: 'var(--canvas-surface-soft)', padding: '0 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ color: 'var(--canvas-text-secondary)', fontFamily: 'var(--canvas-font-sans)', fontSize: 14, fontWeight: 700 }}>{selectedAmountMode.value === 'percentage' ? '%' : '$'}</span>
             <input value={node?.actionAmountValue ?? ''} onChange={(event) => onAmountValueChange(event.target.value)} placeholder={amountPlaceholder} inputMode="decimal" style={{ width: '100%', border: 'none', outline: 'none', background: 'transparent', color: 'var(--canvas-text-primary)', fontFamily: 'var(--canvas-font-sans)', fontSize: 14, fontWeight: 700, padding: 0 }} />
@@ -237,27 +288,41 @@ export function CanvasTradeSidebar({ active, node, nodeTitle, nodeDescription, h
   )
 }
 
-export function CanvasRebalanceSidebarBase({ active, node, onClose, onModeChange, onThresholdChange }: { active: boolean; node: CanvasNodeRecord | null; onClose: () => void; onModeChange: (value: CanvasRebalanceMode) => void; onThresholdChange: (value: string) => void }) {
+export function CanvasRebalanceSidebarBase({ active, node, onClose, onModeChange, onThresholdChange, onScopeChange }: { active: boolean; node: CanvasNodeRecord | null; onClose: () => void; onModeChange: (value: CanvasRebalanceMode) => void; onThresholdChange: (value: string) => void; onScopeChange: (value: CanvasRebalanceScope) => void }) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const triggerRef = useRef<HTMLButtonElement | null>(null)
+  const scopeTriggerRef = useRef<HTMLButtonElement | null>(null)
   const [isOpen, setIsOpen] = useState(false)
+  const [isScopeOpen, setIsScopeOpen] = useState(false)
   const selectedMode = rebalanceModeOptions.find((option) => option.value === node?.rebalanceMode) ?? rebalanceModeOptions[0]
+  const selectedScope = rebalanceScopeOptions.find((option) => option.value === node?.rebalanceScope) ?? rebalanceScopeOptions[0]
   const groups = useMemo(
-    () => [{ items: rebalanceModeOptions.map<DropdownMenuItem>((option) => ({ label: option.label, value: option.value, active: option.value === selectedMode.value })) }],
+    () => [{ items: rebalanceModeOptions.map<DropdownMenuItem>((option) => ({ label: option.label, value: option.value, active: option.value === selectedMode.value, trailingIcon: option.value === selectedMode.value ? '✓' : undefined })) }],
     [selectedMode.value],
   )
-  const closeAll = () => setIsOpen(false)
+  const scopeGroups = useMemo(
+    () => [{ items: rebalanceScopeOptions.map<DropdownMenuItem>((option) => ({ label: option.label, value: option.value, active: option.value === selectedScope.value, trailingIcon: option.value === selectedScope.value ? '✓' : undefined })) }],
+    [selectedScope.value],
+  )
+  const closeAll = () => {
+    setIsOpen(false)
+    setIsScopeOpen(false)
+  }
 
-  useCloseOnOutside(active, containerRef, closeAll, [isOpen])
+  useCloseOnOutside(active, containerRef, closeAll, [isOpen, isScopeOpen])
 
   return (
-    <BaseSidebar active={active} title="Rebalance Node" description="Rebalances the portfolio using a simple mode-based rule." helpTitle="Rebalance Node" helpBody="The rebalance node lets the flow rebalance positions either equally or toward a target mode." closeLabel="Close rebalance sidebar" onClose={onClose}>
+    <BaseSidebar active={active} title="Rebalance Node" description="Rebalances the portfolio when this branch needs to reset allocation." helpTitle="Rebalance Node" helpBody="The rebalance node lets the current branch rebalance positions either equally or toward a target mode after a trigger condition is met." closeLabel="Close rebalance sidebar" onClose={onClose}>
       <div ref={containerRef} style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <CanvasSidebarFieldSection title="Rebalance Mode" description="Choose whether the rebalance should equalize holdings or use a target mode.">
+        <CanvasSidebarFieldSection title="Rebalance Mode" description="Choose whether this branch should equalize holdings or rebalance toward a target mode.">
           <SidebarDropdown containerRef={containerRef} triggerRef={triggerRef} isOpen={isOpen} groups={groups} label={selectedMode.label} onToggle={() => setIsOpen((current) => !current)} onItemClick={(value) => { onModeChange(value as CanvasRebalanceMode); setIsOpen(false) }} />
         </CanvasSidebarFieldSection>
 
-        <CanvasSidebarFieldSection title="Trigger Threshold" description="Enter the drift threshold that should trigger the rebalance action." showDivider={false}>
+        <CanvasSidebarFieldSection title="Rebalance Scope" description="Choose which part of the strategy this rebalance step should represent.">
+          <SidebarDropdown containerRef={containerRef} triggerRef={scopeTriggerRef} isOpen={isScopeOpen} groups={scopeGroups} label={selectedScope.label} onToggle={() => setIsScopeOpen((current) => !current)} onItemClick={(value) => { onScopeChange(value as CanvasRebalanceScope); setIsScopeOpen(false) }} />
+        </CanvasSidebarFieldSection>
+
+        <CanvasSidebarFieldSection title="Trigger Threshold" description="Enter the drift threshold that should trigger this branch rebalance." showDivider={false}>
           <div style={{ minHeight: 54, borderRadius: 16, border: '1px solid var(--canvas-panel-divider)', background: 'var(--canvas-surface-soft)', padding: '0 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ color: 'var(--canvas-text-secondary)', fontFamily: 'var(--canvas-font-sans)', fontSize: 14, fontWeight: 700 }}>%</span>
             <input value={node?.rebalanceThreshold ?? ''} onChange={(event) => onThresholdChange(event.target.value)} placeholder="5" inputMode="decimal" style={{ width: '100%', border: 'none', outline: 'none', background: 'transparent', color: 'var(--canvas-text-primary)', fontFamily: 'var(--canvas-font-sans)', fontSize: 14, fontWeight: 700, padding: 0 }} />
@@ -268,27 +333,41 @@ export function CanvasRebalanceSidebarBase({ active, node, onClose, onModeChange
   )
 }
 
-export function CanvasAllocateSidebarBase({ active, node, onClose, onModeChange, onAmountValueChange }: { active: boolean; node: CanvasNodeRecord | null; onClose: () => void; onModeChange: (value: CanvasAllocateWeightingMode) => void; onAmountValueChange: (value: string) => void }) {
+export function CanvasAllocateSidebarBase({ active, node, onClose, onModeChange, onAmountValueChange, onStyleChange }: { active: boolean; node: CanvasNodeRecord | null; onClose: () => void; onModeChange: (value: CanvasAllocateWeightingMode) => void; onAmountValueChange: (value: string) => void; onStyleChange: (value: CanvasAllocateStyle) => void }) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const triggerRef = useRef<HTMLButtonElement | null>(null)
+  const styleTriggerRef = useRef<HTMLButtonElement | null>(null)
   const [isOpen, setIsOpen] = useState(false)
+  const [isStyleOpen, setIsStyleOpen] = useState(false)
   const selectedMode = allocateWeightingModeOptions.find((option) => option.value === node?.allocateWeightingMode) ?? allocateWeightingModeOptions[0]
+  const selectedStyle = allocateStyleOptions.find((option) => option.value === node?.allocateStyle) ?? allocateStyleOptions[0]
   const groups = useMemo(
-    () => [{ items: allocateWeightingModeOptions.map<DropdownMenuItem>((option) => ({ label: option.label, value: option.value, active: option.value === selectedMode.value })) }],
+    () => [{ items: allocateWeightingModeOptions.map<DropdownMenuItem>((option) => ({ label: option.label, value: option.value, active: option.value === selectedMode.value, trailingIcon: option.value === selectedMode.value ? '✓' : undefined })) }],
     [selectedMode.value],
   )
-  const closeAll = () => setIsOpen(false)
+  const styleGroups = useMemo(
+    () => [{ items: allocateStyleOptions.map<DropdownMenuItem>((option) => ({ label: option.label, value: option.value, active: option.value === selectedStyle.value, trailingIcon: option.value === selectedStyle.value ? '✓' : undefined })) }],
+    [selectedStyle.value],
+  )
+  const closeAll = () => {
+    setIsOpen(false)
+    setIsStyleOpen(false)
+  }
 
-  useCloseOnOutside(active, containerRef, closeAll, [isOpen])
+  useCloseOnOutside(active, containerRef, closeAll, [isOpen, isStyleOpen])
 
   return (
-    <BaseSidebar active={active} title="Allocate Node" description="Applies a simple allocation amount to the portfolio flow." helpTitle="Allocate Node" helpBody="The allocate node applies either a percentage-based or value-based allocation in the current flow." closeLabel="Close allocate sidebar" onClose={onClose}>
+    <BaseSidebar active={active} title="Allocate Node" description="Applies an allocation change to the current branch." helpTitle="Allocate Node" helpBody="The allocate node applies either a percentage-based or value-based allocation when this branch should adjust portfolio exposure." closeLabel="Close allocate sidebar" onClose={onClose}>
       <div ref={containerRef} style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <CanvasSidebarFieldSection title="Weighting Mode" description="Choose whether the allocation uses a percentage or an absolute value.">
+        <CanvasSidebarFieldSection title="Weighting Mode" description="Choose whether this branch allocation uses a percentage or an absolute value.">
           <SidebarDropdown containerRef={containerRef} triggerRef={triggerRef} isOpen={isOpen} groups={groups} label={selectedMode.label} onToggle={() => setIsOpen((current) => !current)} onItemClick={(value) => { onModeChange(value as CanvasAllocateWeightingMode); setIsOpen(false) }} />
         </CanvasSidebarFieldSection>
 
-        <CanvasSidebarFieldSection title="Amount" description="Enter the allocation amount for this step." showDivider={false}>
+        <CanvasSidebarFieldSection title="Allocation Style" description="Choose whether this node represents a target weight or an additional allocation.">
+          <SidebarDropdown containerRef={containerRef} triggerRef={styleTriggerRef} isOpen={isStyleOpen} groups={styleGroups} label={selectedStyle.label} onToggle={() => setIsStyleOpen((current) => !current)} onItemClick={(value) => { onStyleChange(value as CanvasAllocateStyle); setIsStyleOpen(false) }} />
+        </CanvasSidebarFieldSection>
+
+        <CanvasSidebarFieldSection title="Amount" description="Enter how much this branch should allocate during this step." showDivider={false}>
           <div style={{ minHeight: 54, borderRadius: 16, border: '1px solid var(--canvas-panel-divider)', background: 'var(--canvas-surface-soft)', padding: '0 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ color: 'var(--canvas-text-secondary)', fontFamily: 'var(--canvas-font-sans)', fontSize: 14, fontWeight: 700 }}>{selectedMode.value === 'percentage' ? '%' : '$'}</span>
             <input value={node?.allocateAmountValue ?? ''} onChange={(event) => onAmountValueChange(event.target.value)} placeholder={selectedMode.value === 'percentage' ? '25' : '1000'} inputMode="decimal" style={{ width: '100%', border: 'none', outline: 'none', background: 'transparent', color: 'var(--canvas-text-primary)', fontFamily: 'var(--canvas-font-sans)', fontSize: 14, fontWeight: 700, padding: 0 }} />
@@ -301,9 +380,9 @@ export function CanvasAllocateSidebarBase({ active, node, onClose, onModeChange,
 
 export function CanvasScaleOutSidebarBase({ active, node, onClose, onPercentChange }: { active: boolean; node: CanvasNodeRecord | null; onClose: () => void; onPercentChange: (value: string) => void }) {
   return (
-    <BaseSidebar active={active} title="Scale Out Node" description="Gradually reduces the position size by a percentage." helpTitle="Scale Out Node" helpBody="The scale out node reduces exposure by a simple percentage-based amount." closeLabel="Close scale out sidebar" onClose={onClose}>
+    <BaseSidebar active={active} title="Scale Out Node" description="Gradually reduces exposure on the current branch by a percentage." helpTitle="Scale Out Node" helpBody="The scale out node reduces branch exposure by a simple percentage-based amount, which makes it useful for fallback or de-risking paths." closeLabel="Close scale out sidebar" onClose={onClose}>
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <CanvasSidebarFieldSection title="Reduce By" description="Enter how much of the position should be reduced." showDivider={false}>
+        <CanvasSidebarFieldSection title="Reduce By" description="Enter how much of the position this branch should reduce." showDivider={false}>
           <div style={{ minHeight: 54, borderRadius: 16, border: '1px solid var(--canvas-panel-divider)', background: 'var(--canvas-surface-soft)', padding: '0 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ color: 'var(--canvas-text-secondary)', fontFamily: 'var(--canvas-font-sans)', fontSize: 14, fontWeight: 700 }}>%</span>
             <input value={node?.scaleOutPercent ?? ''} onChange={(event) => onPercentChange(event.target.value)} placeholder="10" inputMode="decimal" style={{ width: '100%', border: 'none', outline: 'none', background: 'transparent', color: 'var(--canvas-text-primary)', fontFamily: 'var(--canvas-font-sans)', fontSize: 14, fontWeight: 700, padding: 0 }} />
@@ -314,37 +393,51 @@ export function CanvasScaleOutSidebarBase({ active, node, onClose, onPercentChan
   )
 }
 
-export function CanvasRiskSidebarBase({ active, node, nodeTitle, nodeDescription, helpBody, assetNodeOptions, onClose, onAssetChange, onComparatorChange, onThresholdChange }: { active: boolean; node: CanvasNodeRecord | null; nodeTitle: string; nodeDescription: string; helpBody: string; assetNodeOptions: AssetOption[]; onClose: () => void; onAssetChange: (value: string) => void; onComparatorChange: (value: CanvasRiskComparator) => void; onThresholdChange: (value: string) => void }) {
+export function CanvasRiskSidebarBase({ active, node, nodeTitle, nodeDescription, helpBody, assetNodeOptions, onClose, onAssetChange, onComparatorChange, onThresholdChange, onModeChange }: { active: boolean; node: CanvasNodeRecord | null; nodeTitle: string; nodeDescription: string; helpBody: string; assetNodeOptions: AssetOption[]; onClose: () => void; onAssetChange: (value: string) => void; onComparatorChange: (value: CanvasRiskComparator) => void; onThresholdChange: (value: string) => void; onModeChange: (value: string) => void }) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const assetTriggerRef = useRef<HTMLButtonElement | null>(null)
   const comparatorTriggerRef = useRef<HTMLButtonElement | null>(null)
+  const modeTriggerRef = useRef<HTMLButtonElement | null>(null)
   const [isAssetOpen, setIsAssetOpen] = useState(false)
   const [isComparatorOpen, setIsComparatorOpen] = useState(false)
+  const [isModeOpen, setIsModeOpen] = useState(false)
   const selectedAsset = assetNodeOptions.find((option) => option.id === node?.riskAssetNodeId) ?? null
   const selectedComparator = riskComparatorOptions.find((option) => option.value === node?.riskComparator) ?? riskComparatorOptions[0]
+  const isTakeProfit = nodeTitle === 'Take Profit Node'
+  const modeOptions = isTakeProfit ? takeProfitModeOptions : stopLossModeOptions
+  const selectedMode = isTakeProfit ? takeProfitModeOptions.find((option) => option.value === node?.takeProfitMode) ?? takeProfitModeOptions[0] : stopLossModeOptions.find((option) => option.value === node?.stopLossMode) ?? stopLossModeOptions[0]
   const comparatorGroups = useMemo(
-    () => [{ items: riskComparatorOptions.map<DropdownMenuItem>((option) => ({ label: option.label, value: option.value, active: option.value === selectedComparator.value })) }],
+    () => [{ items: riskComparatorOptions.map<DropdownMenuItem>((option) => ({ label: option.label, value: option.value, active: option.value === selectedComparator.value, trailingIcon: option.value === selectedComparator.value ? '✓' : undefined })) }],
     [selectedComparator.value],
+  )
+  const modeGroups = useMemo(
+    () => [{ items: modeOptions.map<DropdownMenuItem>((option) => ({ label: option.label, value: option.value, active: option.value === selectedMode.value, trailingIcon: option.value === selectedMode.value ? '✓' : undefined })) }],
+    [modeOptions, selectedMode.value],
   )
   const closeAll = () => {
     setIsAssetOpen(false)
     setIsComparatorOpen(false)
+    setIsModeOpen(false)
   }
 
-  useCloseOnOutside(active, containerRef, closeAll, [isAssetOpen, isComparatorOpen])
+  useCloseOnOutside(active, containerRef, closeAll, [isAssetOpen, isComparatorOpen, isModeOpen])
 
   return (
     <BaseSidebar active={active} title={nodeTitle} description={nodeDescription} helpTitle={nodeTitle} helpBody={helpBody} closeLabel={`Close ${nodeTitle.toLowerCase()} sidebar`} onClose={onClose}>
       <div ref={containerRef} style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <CanvasSidebarFieldSection title="Target Asset" description="Choose which connected asset should be watched for this condition.">
+        <CanvasSidebarFieldSection title="Target Asset" description="Choose which connected asset this branch should watch for the risk condition.">
           <SidebarDropdown containerRef={containerRef} triggerRef={assetTriggerRef} isOpen={isAssetOpen} groups={getAssetMenuGroups(assetNodeOptions, selectedAsset?.id ?? null)} label={selectedAsset?.assetName && selectedAsset.assetSymbol ? `${selectedAsset.assetName} ${selectedAsset.assetSymbol}` : 'Select asset'} leading={<DropdownLeadingAsset option={selectedAsset} />} onToggle={() => setIsAssetOpen((current) => !current)} onItemClick={(value) => { onAssetChange(value); setIsAssetOpen(false) }} />
         </CanvasSidebarFieldSection>
 
-        <CanvasSidebarFieldSection title="Comparator" description="Choose how the asset threshold should be compared.">
+        <CanvasSidebarFieldSection title="Comparator" description="Choose how this branch should compare the watched asset against the threshold.">
           <SidebarDropdown containerRef={containerRef} triggerRef={comparatorTriggerRef} isOpen={isComparatorOpen} groups={comparatorGroups} label={selectedComparator.label} onToggle={() => setIsComparatorOpen((current) => !current)} onItemClick={(value) => { onComparatorChange(value as CanvasRiskComparator); setIsComparatorOpen(false) }} />
         </CanvasSidebarFieldSection>
 
-        <CanvasSidebarFieldSection title="Threshold" description="Enter the threshold value for this risk condition." showDivider={false}>
+        <CanvasSidebarFieldSection title="Mode" description="Choose the visual response style this branch should represent.">
+          <SidebarDropdown containerRef={containerRef} triggerRef={modeTriggerRef} isOpen={isModeOpen} groups={modeGroups} label={selectedMode.label} onToggle={() => setIsModeOpen((current) => !current)} onItemClick={(value) => { onModeChange(value); setIsModeOpen(false) }} />
+        </CanvasSidebarFieldSection>
+
+        <CanvasSidebarFieldSection title="Threshold" description="Enter the threshold value that should trigger this branch risk response." showDivider={false}>
           <div style={{ minHeight: 54, borderRadius: 16, border: '1px solid var(--canvas-panel-divider)', background: 'var(--canvas-surface-soft)', padding: '0 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ color: 'var(--canvas-text-secondary)', fontFamily: 'var(--canvas-font-sans)', fontSize: 14, fontWeight: 700 }}>$</span>
             <input value={node?.riskThresholdValue ?? ''} onChange={(event) => onThresholdChange(event.target.value)} placeholder="100" inputMode="decimal" style={{ width: '100%', border: 'none', outline: 'none', background: 'transparent', color: 'var(--canvas-text-primary)', fontFamily: 'var(--canvas-font-sans)', fontSize: 14, fontWeight: 700, padding: 0 }} />

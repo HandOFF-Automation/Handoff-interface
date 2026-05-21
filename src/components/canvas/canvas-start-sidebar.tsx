@@ -51,13 +51,14 @@ export default function CanvasStartSidebar({
   const selectedWeightingIcon = selectedWeighting ? weightingIconByValue[selectedWeighting.value] : <Play size={16} weight="fill" />
   const weightingMenuGroups = useMemo(
     () => [
-      {
-        items: weightingOptions.map<DropdownMenuItem>((option) => ({
-          label: option.label,
-          value: option.value,
-          active: option.value === selectedWeighting?.value,
-        })),
-      },
+        {
+          items: weightingOptions.map<DropdownMenuItem>((option) => ({
+            label: option.label,
+            value: option.value,
+            active: option.value === selectedWeighting?.value,
+            trailingIcon: option.value === selectedWeighting?.value ? '✓' : undefined,
+          })),
+        },
     ],
     [selectedWeighting?.value],
   )
@@ -116,15 +117,15 @@ export default function CanvasStartSidebar({
     >
       <CanvasNodeSidebarHeader
         title="Start Node"
-        description="Controls how the strategy allocates into connected assets."
+        description="Sets the opening allocation that feeds the rest of the strategy flow."
         helpTitle="Start Node"
-        helpBody="The start node defines the initial weighting method for assets connected to this strategy. Use it to choose equal weights, market-cap weights, or custom percentages."
+        helpBody="The Start node defines the initial weighting method for assets connected to this strategy. Use it to choose equal weights, market-cap weights, or custom percentages before the flow moves into Filter, If, or execution branches."
         closeLabel="Close start sidebar"
         onClose={onClose}
       />
 
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <CanvasSidebarFieldSection title="Set Weighting Type" description="Choose how the strategy should allocate across connected assets at the start.">
+        <CanvasSidebarFieldSection title="Set Weighting Type" description="Choose how the strategy should allocate across connected assets before entering downstream logic branches.">
         <div ref={containerRef} style={{ position: 'relative' }}>
           <button
             ref={weightingTriggerRef}

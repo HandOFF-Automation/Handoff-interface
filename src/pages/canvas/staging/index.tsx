@@ -1,11 +1,16 @@
 import CanvasAllocateSidebar from '../../../components/canvas/canvas-allocate-sidebar'
 import CanvasAssetSidebar from '../../../components/canvas/canvas-asset-sidebar'
 import CanvasBuySidebar from '../../../components/canvas/canvas-buy-sidebar'
+import CanvasCooldownSidebar from '../../../components/canvas/canvas-cooldown-sidebar'
 import CanvasElseSidebar from '../../../components/canvas/canvas-else-sidebar'
 import CanvasEndSidebar from '../../../components/canvas/canvas-end-sidebar'
+import CanvasExposureLimitSidebar from '../../../components/canvas/canvas-exposure-limit-sidebar'
 import CanvasFilterSidebar from '../../../components/canvas/canvas-filter-sidebar'
 import CanvasIfSidebar from '../../../components/canvas/canvas-if-sidebar'
+import CanvasLogicAggregatorSidebar from '../../../components/canvas/canvas-logic-aggregator-sidebar'
 import CanvasLoopSidebar from '../../../components/canvas/canvas-loop-sidebar'
+import CanvasPortfolioConditionSidebar from '../../../components/canvas/canvas-portfolio-condition-sidebar'
+import CanvasPositionLimitSidebar from '../../../components/canvas/canvas-position-limit-sidebar'
 import CanvasRebalanceSidebar from '../../../components/canvas/canvas-rebalance-sidebar'
 import CanvasScaleOutSidebar from '../../../components/canvas/canvas-scale-out-sidebar'
 import CanvasSellSidebar from '../../../components/canvas/canvas-sell-sidebar'
@@ -14,10 +19,12 @@ import CanvasStopLossSidebar from '../../../components/canvas/canvas-stop-loss-s
 import CanvasTakeProfitSidebar from '../../../components/canvas/canvas-take-profit-sidebar'
 import { getCanvasAssetOptions } from '../../../components/canvas/canvas-asset-options'
 import CanvasViewport from '../../../components/canvas/canvas-viewport'
+import { complexCanvasTemplate } from '../../../config/canvas-template/config'
 import { useEffect, useRef, useState } from 'react'
 import { appLoadingController } from '../../../state/app-loading-store'
 import { useCanvasEdges } from '../../../state/canvas-edge-store'
-import { updateCanvasActionConfig, updateCanvasAllocateConfig, updateCanvasElseConfig, updateCanvasEndConfig, updateCanvasEndType, updateCanvasFilterConfig, updateCanvasIfConfig, updateCanvasLoopConfig, updateCanvasLoopType, updateCanvasNodeAsset, updateCanvasRebalanceConfig, updateCanvasRiskConfig, updateCanvasScaleOutConfig, updateCanvasStartSpecificPercentage, updateCanvasStartWeightingType, useCanvasNodes } from '../../../state/canvas-node-store'
+import { replaceCanvasGraph } from '../../../state/canvas-graph-store'
+import { setCanvasFilterAssetNodeId, updateCanvasActionConfig, updateCanvasAllocateConfig, updateCanvasCooldownConfig, updateCanvasEndConfig, updateCanvasEndType, updateCanvasExposureLimitConfig, updateCanvasFilterConfig, updateCanvasIfConfig, updateCanvasLoopConfig, updateCanvasLoopType, updateCanvasNodeAsset, updateCanvasPortfolioConditionConfig, updateCanvasPositionLimitConfig, updateCanvasRebalanceConfig, updateCanvasRiskConfig, updateCanvasScaleOutConfig, updateCanvasStartSpecificPercentage, updateCanvasStartWeightingType, useCanvasNodes } from '../../../state/canvas-node-store'
 
 export default function StagingCanvasPage() {
   const { nodes, selectedNodeIds } = useCanvasNodes()
@@ -36,7 +43,15 @@ export default function StagingCanvasPage() {
   const isLoopNodeSelected = selectedNode?.type === 'loop'
   const isIfNodeSelected = selectedNode?.type === 'if'
   const isElseNodeSelected = selectedNode?.type === 'else'
+  const isAndNodeSelected = selectedNode?.type === 'and'
+  const isOrNodeSelected = selectedNode?.type === 'or'
+  const isNotNodeSelected = selectedNode?.type === 'not'
+  const isXorNodeSelected = selectedNode?.type === 'xor'
+  const isIntersectNodeSelected = selectedNode?.type === 'intersect'
+  const isUnionNodeSelected = selectedNode?.type === 'union'
+  const isExcludeNodeSelected = selectedNode?.type === 'exclude'
   const isFilterNodeSelected = selectedNode?.type === 'filter'
+  const isPortfolioConditionNodeSelected = selectedNode?.type === 'portfolioCondition'
   const isAssetNodeSelected = selectedNode?.type === 'stock' || selectedNode?.type === 'token'
   const isBuyNodeSelected = selectedNode?.type === 'buy'
   const isSellNodeSelected = selectedNode?.type === 'sell'
@@ -45,12 +60,17 @@ export default function StagingCanvasPage() {
   const isScaleOutNodeSelected = selectedNode?.type === 'scaleOut'
   const isTakeProfitNodeSelected = selectedNode?.type === 'takeProfit'
   const isStopLossNodeSelected = selectedNode?.type === 'stopLoss'
+  const isCooldownNodeSelected = selectedNode?.type === 'cooldown'
+  const isPositionLimitNodeSelected = selectedNode?.type === 'positionLimit'
+  const isExposureLimitNodeSelected = selectedNode?.type === 'exposureLimit'
   const isStartSidebarActive = isSelectionSidebarEnabled && hasSelectedNodes && isStartNodeSelected
   const isEndSidebarActive = isSelectionSidebarEnabled && hasSelectedNodes && isEndNodeSelected
   const isLoopSidebarActive = isSelectionSidebarEnabled && hasSelectedNodes && isLoopNodeSelected
   const isIfSidebarActive = isSelectionSidebarEnabled && hasSelectedNodes && isIfNodeSelected
   const isElseSidebarActive = isSelectionSidebarEnabled && hasSelectedNodes && isElseNodeSelected
+  const isLogicAggregatorSidebarActive = isSelectionSidebarEnabled && hasSelectedNodes && (isAndNodeSelected || isOrNodeSelected || isNotNodeSelected || isXorNodeSelected || isIntersectNodeSelected || isUnionNodeSelected || isExcludeNodeSelected)
   const isFilterSidebarActive = isSelectionSidebarEnabled && hasSelectedNodes && isFilterNodeSelected
+  const isPortfolioConditionSidebarActive = isSelectionSidebarEnabled && hasSelectedNodes && isPortfolioConditionNodeSelected
   const isAssetSidebarActive = isSelectionSidebarEnabled && hasSelectedNodes && isAssetNodeSelected
   const isBuySidebarActive = isSelectionSidebarEnabled && hasSelectedNodes && isBuyNodeSelected
   const isSellSidebarActive = isSelectionSidebarEnabled && hasSelectedNodes && isSellNodeSelected
@@ -59,6 +79,9 @@ export default function StagingCanvasPage() {
   const isScaleOutSidebarActive = isSelectionSidebarEnabled && hasSelectedNodes && isScaleOutNodeSelected
   const isTakeProfitSidebarActive = isSelectionSidebarEnabled && hasSelectedNodes && isTakeProfitNodeSelected
   const isStopLossSidebarActive = isSelectionSidebarEnabled && hasSelectedNodes && isStopLossNodeSelected
+  const isCooldownSidebarActive = isSelectionSidebarEnabled && hasSelectedNodes && isCooldownNodeSelected
+  const isPositionLimitSidebarActive = isSelectionSidebarEnabled && hasSelectedNodes && isPositionLimitNodeSelected
+  const isExposureLimitSidebarActive = isSelectionSidebarEnabled && hasSelectedNodes && isExposureLimitNodeSelected
   const assetNodeOptions = nodes.flatMap((node) =>
     node.type === 'stock' || node.type === 'token'
       ? [{ id: node.id, type: node.type, assetSymbol: node.assetSymbol, assetName: node.assetName }]
@@ -103,6 +126,21 @@ export default function StagingCanvasPage() {
 
     return nodes.flatMap((node) =>
       discoveredMarketNodeIds.has(node.id) && (node.type === 'stock' || node.type === 'token')
+        ? [{ id: node.id, type: node.type, assetSymbol: node.assetSymbol, assetName: node.assetName }]
+        : [],
+    )
+  })()
+  const connectedFilterAssetNodes = (() => {
+    if (!selectedNode || selectedNode.type !== 'filter') {
+      return []
+    }
+
+    const sourceNodeIds = edges
+      .filter((edge) => edge.toNodeId === selectedNode.id)
+      .map((edge) => edge.fromNodeId)
+
+    return nodes.flatMap((node) =>
+      sourceNodeIds.includes(node.id) && (node.type === 'stock' || node.type === 'token')
         ? [{ id: node.id, type: node.type, assetSymbol: node.assetSymbol, assetName: node.assetName }]
         : [],
     )
@@ -152,6 +190,26 @@ export default function StagingCanvasPage() {
 
     setIsSelectionSidebarEnabled(true)
   }, [hasSelectedNodes, selectedNodesKey])
+
+  useEffect(() => {
+    if (!selectedNode || selectedNode.type !== 'filter') {
+      return
+    }
+
+    if (selectedNode.filterAssetNodeId || connectedFilterAssetNodes.length === 0) {
+      return
+    }
+
+    setCanvasFilterAssetNodeId(selectedNode.id, connectedFilterAssetNodes[0].id)
+  }, [connectedFilterAssetNodes, selectedNode])
+
+  useEffect(() => {
+    if (nodes.length > 0 || edges.length > 0) {
+      return
+    }
+
+    replaceCanvasGraph(complexCanvasTemplate)
+  }, [edges.length, nodes.length])
 
   const commitCanvasName = () => {
     const nextName = draftCanvasName.trim()
@@ -301,6 +359,34 @@ export default function StagingCanvasPage() {
 
           updateCanvasLoopConfig(selectedNode.id, { loopDepositTimeUnit: value })
         }}
+        onLoopRunModeChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'loop') {
+            return
+          }
+
+          updateCanvasLoopConfig(selectedNode.id, { loopRunMode: value })
+        }}
+        onLoopPostActionChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'loop') {
+            return
+          }
+
+          updateCanvasLoopConfig(selectedNode.id, { loopPostAction: value })
+        }}
+        onLoopPostActionValueChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'loop') {
+            return
+          }
+
+          updateCanvasLoopConfig(selectedNode.id, { loopPostActionValue: value })
+        }}
+        onLoopPostActionUnitChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'loop') {
+            return
+          }
+
+          updateCanvasLoopConfig(selectedNode.id, { loopPostActionUnit: value })
+        }}
       />
 
       <CanvasIfSidebar
@@ -308,6 +394,20 @@ export default function StagingCanvasPage() {
         node={selectedNode}
         assetNodeOptions={assetNodeOptions}
         onClose={() => setIsSelectionSidebarEnabled(false)}
+        onSourceTypeChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'if') {
+            return
+          }
+
+          updateCanvasIfConfig(selectedNode.id, { ifSourceType: value })
+        }}
+        onConditionTypeChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'if') {
+            return
+          }
+
+          updateCanvasIfConfig(selectedNode.id, { ifConditionType: value })
+        }}
         onPrimaryFunctionChange={(value) => {
           if (!selectedNode || selectedNode.type !== 'if') {
             return
@@ -357,75 +457,66 @@ export default function StagingCanvasPage() {
 
           updateCanvasIfConfig(selectedNode.id, { ifSecondaryAssetNodeId: value })
         }}
+        onPrimaryPeriodChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'if') {
+            return
+          }
+
+          updateCanvasIfConfig(selectedNode.id, { ifPrimaryPeriod: value })
+        }}
+        onSecondaryPeriodChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'if') {
+            return
+          }
+
+          updateCanvasIfConfig(selectedNode.id, { ifSecondaryPeriod: value })
+        }}
+        onRangeMinValueChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'if') {
+            return
+          }
+
+          updateCanvasIfConfig(selectedNode.id, { ifRangeMinValue: value })
+        }}
+        onRangeMaxValueChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'if') {
+            return
+          }
+
+          updateCanvasIfConfig(selectedNode.id, { ifRangeMaxValue: value })
+        }}
+        onCrossoverEventChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'if') {
+            return
+          }
+
+          updateCanvasIfConfig(selectedNode.id, { ifCrossoverEvent: value })
+        }}
       />
 
       <CanvasElseSidebar
         active={isElseSidebarActive}
         node={selectedNode}
-        assetNodeOptions={assetNodeOptions}
         onClose={() => setIsSelectionSidebarEnabled(false)}
-        onPrimaryFunctionChange={(value) => {
-          if (!selectedNode || selectedNode.type !== 'else') {
-            return
-          }
+      />
 
-          updateCanvasElseConfig(selectedNode.id, { elsePrimaryFunction: value })
-        }}
-        onPrimaryAssetChange={(value) => {
-          if (!selectedNode || selectedNode.type !== 'else') {
-            return
-          }
-
-          updateCanvasElseConfig(selectedNode.id, { elsePrimaryAssetNodeId: value })
-        }}
-        onComparatorChange={(value) => {
-          if (!selectedNode || selectedNode.type !== 'else') {
-            return
-          }
-
-          updateCanvasElseConfig(selectedNode.id, { elseComparator: value })
-        }}
-        onComparisonTargetTypeChange={(value) => {
-          if (!selectedNode || selectedNode.type !== 'else') {
-            return
-          }
-
-          updateCanvasElseConfig(selectedNode.id, { elseComparisonTargetType: value })
-        }}
-        onComparisonValueChange={(value) => {
-          if (!selectedNode || selectedNode.type !== 'else') {
-            return
-          }
-
-          updateCanvasElseConfig(selectedNode.id, { elseComparisonValue: value })
-        }}
-        onSecondaryFunctionChange={(value) => {
-          if (!selectedNode || selectedNode.type !== 'else') {
-            return
-          }
-
-          updateCanvasElseConfig(selectedNode.id, { elseSecondaryFunction: value })
-        }}
-        onSecondaryAssetChange={(value) => {
-          if (!selectedNode || selectedNode.type !== 'else') {
-            return
-          }
-
-          updateCanvasElseConfig(selectedNode.id, { elseSecondaryAssetNodeId: value })
-        }}
+      <CanvasLogicAggregatorSidebar
+        active={isLogicAggregatorSidebarActive}
+        node={selectedNode}
+        onClose={() => setIsSelectionSidebarEnabled(false)}
       />
 
       <CanvasFilterSidebar
         active={isFilterSidebarActive}
         node={selectedNode}
-        assetNodeOptions={assetNodeOptions}
+        incomingAssetNodeOptions={connectedFilterAssetNodes}
         onClose={() => setIsSelectionSidebarEnabled(false)}
         onAssetNodeChange={(value) => {
           if (!selectedNode || selectedNode.type !== 'filter') {
             return
           }
 
-          updateCanvasFilterConfig(selectedNode.id, { filterAssetNodeId: value })
+          setCanvasFilterAssetNodeId(selectedNode.id, value)
         }}
         onSortFunctionChange={(value) => {
           if (!selectedNode || selectedNode.type !== 'filter') {
@@ -433,6 +524,20 @@ export default function StagingCanvasPage() {
           }
 
           updateCanvasFilterConfig(selectedNode.id, { filterSortFunction: value })
+        }}
+        onSecondarySortFunctionChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'filter') {
+            return
+          }
+
+          updateCanvasFilterConfig(selectedNode.id, { filterSecondarySortFunction: value })
+        }}
+        onConditionOperatorChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'filter') {
+            return
+          }
+
+          updateCanvasFilterConfig(selectedNode.id, { filterConditionOperator: value })
         }}
         onOrderingChange={(value) => {
           if (!selectedNode || selectedNode.type !== 'filter') {
@@ -447,6 +552,54 @@ export default function StagingCanvasPage() {
           }
 
           updateCanvasFilterConfig(selectedNode.id, { filterHowMany: value })
+        }}
+        onSortPeriodChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'filter') {
+            return
+          }
+
+          updateCanvasFilterConfig(selectedNode.id, { filterSortPeriod: value })
+        }}
+        onSecondarySortPeriodChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'filter') {
+            return
+          }
+
+          updateCanvasFilterConfig(selectedNode.id, { filterSecondarySortPeriod: value })
+        }}
+        onResultModeChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'filter') {
+            return
+          }
+
+          updateCanvasFilterConfig(selectedNode.id, { filterResultMode: value })
+        }}
+      />
+
+      <CanvasPortfolioConditionSidebar
+        active={isPortfolioConditionSidebarActive}
+        node={selectedNode}
+        onClose={() => setIsSelectionSidebarEnabled(false)}
+        onMetricChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'portfolioCondition') {
+            return
+          }
+
+          updateCanvasPortfolioConditionConfig(selectedNode.id, { portfolioMetric: value })
+        }}
+        onComparatorChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'portfolioCondition') {
+            return
+          }
+
+          updateCanvasPortfolioConditionConfig(selectedNode.id, { portfolioComparator: value })
+        }}
+        onValueChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'portfolioCondition') {
+            return
+          }
+
+          updateCanvasPortfolioConditionConfig(selectedNode.id, { portfolioValue: value })
         }}
       />
 
@@ -495,6 +648,13 @@ export default function StagingCanvasPage() {
 
           updateCanvasActionConfig(selectedNode.id, { actionAmountValue: value })
         }}
+        onBehaviorChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'buy') {
+            return
+          }
+
+          updateCanvasActionConfig(selectedNode.id, { buyType: value as never })
+        }}
       />
 
       <CanvasSellSidebar
@@ -523,6 +683,13 @@ export default function StagingCanvasPage() {
 
           updateCanvasActionConfig(selectedNode.id, { actionAmountValue: value })
         }}
+        onBehaviorChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'sell') {
+            return
+          }
+
+          updateCanvasActionConfig(selectedNode.id, { sellType: value as never })
+        }}
       />
 
       <CanvasRebalanceSidebar
@@ -543,6 +710,13 @@ export default function StagingCanvasPage() {
 
           updateCanvasRebalanceConfig(selectedNode.id, { rebalanceThreshold: value })
         }}
+        onScopeChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'rebalance') {
+            return
+          }
+
+          updateCanvasRebalanceConfig(selectedNode.id, { rebalanceScope: value })
+        }}
       />
 
       <CanvasAllocateSidebar
@@ -562,6 +736,13 @@ export default function StagingCanvasPage() {
           }
 
           updateCanvasAllocateConfig(selectedNode.id, { allocateAmountValue: value })
+        }}
+        onStyleChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'allocate') {
+            return
+          }
+
+          updateCanvasAllocateConfig(selectedNode.id, { allocateStyle: value as never })
         }}
       />
 
@@ -604,6 +785,13 @@ export default function StagingCanvasPage() {
 
           updateCanvasRiskConfig(selectedNode.id, { riskThresholdValue: value })
         }}
+        onModeChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'takeProfit') {
+            return
+          }
+
+          updateCanvasRiskConfig(selectedNode.id, { takeProfitMode: value as never })
+        }}
       />
 
       <CanvasStopLossSidebar
@@ -631,6 +819,94 @@ export default function StagingCanvasPage() {
           }
 
           updateCanvasRiskConfig(selectedNode.id, { riskThresholdValue: value })
+        }}
+        onModeChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'stopLoss') {
+            return
+          }
+
+          updateCanvasRiskConfig(selectedNode.id, { stopLossMode: value as never })
+        }}
+      />
+
+      <CanvasCooldownSidebar
+        active={isCooldownSidebarActive}
+        node={selectedNode}
+        onClose={() => setIsSelectionSidebarEnabled(false)}
+        onScopeChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'cooldown') {
+            return
+          }
+
+          updateCanvasCooldownConfig(selectedNode.id, { cooldownScope: value })
+        }}
+        onDurationChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'cooldown') {
+            return
+          }
+
+          updateCanvasCooldownConfig(selectedNode.id, { cooldownDuration: value })
+        }}
+        onUnitChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'cooldown') {
+            return
+          }
+
+          updateCanvasCooldownConfig(selectedNode.id, { cooldownUnit: value })
+        }}
+      />
+
+      <CanvasPositionLimitSidebar
+        active={isPositionLimitSidebarActive}
+        node={selectedNode}
+        onClose={() => setIsSelectionSidebarEnabled(false)}
+        onModeChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'positionLimit') {
+            return
+          }
+
+          updateCanvasPositionLimitConfig(selectedNode.id, { positionLimitMode: value })
+        }}
+        onApplyToChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'positionLimit') {
+            return
+          }
+
+          updateCanvasPositionLimitConfig(selectedNode.id, { positionLimitApplyTo: value })
+        }}
+        onValueChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'positionLimit') {
+            return
+          }
+
+          updateCanvasPositionLimitConfig(selectedNode.id, { positionLimitValue: value })
+        }}
+      />
+
+      <CanvasExposureLimitSidebar
+        active={isExposureLimitSidebarActive}
+        node={selectedNode}
+        onClose={() => setIsSelectionSidebarEnabled(false)}
+        onTypeChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'exposureLimit') {
+            return
+          }
+
+          updateCanvasExposureLimitConfig(selectedNode.id, { exposureLimitType: value })
+        }}
+        onComparatorChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'exposureLimit') {
+            return
+          }
+
+          updateCanvasExposureLimitConfig(selectedNode.id, { riskComparator: value })
+        }}
+        onValueChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'exposureLimit') {
+            return
+          }
+
+          updateCanvasExposureLimitConfig(selectedNode.id, { exposureLimitValue: value })
         }}
       />
 

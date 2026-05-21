@@ -98,6 +98,7 @@ export default function CanvasEndSidebar({
           label: option.label,
           value: option.value,
           active: option.value === selectedEndType?.value,
+          trailingIcon: option.value === selectedEndType?.value ? '✓' : undefined,
         })),
       },
     ],
@@ -120,6 +121,7 @@ export default function CanvasEndSidebar({
           disabled: !option.id,
           active: option.id === selectedAssetNode?.id,
           icon: option.id && option.assetSymbol ? <CanvasAssetLogo assetType={option.type} symbol={option.assetSymbol} size={20} /> : null,
+          trailingIcon: option.id === selectedAssetNode?.id ? '✓' : undefined,
         })),
       },
     ],
@@ -132,6 +134,7 @@ export default function CanvasEndSidebar({
           label: option.label,
           value: option.value,
           active: option.value === selectedOperator?.value,
+          trailingIcon: option.value === selectedOperator?.value ? '✓' : undefined,
         })),
       },
     ],
@@ -144,6 +147,7 @@ export default function CanvasEndSidebar({
           label: option.label,
           value: option.value,
           active: option.value === selectedTimeUnit?.value,
+          trailingIcon: option.value === selectedTimeUnit?.value ? '✓' : undefined,
         })),
       },
     ],
@@ -209,15 +213,15 @@ export default function CanvasEndSidebar({
     >
       <CanvasNodeSidebarHeader
         title="End Node"
-        description="Sets the exit condition that finishes or closes the flow."
+        description="Sets the condition that closes the current strategy branch or stops the flow."
         helpTitle="End Node"
-        helpBody="The end node defines when the strategy should stop or exit based on price targets, portfolio value targets, or a time-based rule."
+        helpBody="The End node defines when the current strategy path should stop, close out, or terminate after a branch reaches its final condition. Use it for profit targets, time-based exits, or branch-level risk stops."
         closeLabel="Close end sidebar"
         onClose={onClose}
       />
 
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <CanvasSidebarFieldSection title="Set End Type" description="Choose what kind of end condition should stop or exit the strategy.">
+        <CanvasSidebarFieldSection title="Set End Type" description="Choose what kind of condition should close the current branch or end the flow.">
         <div ref={containerRef} style={{ position: 'relative' }}>
           <button
             ref={endTypeTriggerRef}

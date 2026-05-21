@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowCircleDownRight, ArrowCircleUpRight, ArrowsClockwise, ArrowsSplit, CaretDown, ChartPieSlice, ChatCircleDots, Coin, Cursor, FlagCheckered, FunnelSimple, Hand, Moon, Path, Percent, Play, Sun, TrendDown, TrendUp } from '@phosphor-icons/react'
+import { ArrowCircleDownRight, ArrowCircleUpRight, ArrowsClockwise, ArrowsSplit, CaretDown, ChartPieSlice, ChatCircleDots, Coin, Cursor, FlagCheckered, FunnelSimple, Hand, Moon, Path, Percent, Play, ShieldWarning, Sun, TrendDown, TrendUp, Wallet } from '@phosphor-icons/react'
 import { executeCanvasZoomAction, setCanvasNodeType, useCanvasNodeType, useCanvasScale, type CanvasTool } from '../../state/canvas-tool-store'
 import { toggleCanvasTheme, useCanvasTheme } from '../../state/theme-store'
 import * as canvasKeybindings from '../../config/keybinding/canvas-keybindings'
@@ -20,10 +20,11 @@ export default function CanvasDock({ activeTool, onToolChange }: CanvasDockProps
   const activeToolIcon = activeTool === 'hand' ? <Hand size={16} weight="fill" /> : <Cursor size={16} weight="fill" />
   const isNodeToolActive = activeTool === 'node'
   const isFlowNodeType = activeNodeType === 'start' || activeNodeType === 'loop' || activeNodeType === 'end'
-  const isLogicNodeType = activeNodeType === 'if' || activeNodeType === 'else' || activeNodeType === 'filter'
+  const isLogicNodeType = activeNodeType === 'if' || activeNodeType === 'else' || activeNodeType === 'and' || activeNodeType === 'or' || activeNodeType === 'not' || activeNodeType === 'xor' || activeNodeType === 'intersect' || activeNodeType === 'union' || activeNodeType === 'exclude' || activeNodeType === 'filter' || activeNodeType === 'portfolioCondition'
   const isAssetNodeType = activeNodeType === 'stock' || activeNodeType === 'token'
   const activeNodeIcon = activeNodeType === 'end' ? <FlagCheckered size={16} weight="fill" /> : activeNodeType === 'loop' ? <ArrowsClockwise size={16} weight="bold" /> : <Play size={16} weight="fill" />
-  const activeLogicNodeIcon = activeNodeType === 'if' ? <ArrowsSplit size={16} weight="fill" /> : activeNodeType === 'else' ? <Path size={16} weight="fill" /> : <FunnelSimple size={16} weight="fill" />
+  const logicTextIcon = (label: string) => <span style={{ fontFamily: 'var(--canvas-font-sans)', fontSize: 10, fontWeight: 800, lineHeight: 1, letterSpacing: '0.06em' }}>{label}</span>
+  const activeLogicNodeIcon = activeNodeType === 'if' ? <ArrowsSplit size={16} weight="fill" /> : activeNodeType === 'else' ? <Path size={16} weight="fill" /> : activeNodeType === 'and' ? logicTextIcon('ALL') : activeNodeType === 'or' ? logicTextIcon('ANY') : activeNodeType === 'not' ? logicTextIcon('NOT') : activeNodeType === 'xor' ? logicTextIcon('1/1') : activeNodeType === 'intersect' ? logicTextIcon('ALL') : activeNodeType === 'union' ? logicTextIcon('ANY') : activeNodeType === 'exclude' ? logicTextIcon('OUT') : activeNodeType === 'portfolioCondition' ? <Wallet size={16} weight="fill" /> : <FunnelSimple size={16} weight="fill" />
   const activeAssetTypeIcon = activeNodeType === 'stock' ? <TrendUp size={16} weight="bold" /> : <Coin size={16} weight="fill" />
   const toolMenuShortcut = canvasKeybindings.canvasDockMenuShortcuts.find((item) => item.menu === 'tool')?.shortcut ?? 'P'
   const nodeMenuShortcut = canvasKeybindings.canvasDockMenuShortcuts.find((item) => item.menu === 'node')?.shortcut ?? 'N'
@@ -31,14 +32,16 @@ export default function CanvasDock({ activeTool, onToolChange }: CanvasDockProps
   const assetTypeMenuShortcut = canvasKeybindings.canvasDockMenuShortcuts.find((item) => item.menu === 'assetType')?.shortcut ?? 'A'
   const executionMenuShortcut = canvasKeybindings.canvasDockMenuShortcuts.find((item) => item.menu === 'execution')?.shortcut ?? 'E'
   const zoomMenuShortcut = canvasKeybindings.canvasDockMenuShortcuts.find((item) => item.menu === 'zoom')?.shortcut ?? 'Z'
-  const isExecutionNodeType = activeNodeType === 'buy' || activeNodeType === 'sell' || activeNodeType === 'rebalance' || activeNodeType === 'allocate' || activeNodeType === 'scaleOut' || activeNodeType === 'takeProfit' || activeNodeType === 'stopLoss'
+  const isExecutionNodeType = activeNodeType === 'buy' || activeNodeType === 'sell' || activeNodeType === 'rebalance' || activeNodeType === 'allocate' || activeNodeType === 'scaleOut' || activeNodeType === 'takeProfit' || activeNodeType === 'stopLoss' || activeNodeType === 'cooldown' || activeNodeType === 'positionLimit' || activeNodeType === 'exposureLimit'
   const toolMenuGroups = useMemo(
     () => [
       {
+        heading: 'Pointer',
         items: canvasKeybindings.canvasToolMenuItems.map<DropdownMenuItem>((item) => ({
           ...item,
           icon: item.value === 'hand' ? <Hand size={16} weight="fill" /> : <Cursor size={16} weight="fill" />,
           active: activeTool === item.value,
+          trailingIcon: activeTool === item.value ? '✓' : undefined,
         })),
       },
     ],
@@ -47,6 +50,7 @@ export default function CanvasDock({ activeTool, onToolChange }: CanvasDockProps
   const nodeMenuGroups = useMemo(
     () => [
       {
+        heading: 'Flow',
         items: canvasKeybindings.canvasNodeMenuItems.map<DropdownMenuItem>((item) => ({
           ...item,
           icon: item.value === 'loop'
@@ -55,6 +59,7 @@ export default function CanvasDock({ activeTool, onToolChange }: CanvasDockProps
               ? <FlagCheckered size={16} weight="fill" />
               : <Play size={16} weight="fill" />,
           active: activeNodeType === item.value,
+          trailingIcon: activeNodeType === item.value ? '✓' : undefined,
         })),
       },
     ],
@@ -70,8 +75,25 @@ export default function CanvasDock({ activeTool, onToolChange }: CanvasDockProps
             ? <ArrowsSplit size={16} weight="fill" />
             : item.value === 'else'
               ? <Path size={16} weight="fill" />
-              : <FunnelSimple size={16} weight="fill" />,
+              : item.value === 'and'
+                ? logicTextIcon('ALL')
+                : item.value === 'or'
+                  ? logicTextIcon('ANY')
+                  : item.value === 'not'
+                    ? logicTextIcon('NOT')
+                    : item.value === 'xor'
+                      ? logicTextIcon('1/1')
+                      : item.value === 'intersect'
+                        ? logicTextIcon('ALL')
+                        : item.value === 'union'
+                          ? logicTextIcon('ANY')
+                  : item.value === 'exclude'
+                            ? logicTextIcon('OUT')
+                            : item.value === 'portfolioCondition'
+                              ? <Wallet size={16} weight="fill" />
+                              : <FunnelSimple size={16} weight="fill" />,
           active: activeNodeType === item.value,
+          trailingIcon: activeNodeType === item.value ? '✓' : undefined,
         })),
       },
     ],
@@ -103,9 +125,9 @@ export default function CanvasDock({ activeTool, onToolChange }: CanvasDockProps
         heading: 'Risk',
         items: canvasKeybindings.canvasRiskMenuItems.map<DropdownMenuItem>((item) => ({
           ...item,
-          icon: item.value === 'takeProfit' ? <TrendUp size={16} weight="bold" /> : <TrendDown size={16} weight="bold" />,
-          active: activeNodeType === item.value,
-        })),
+            icon: item.value === 'takeProfit' ? <TrendUp size={16} weight="bold" /> : item.value === 'stopLoss' ? <TrendDown size={16} weight="bold" /> : item.value === 'cooldown' ? <ArrowsClockwise size={16} weight="bold" /> : item.value === 'positionLimit' ? <ShieldWarning size={16} weight="fill" /> : <Percent size={16} weight="bold" />,
+            active: activeNodeType === item.value,
+          })),
       },
     ],
     [activeNodeType],
@@ -113,6 +135,7 @@ export default function CanvasDock({ activeTool, onToolChange }: CanvasDockProps
   const assetTypeMenuGroups = useMemo(
     () => [
       {
+        heading: 'Asset Type',
         items: canvasKeybindings.canvasAssetTypeMenuItems.map<DropdownMenuItem>((item) => ({
           ...item,
           icon: item.value === 'stock' ? <TrendUp size={16} weight="bold" /> : <Coin size={16} weight="fill" />,
@@ -184,7 +207,7 @@ export default function CanvasDock({ activeTool, onToolChange }: CanvasDockProps
   }
 
   const handleLogicItemClick = (item: DropdownMenuItem) => {
-    if (item.value === 'if' || item.value === 'else' || item.value === 'filter') {
+    if (item.value === 'if' || item.value === 'else' || item.value === 'and' || item.value === 'or' || item.value === 'not' || item.value === 'xor' || item.value === 'intersect' || item.value === 'union' || item.value === 'exclude' || item.value === 'filter' || item.value === 'portfolioCondition') {
       setCanvasNodeType(item.value)
       onToolChange('node')
     }
@@ -193,7 +216,7 @@ export default function CanvasDock({ activeTool, onToolChange }: CanvasDockProps
   }
 
   const handleExecutionItemClick = (item: DropdownMenuItem) => {
-    if (item.value === 'buy' || item.value === 'sell' || item.value === 'rebalance' || item.value === 'allocate' || item.value === 'scaleOut' || item.value === 'takeProfit' || item.value === 'stopLoss') {
+    if (item.value === 'buy' || item.value === 'sell' || item.value === 'rebalance' || item.value === 'allocate' || item.value === 'scaleOut' || item.value === 'takeProfit' || item.value === 'stopLoss' || item.value === 'cooldown' || item.value === 'positionLimit' || item.value === 'exposureLimit') {
       setCanvasNodeType(item.value)
       onToolChange('node')
     }
@@ -342,8 +365,8 @@ export default function CanvasDock({ activeTool, onToolChange }: CanvasDockProps
       <div style={{ position: 'relative', zIndex: isToolMenuOpen ? 2 : 1 }}>
         <button
           type="button"
-          aria-label="Tool"
-          title={`Tool (${toolMenuShortcut})`}
+          aria-label="Pointer"
+          title={`Pointer (${toolMenuShortcut})`}
           onClick={toggleToolMenu}
           style={{
             minWidth: 52,
@@ -383,8 +406,8 @@ export default function CanvasDock({ activeTool, onToolChange }: CanvasDockProps
       <div style={{ position: 'relative', zIndex: isNodeMenuOpen ? 2 : 1 }}>
         <button
           type="button"
-          aria-label="Nodes"
-          title={`Nodes (${nodeMenuShortcut})`}
+          aria-label="Flow"
+          title={`Flow (${nodeMenuShortcut})`}
           onClick={toggleNodeMenu}
           style={{
             minWidth: 52,

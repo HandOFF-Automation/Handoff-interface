@@ -10,6 +10,7 @@ export type ZoomMenuItem = {
 }
 
 export type ZoomMenuGroup = {
+  heading?: string
   items: ZoomMenuItem[]
 }
 
@@ -61,7 +62,15 @@ export const canvasNodeMenuItems: CanvasDockMenuItemConfig[] = [
 export const canvasLogicMenuItems: CanvasDockMenuItemConfig[] = [
   { label: 'If', value: 'if', shortcut: 'I' },
   { label: 'Else', value: 'else', shortcut: 'E' },
+  { label: 'All Of', value: 'and', shortcut: 'D' },
+  { label: 'Any Of', value: 'or', shortcut: 'O' },
+  { label: 'Not', value: 'not', shortcut: 'N' },
+  { label: 'Only One', value: 'xor', shortcut: 'X' },
+  { label: 'Match All', value: 'intersect', shortcut: 'M' },
+  { label: 'Match Any', value: 'union', shortcut: 'Y' },
+  { label: 'Exclude', value: 'exclude', shortcut: 'U' },
   { label: 'Filter', value: 'filter', shortcut: 'F' },
+  { label: 'Portfolio Condition', value: 'portfolioCondition', shortcut: 'P' },
 ]
 
 export const canvasAssetTypeMenuItems: CanvasDockMenuItemConfig[] = [
@@ -83,10 +92,14 @@ export const canvasPortfolioMenuItems: CanvasDockMenuItemConfig[] = [
 export const canvasRiskMenuItems: CanvasDockMenuItemConfig[] = [
   { label: 'Take Profit', value: 'takeProfit', shortcut: 'T' },
   { label: 'Stop Loss', value: 'stopLoss', shortcut: 'L' },
+  { label: 'Cooldown', value: 'cooldown', shortcut: 'C' },
+  { label: 'Position Limit', value: 'positionLimit', shortcut: 'P' },
+  { label: 'Exposure Limit', value: 'exposureLimit', shortcut: 'X' },
 ]
 
 export const canvasZoomMenuGroups: ZoomMenuGroup[] = [
   {
+    heading: 'Zoom',
     items: [
       { label: 'Zoom', shortcut: 'Z' },
       { label: 'Zoom In', shortcut: 'Ctrl+=', action: 'zoomIn' },
@@ -94,6 +107,7 @@ export const canvasZoomMenuGroups: ZoomMenuGroup[] = [
     ],
   },
   {
+    heading: 'View',
     items: [
       { label: 'Zoom to 100%', shortcut: 'Shift+0', action: 'zoom100' },
       { label: 'Zoom to Fit', shortcut: 'Shift+1', action: 'zoomFit' },
