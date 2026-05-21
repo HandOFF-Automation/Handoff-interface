@@ -1536,7 +1536,7 @@ export default function CanvasViewport() {
                     })
                   }} />
                 ) : node.type === 'else' ? (
-                  <ElseNode labelSegments={[{ kind: 'text', text: 'Else' }, { kind: 'badge', text: 'Otherwise' }, { kind: 'text', text: 'follow fallback path' }]} selected={selectedNodeIds.includes(node.id)} activeConnectorSide={connectorDragStateRef.current?.fromNodeId === node.id ? connectorDragStateRef.current.fromSide : connectorHoverTarget?.nodeId === node.id ? connectorHoverTarget.side : null} onConnectorPointerDown={(side, event) => handleConnectorPointerDown(event, node.id, side)} onMeasure={(size) => {
+                  <ElseNode labelSegments={[{ kind: 'text', text: 'Else' }, { kind: 'badge', text: 'Fallback' }, { kind: 'text', text: 'continue here' }]} selected={selectedNodeIds.includes(node.id)} activeConnectorSide={connectorDragStateRef.current?.fromNodeId === node.id ? connectorDragStateRef.current.fromSide : connectorHoverTarget?.nodeId === node.id ? connectorHoverTarget.side : null} onConnectorPointerDown={(side, event) => handleConnectorPointerDown(event, node.id, side)} onMeasure={(size) => {
                     setNodeSizes((current) => {
                       const previous = current[node.id]
 
@@ -1857,10 +1857,9 @@ export default function CanvasViewport() {
                     labelSegments={[
                       { kind: 'text', text: 'Rebalance' },
                       { kind: 'badge', text: node.rebalanceScope === 'selectedAssets' ? 'Selected Assets' : node.rebalanceScope === 'portfolioSet' ? 'Portfolio Set' : 'This Branch' },
-                      { kind: 'text', text: 'branch' },
-                      { kind: 'text', text: 'to' },
+                      { kind: 'text', text: 'using' },
                       { kind: 'badge', text: node.rebalanceMode === 'target' ? 'Target' : 'Equal' },
-                      { kind: 'text', text: 'at' },
+                      { kind: 'text', text: 'trigger' },
                       { kind: 'badge', text: `${node.rebalanceThreshold?.trim() ? node.rebalanceThreshold.trim() : '0'}%` },
                     ]}
                     {...getCommonNodeProps(node.id)}
@@ -1870,8 +1869,7 @@ export default function CanvasViewport() {
                     labelSegments={[
                       { kind: 'text', text: 'Allocate' },
                       { kind: 'badge', text: node.allocateStyle === 'addExposure' ? 'Add Exposure' : 'Target Weight' },
-                      { kind: 'text', text: 'branch' },
-                      { kind: 'text', text: 'with' },
+                      { kind: 'text', text: 'using' },
                       { kind: 'badge', text: node.allocateWeightingMode === 'value' ? 'Value' : 'Percentage' },
                       { kind: 'badge', text: node.allocateWeightingMode === 'value' ? `$${node.allocateAmountValue?.trim() ? node.allocateAmountValue.trim() : '0'}` : `${node.allocateAmountValue?.trim() ? node.allocateAmountValue.trim() : '0'}%` },
                     ]}
@@ -1881,7 +1879,6 @@ export default function CanvasViewport() {
                   <ScaleOutNode
                     labelSegments={[
                       { kind: 'text', text: 'Scale out' },
-                      { kind: 'text', text: 'branch' },
                       { kind: 'text', text: 'by' },
                       { kind: 'badge', text: `${node.scaleOutPercent?.trim() ? node.scaleOutPercent.trim() : '0'}%` },
                     ]}

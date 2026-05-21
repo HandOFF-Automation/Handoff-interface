@@ -214,15 +214,15 @@ export default function CanvasFilterSidebar({ active, node, incomingAssetNodeOpt
     >
       <CanvasNodeSidebarHeader
         title="Filter Node"
-        description="Sorts and filters assets before the flow continues."
+        description="Ranks and narrows connected assets before the flow continues."
         helpTitle="Filter Node"
-        helpBody="The Filter node now works on the assets connected into it. Configure the filter rules here, while the incoming asset context follows the graph connections instead of a single selected asset field."
+        helpBody="The Filter node works on the assets connected into it. Use this panel to define ranking rules for each connected asset view and decide what results should continue downstream."
         closeLabel="Close filter sidebar"
         onClose={onClose}
       />
 
       <div ref={containerRef} style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <CanvasSidebarFieldSection title="Configure asset" description="Choose which incoming asset you are configuring inside this Filter node.">
+        <CanvasSidebarFieldSection title="Asset View" description="Choose which connected asset view you are editing inside this Filter node.">
         <div style={{ position: 'relative' }}>
           <button
             ref={assetTriggerRef}
@@ -293,7 +293,7 @@ export default function CanvasFilterSidebar({ active, node, incomingAssetNodeOpt
         </div>
         </CanvasSidebarFieldSection>
 
-        <CanvasSidebarFieldSection title="Primary rule" description="Choose the main metric used to rank the incoming assets.">
+        <CanvasSidebarFieldSection title="Primary Rule" description="Choose the main metric used to rank connected assets in this view.">
         <div style={{ position: 'relative' }}>
           <button
             ref={sortTriggerRef}

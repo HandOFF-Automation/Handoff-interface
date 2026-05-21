@@ -312,13 +312,13 @@ export function CanvasRebalanceSidebarBase({ active, node, onClose, onModeChange
   useCloseOnOutside(active, containerRef, closeAll, [isOpen, isScopeOpen])
 
   return (
-    <BaseSidebar active={active} title="Rebalance Node" description="Rebalances the portfolio when this branch needs to reset allocation." helpTitle="Rebalance Node" helpBody="The rebalance node lets the current branch rebalance positions either equally or toward a target mode after a trigger condition is met." closeLabel="Close rebalance sidebar" onClose={onClose}>
+    <BaseSidebar active={active} title="Rebalance Node" description="Resets allocations when this flow needs a portfolio rebalance step." helpTitle="Rebalance Node" helpBody="Use the rebalance node to show whether this step rebalances the current branch, selected assets, or a broader portfolio set." closeLabel="Close rebalance sidebar" onClose={onClose}>
       <div ref={containerRef} style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <CanvasSidebarFieldSection title="Rebalance Mode" description="Choose whether this branch should equalize holdings or rebalance toward a target mode.">
+        <CanvasSidebarFieldSection title="Rebalance Mode" description="Choose whether this step should equalize holdings or move toward target weights.">
           <SidebarDropdown containerRef={containerRef} triggerRef={triggerRef} isOpen={isOpen} groups={groups} label={selectedMode.label} onToggle={() => setIsOpen((current) => !current)} onItemClick={(value) => { onModeChange(value as CanvasRebalanceMode); setIsOpen(false) }} />
         </CanvasSidebarFieldSection>
 
-        <CanvasSidebarFieldSection title="Rebalance Scope" description="Choose which part of the strategy this rebalance step should represent.">
+        <CanvasSidebarFieldSection title="Rebalance Scope" description="Choose what part of the strategy this rebalance step should describe.">
           <SidebarDropdown containerRef={containerRef} triggerRef={scopeTriggerRef} isOpen={isScopeOpen} groups={scopeGroups} label={selectedScope.label} onToggle={() => setIsScopeOpen((current) => !current)} onItemClick={(value) => { onScopeChange(value as CanvasRebalanceScope); setIsScopeOpen(false) }} />
         </CanvasSidebarFieldSection>
 
@@ -357,13 +357,13 @@ export function CanvasAllocateSidebarBase({ active, node, onClose, onModeChange,
   useCloseOnOutside(active, containerRef, closeAll, [isOpen, isStyleOpen])
 
   return (
-    <BaseSidebar active={active} title="Allocate Node" description="Applies an allocation change to the current branch." helpTitle="Allocate Node" helpBody="The allocate node applies either a percentage-based or value-based allocation when this branch should adjust portfolio exposure." closeLabel="Close allocate sidebar" onClose={onClose}>
+    <BaseSidebar active={active} title="Allocate Node" description="Applies an allocation decision inside the current flow." helpTitle="Allocate Node" helpBody="Use the allocate node to show whether this step sets a target weight or adds more exposure to the active flow." closeLabel="Close allocate sidebar" onClose={onClose}>
       <div ref={containerRef} style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <CanvasSidebarFieldSection title="Weighting Mode" description="Choose whether this branch allocation uses a percentage or an absolute value.">
+        <CanvasSidebarFieldSection title="Weighting Mode" description="Choose whether this allocation uses a percentage or a fixed value.">
           <SidebarDropdown containerRef={containerRef} triggerRef={triggerRef} isOpen={isOpen} groups={groups} label={selectedMode.label} onToggle={() => setIsOpen((current) => !current)} onItemClick={(value) => { onModeChange(value as CanvasAllocateWeightingMode); setIsOpen(false) }} />
         </CanvasSidebarFieldSection>
 
-        <CanvasSidebarFieldSection title="Allocation Style" description="Choose whether this node represents a target weight or an additional allocation.">
+        <CanvasSidebarFieldSection title="Allocation Style" description="Choose whether this step sets a target weight or adds more exposure.">
           <SidebarDropdown containerRef={containerRef} triggerRef={styleTriggerRef} isOpen={isStyleOpen} groups={styleGroups} label={selectedStyle.label} onToggle={() => setIsStyleOpen((current) => !current)} onItemClick={(value) => { onStyleChange(value as CanvasAllocateStyle); setIsStyleOpen(false) }} />
         </CanvasSidebarFieldSection>
 
@@ -380,7 +380,7 @@ export function CanvasAllocateSidebarBase({ active, node, onClose, onModeChange,
 
 export function CanvasScaleOutSidebarBase({ active, node, onClose, onPercentChange }: { active: boolean; node: CanvasNodeRecord | null; onClose: () => void; onPercentChange: (value: string) => void }) {
   return (
-    <BaseSidebar active={active} title="Scale Out Node" description="Gradually reduces exposure on the current branch by a percentage." helpTitle="Scale Out Node" helpBody="The scale out node reduces branch exposure by a simple percentage-based amount, which makes it useful for fallback or de-risking paths." closeLabel="Close scale out sidebar" onClose={onClose}>
+    <BaseSidebar active={active} title="Scale Out Node" description="Gradually reduces exposure in the active flow by a percentage." helpTitle="Scale Out Node" helpBody="Use the scale out node for trim or de-risk steps where the strategy should reduce part of a position instead of exiting fully." closeLabel="Close scale out sidebar" onClose={onClose}>
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
         <CanvasSidebarFieldSection title="Reduce By" description="Enter how much of the position this branch should reduce." showDivider={false}>
           <div style={{ minHeight: 54, borderRadius: 16, border: '1px solid var(--canvas-panel-divider)', background: 'var(--canvas-surface-soft)', padding: '0 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -433,7 +433,7 @@ export function CanvasRiskSidebarBase({ active, node, nodeTitle, nodeDescription
           <SidebarDropdown containerRef={containerRef} triggerRef={comparatorTriggerRef} isOpen={isComparatorOpen} groups={comparatorGroups} label={selectedComparator.label} onToggle={() => setIsComparatorOpen((current) => !current)} onItemClick={(value) => { onComparatorChange(value as CanvasRiskComparator); setIsComparatorOpen(false) }} />
         </CanvasSidebarFieldSection>
 
-        <CanvasSidebarFieldSection title="Mode" description="Choose the visual response style this branch should represent.">
+        <CanvasSidebarFieldSection title="Mode" description="Choose the response style this step should represent in the flow.">
           <SidebarDropdown containerRef={containerRef} triggerRef={modeTriggerRef} isOpen={isModeOpen} groups={modeGroups} label={selectedMode.label} onToggle={() => setIsModeOpen((current) => !current)} onItemClick={(value) => { onModeChange(value); setIsModeOpen(false) }} />
         </CanvasSidebarFieldSection>
 

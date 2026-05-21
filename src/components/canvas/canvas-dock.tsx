@@ -23,8 +23,50 @@ export default function CanvasDock({ activeTool, onToolChange }: CanvasDockProps
   const isLogicNodeType = activeNodeType === 'if' || activeNodeType === 'else' || activeNodeType === 'and' || activeNodeType === 'or' || activeNodeType === 'not' || activeNodeType === 'xor' || activeNodeType === 'intersect' || activeNodeType === 'union' || activeNodeType === 'exclude' || activeNodeType === 'filter' || activeNodeType === 'portfolioCondition'
   const isAssetNodeType = activeNodeType === 'stock' || activeNodeType === 'token'
   const activeNodeIcon = activeNodeType === 'end' ? <FlagCheckered size={16} weight="fill" /> : activeNodeType === 'loop' ? <ArrowsClockwise size={16} weight="bold" /> : <Play size={16} weight="fill" />
-  const logicTextIcon = (label: string) => <span style={{ fontFamily: 'var(--canvas-font-sans)', fontSize: 10, fontWeight: 800, lineHeight: 1, letterSpacing: '0.06em' }}>{label}</span>
-  const activeLogicNodeIcon = activeNodeType === 'if' ? <ArrowsSplit size={16} weight="fill" /> : activeNodeType === 'else' ? <Path size={16} weight="fill" /> : activeNodeType === 'and' ? logicTextIcon('ALL') : activeNodeType === 'or' ? logicTextIcon('ANY') : activeNodeType === 'not' ? logicTextIcon('NOT') : activeNodeType === 'xor' ? logicTextIcon('1/1') : activeNodeType === 'intersect' ? logicTextIcon('ALL') : activeNodeType === 'union' ? logicTextIcon('ANY') : activeNodeType === 'exclude' ? logicTextIcon('OUT') : activeNodeType === 'portfolioCondition' ? <Wallet size={16} weight="fill" /> : <FunnelSimple size={16} weight="fill" />
+  const logicGlyph = (kind: 'and' | 'or' | 'not' | 'xor' | 'intersect' | 'union' | 'exclude') => (
+    <span style={{ width: 16, height: 16, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+      {kind === 'and' ? (
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <circle cx="5" cy="8" r="2" fill="currentColor" />
+          <circle cx="11" cy="8" r="2" fill="currentColor" />
+          <path d="M7 8H9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        </svg>
+      ) : kind === 'or' ? (
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <circle cx="5" cy="8" r="2" fill="currentColor" />
+          <circle cx="11" cy="8" r="2" fill="currentColor" opacity="0.45" />
+        </svg>
+      ) : kind === 'not' ? (
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <circle cx="8" cy="8" r="4" stroke="currentColor" strokeWidth="1.8" />
+          <path d="M5.2 10.8L10.8 5.2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        </svg>
+      ) : kind === 'xor' ? (
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <circle cx="5" cy="8" r="2" fill="currentColor" />
+          <circle cx="11" cy="8" r="2" stroke="currentColor" strokeWidth="1.8" />
+        </svg>
+      ) : kind === 'intersect' ? (
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <circle cx="6.25" cy="8" r="3.25" stroke="currentColor" strokeWidth="1.5" />
+          <circle cx="9.75" cy="8" r="3.25" stroke="currentColor" strokeWidth="1.5" />
+          <path d="M8 4.9C8.9 5.5 9.5 6.6 9.5 8C9.5 9.4 8.9 10.5 8 11.1C7.1 10.5 6.5 9.4 6.5 8C6.5 6.6 7.1 5.5 8 4.9Z" fill="currentColor" />
+        </svg>
+      ) : kind === 'union' ? (
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <circle cx="6.25" cy="8" r="3.25" stroke="currentColor" strokeWidth="1.5" />
+          <circle cx="9.75" cy="8" r="3.25" stroke="currentColor" strokeWidth="1.5" />
+        </svg>
+      ) : (
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <circle cx="8" cy="8" r="4" stroke="currentColor" strokeWidth="1.8" />
+          <path d="M5.2 10.8L10.8 5.2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          <circle cx="11.5" cy="4.5" r="2" fill="var(--canvas-dock-bg)" stroke="currentColor" strokeWidth="1.4" />
+        </svg>
+      )}
+    </span>
+  )
+  const activeLogicNodeIcon = activeNodeType === 'if' ? <ArrowsSplit size={16} weight="fill" /> : activeNodeType === 'else' ? <Path size={16} weight="fill" /> : activeNodeType === 'and' ? logicGlyph('and') : activeNodeType === 'or' ? logicGlyph('or') : activeNodeType === 'not' ? logicGlyph('not') : activeNodeType === 'xor' ? logicGlyph('xor') : activeNodeType === 'intersect' ? logicGlyph('intersect') : activeNodeType === 'union' ? logicGlyph('union') : activeNodeType === 'exclude' ? logicGlyph('exclude') : activeNodeType === 'portfolioCondition' ? <Wallet size={16} weight="fill" /> : <FunnelSimple size={16} weight="fill" />
   const activeAssetTypeIcon = activeNodeType === 'stock' ? <TrendUp size={16} weight="bold" /> : <Coin size={16} weight="fill" />
   const toolMenuShortcut = canvasKeybindings.canvasDockMenuShortcuts.find((item) => item.menu === 'tool')?.shortcut ?? 'P'
   const nodeMenuShortcut = canvasKeybindings.canvasDockMenuShortcuts.find((item) => item.menu === 'node')?.shortcut ?? 'N'
@@ -76,19 +118,19 @@ export default function CanvasDock({ activeTool, onToolChange }: CanvasDockProps
             : item.value === 'else'
               ? <Path size={16} weight="fill" />
               : item.value === 'and'
-                ? logicTextIcon('ALL')
-                : item.value === 'or'
-                  ? logicTextIcon('ANY')
+                ? logicGlyph('and')
+                  : item.value === 'or'
+                  ? logicGlyph('or')
                   : item.value === 'not'
-                    ? logicTextIcon('NOT')
+                    ? logicGlyph('not')
                     : item.value === 'xor'
-                      ? logicTextIcon('1/1')
+                      ? logicGlyph('xor')
                       : item.value === 'intersect'
-                        ? logicTextIcon('ALL')
+                        ? logicGlyph('intersect')
                         : item.value === 'union'
-                          ? logicTextIcon('ANY')
+                          ? logicGlyph('union')
                   : item.value === 'exclude'
-                            ? logicTextIcon('OUT')
+                            ? logicGlyph('exclude')
                             : item.value === 'portfolioCondition'
                               ? <Wallet size={16} weight="fill" />
                               : <FunnelSimple size={16} weight="fill" />,
@@ -564,13 +606,19 @@ export default function CanvasDock({ activeTool, onToolChange }: CanvasDockProps
                   ? <ArrowsClockwise size={16} weight="bold" />
                   : activeNodeType === 'allocate'
                     ? <ChartPieSlice size={16} weight="fill" />
-                    : activeNodeType === 'scaleOut'
+                : activeNodeType === 'scaleOut'
                       ? <Percent size={16} weight="bold" />
-                      : activeNodeType === 'takeProfit'
+                : activeNodeType === 'takeProfit'
                         ? <TrendUp size={16} weight="bold" />
                         : activeNodeType === 'stopLoss'
                           ? <TrendDown size={16} weight="bold" />
-                          : <ArrowCircleDownRight size={16} weight="fill" />}
+                          : activeNodeType === 'cooldown'
+                            ? <ArrowsClockwise size={16} weight="bold" />
+                            : activeNodeType === 'positionLimit'
+                              ? <ShieldWarning size={16} weight="fill" />
+                              : activeNodeType === 'exposureLimit'
+                                ? <Percent size={16} weight="bold" />
+                           : <ArrowCircleDownRight size={16} weight="fill" />}
             </span>
             <CaretDown
               size={12}
