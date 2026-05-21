@@ -152,6 +152,60 @@ export default function CanvasLoopSidebar({
     () => [{ items: postActionOptions.map<DropdownMenuItem>((option) => ({ label: option.label, value: option.value, active: option.value === selectedPostAction.value, trailingIcon: option.value === selectedPostAction.value ? '✓' : undefined })) }],
     [selectedPostAction.value],
   )
+  const closeAllMenus = () => {
+    setIsLoopMenuOpen(false)
+    setIsTimeUnitMenuOpen(false)
+    setIsDepositTimingMenuOpen(false)
+    setIsDepositTimeUnitMenuOpen(false)
+    setIsRunModeOpen(false)
+    setIsPostActionOpen(false)
+  }
+
+  const toggleExclusiveMenu = (target: 'loopType' | 'postActionUnit' | 'depositTiming' | 'depositTimeUnit' | 'runMode' | 'postAction' | 'loopTimeUnit') => {
+    const nextOpen = target === 'loopType'
+      ? !isLoopMenuOpen
+      : target === 'postActionUnit' || target === 'loopTimeUnit'
+        ? !isTimeUnitMenuOpen
+        : target === 'depositTiming'
+          ? !isDepositTimingMenuOpen
+          : target === 'depositTimeUnit'
+            ? !isDepositTimeUnitMenuOpen
+            : target === 'runMode'
+              ? !isRunModeOpen
+              : !isPostActionOpen
+    closeAllMenus()
+
+    if (!nextOpen) {
+      return
+    }
+
+    if (target === 'loopType') {
+      setIsLoopMenuOpen(true)
+      return
+    }
+
+    if (target === 'postActionUnit' || target === 'loopTimeUnit') {
+      setIsTimeUnitMenuOpen(true)
+      return
+    }
+
+    if (target === 'depositTiming') {
+      setIsDepositTimingMenuOpen(true)
+      return
+    }
+
+    if (target === 'depositTimeUnit') {
+      setIsDepositTimeUnitMenuOpen(true)
+      return
+    }
+
+    if (target === 'runMode') {
+      setIsRunModeOpen(true)
+      return
+    }
+
+    setIsPostActionOpen(true)
+  }
 
   useEffect(() => {
     if (!active) {
@@ -230,7 +284,7 @@ export default function CanvasLoopSidebar({
           <button
             ref={loopTypeTriggerRef}
             type="button"
-            onClick={() => setIsLoopMenuOpen((current) => !current)}
+            onClick={() => toggleExclusiveMenu('loopType')}
             style={{
               width: '100%',
               minHeight: 54,
@@ -314,7 +368,7 @@ export default function CanvasLoopSidebar({
 
         <CanvasSidebarFieldSection title="Run mode" description="Choose whether this loop should run every time or only once per period.">
           <div style={{ position: 'relative' }}>
-            <button type="button" onClick={() => setIsRunModeOpen((current) => !current)} style={{ width: '100%', minHeight: 54, borderRadius: 16, border: '1px solid var(--canvas-panel-divider)', background: 'var(--canvas-surface-soft)', padding: '0 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, cursor: 'pointer' }}>
+            <button type="button" onClick={() => toggleExclusiveMenu('runMode')} style={{ width: '100%', minHeight: 54, borderRadius: 16, border: '1px solid var(--canvas-panel-divider)', background: 'var(--canvas-surface-soft)', padding: '0 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, cursor: 'pointer' }}>
               <span style={{ color: 'var(--canvas-text-primary)', fontFamily: 'var(--canvas-font-sans)', fontSize: 13, fontWeight: 700, lineHeight: 1.2 }}>{selectedRunMode.label}</span>
               <CaretDown size={14} weight="bold" style={{ color: 'var(--canvas-text-secondary)', flex: 'none', transform: `rotate(${isRunModeOpen ? '180deg' : '0deg'})`, transition: 'transform 160ms ease' }} />
             </button>
@@ -324,7 +378,7 @@ export default function CanvasLoopSidebar({
 
         <CanvasSidebarFieldSection title="After branch action" description="Choose whether the loop should wait or cool down before the next re-check.">
           <div style={{ position: 'relative' }}>
-            <button type="button" onClick={() => setIsPostActionOpen((current) => !current)} style={{ width: '100%', minHeight: 54, borderRadius: 16, border: '1px solid var(--canvas-panel-divider)', background: 'var(--canvas-surface-soft)', padding: '0 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, cursor: 'pointer' }}>
+            <button type="button" onClick={() => toggleExclusiveMenu('postAction')} style={{ width: '100%', minHeight: 54, borderRadius: 16, border: '1px solid var(--canvas-panel-divider)', background: 'var(--canvas-surface-soft)', padding: '0 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, cursor: 'pointer' }}>
               <span style={{ color: 'var(--canvas-text-primary)', fontFamily: 'var(--canvas-font-sans)', fontSize: 13, fontWeight: 700, lineHeight: 1.2 }}>{selectedPostAction.label}</span>
               <CaretDown size={14} weight="bold" style={{ color: 'var(--canvas-text-secondary)', flex: 'none', transform: `rotate(${isPostActionOpen ? '180deg' : '0deg'})`, transition: 'transform 160ms ease' }} />
             </button>
@@ -339,7 +393,7 @@ export default function CanvasLoopSidebar({
                 <input type="text" inputMode="numeric" value={node?.loopPostActionValue ?? ''} onChange={(event) => onLoopPostActionValueChange(event.target.value.replace(/[^0-9]/g, ''))} placeholder="1" style={{ width: '100%', border: 'none', outline: 'none', background: 'transparent', color: 'var(--canvas-text-primary)', fontFamily: 'var(--canvas-font-sans)', fontSize: 13, fontWeight: 700, padding: 0 }} />
               </div>
               <div style={{ position: 'relative', width: 110 }}>
-                <button type="button" onClick={() => setIsTimeUnitMenuOpen((current) => !current)} style={{ width: '100%', minHeight: 54, borderRadius: 16, border: '1px solid var(--canvas-panel-divider)', background: 'var(--canvas-surface-soft)', padding: '0 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, cursor: 'pointer' }}>
+                <button type="button" onClick={() => toggleExclusiveMenu('postActionUnit')} style={{ width: '100%', minHeight: 54, borderRadius: 16, border: '1px solid var(--canvas-panel-divider)', background: 'var(--canvas-surface-soft)', padding: '0 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, cursor: 'pointer' }}>
                   <span style={{ color: 'var(--canvas-text-primary)', fontFamily: 'var(--canvas-font-sans)', fontSize: 13, fontWeight: 700, lineHeight: 1.2 }}>{node?.loopPostActionUnit ? node.loopPostActionUnit.charAt(0).toUpperCase() + node.loopPostActionUnit.slice(1) : 'Day'}</span>
                   <CaretDown size={14} weight="bold" style={{ color: 'var(--canvas-text-secondary)', flex: 'none', transform: `rotate(${isTimeUnitMenuOpen ? '180deg' : '0deg'})`, transition: 'transform 160ms ease' }} />
                 </button>
@@ -391,7 +445,7 @@ export default function CanvasLoopSidebar({
                   <button
                     ref={timeUnitTriggerRef}
                     type="button"
-                    onClick={() => setIsTimeUnitMenuOpen((current) => !current)}
+                    onClick={() => toggleExclusiveMenu('loopTimeUnit')}
                   style={{
                     width: '100%',
                     minHeight: 54,
@@ -532,7 +586,7 @@ export default function CanvasLoopSidebar({
               <button
                 ref={depositTimingTriggerRef}
                 type="button"
-                onClick={() => setIsDepositTimingMenuOpen((current) => !current)}
+                onClick={() => toggleExclusiveMenu('depositTiming')}
                 style={{
                   width: '100%',
                   minHeight: 54,
@@ -636,7 +690,7 @@ export default function CanvasLoopSidebar({
                     <button
                       ref={depositTimeUnitTriggerRef}
                       type="button"
-                      onClick={() => setIsDepositTimeUnitMenuOpen((current) => !current)}
+                      onClick={() => toggleExclusiveMenu('depositTimeUnit')}
                       style={{
                         width: '100%',
                         minHeight: 54,

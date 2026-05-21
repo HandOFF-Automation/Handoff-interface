@@ -25,6 +25,7 @@ export const canvasNodeConfigs: CanvasNodeConfig[] = [
   { type: 'portfolioCondition', label: 'Portfolio Condition', defaultEdgeLabel: 'Portfolio rule' },
   { type: 'stock', label: 'Stock', defaultEdgeLabel: 'Asset' },
   { type: 'token', label: 'Token', defaultEdgeLabel: 'Asset' },
+  { type: 'assetBasket', label: 'Asset Basket', defaultEdgeLabel: 'Basket assets' },
   { type: 'buy', label: 'Buy', defaultEdgeLabel: 'Execute buy' },
   { type: 'sell', label: 'Sell', defaultEdgeLabel: 'Execute sell' },
   { type: 'rebalance', label: 'Rebalance', defaultEdgeLabel: 'Rebalance branch' },
@@ -33,8 +34,12 @@ export const canvasNodeConfigs: CanvasNodeConfig[] = [
   { type: 'takeProfit', label: 'Take Profit', defaultEdgeLabel: 'Take profit' },
   { type: 'stopLoss', label: 'Stop Loss', defaultEdgeLabel: 'Stop loss' },
   { type: 'cooldown', label: 'Cooldown', defaultEdgeLabel: 'Pause branch' },
+  { type: 'wait', label: 'Wait', defaultEdgeLabel: 'Wait before next step' },
+  { type: 'pauseTrading', label: 'Pause Trading', defaultEdgeLabel: 'Pause trading' },
   { type: 'positionLimit', label: 'Position Limit', defaultEdgeLabel: 'Limit position' },
+  { type: 'positionCountLimit', label: 'Position Count Limit', defaultEdgeLabel: 'Limit open positions' },
   { type: 'exposureLimit', label: 'Exposure Limit', defaultEdgeLabel: 'Limit exposure' },
+  { type: 'cashReserve', label: 'Cash Reserve', defaultEdgeLabel: 'Reserve cash' },
 ]
 
 const canvasNodeConfigByType = new Map(canvasNodeConfigs.map((config) => [config.type, config]))

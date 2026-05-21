@@ -8,9 +8,14 @@ export type CanvasNodeRecord = {
   y: number
   assetSymbol?: string
   assetName?: string
+  assetBasketName?: string
   startWeightingType?: CanvasStartWeightingType
   startSpecificPercentages?: Record<string, string>
+  startReserveCashPercent?: string
+  startEntryLimit?: string
+  startStyle?: CanvasStartStyle
   endType?: CanvasEndType
+  endScope?: CanvasEndScope
   endAssetNodeId?: string
   endOperator?: CanvasConditionOperator
   endTargetValue?: string
@@ -57,11 +62,15 @@ export type CanvasNodeRecord = {
   allocateAmountValue?: string
   allocateStyle?: CanvasAllocateStyle
   scaleOutPercent?: string
+  scaleOutMode?: CanvasScaleOutMode
+  scaleOutSteps?: string
   buyType?: CanvasBuyType
   sellType?: CanvasSellType
   riskAssetNodeId?: string
   riskComparator?: CanvasRiskComparator
   riskThresholdValue?: string
+  riskAtrPeriod?: string
+  riskAtrMultiplier?: string
   takeProfitMode?: CanvasTakeProfitMode
   stopLossMode?: CanvasStopLossMode
   loopRunMode?: CanvasLoopRunMode
@@ -74,15 +83,28 @@ export type CanvasNodeRecord = {
   cooldownDuration?: string
   cooldownUnit?: CanvasTimeUnit
   cooldownScope?: CanvasCooldownScope
+  waitDuration?: string
+  waitUnit?: CanvasTimeUnit
+  pauseTradingMode?: CanvasPauseTradingMode
+  pauseTradingDuration?: string
+  pauseTradingUnit?: CanvasTimeUnit
+  pauseTradingCondition?: string
   positionLimitMode?: CanvasLimitMode
   positionLimitValue?: string
   positionLimitApplyTo?: CanvasPositionLimitApplyTo
+  positionCountComparator?: CanvasIfComparator
+  positionCountValue?: string
+  positionCountScope?: CanvasPositionCountScope
   exposureLimitType?: CanvasExposureLimitType
   exposureLimitValue?: string
+  cashReservePercent?: string
+  cashReserveLabel?: string
 }
 
 export type CanvasStartWeightingType = 'equal' | 'specificPercentage' | 'marketCap'
+export type CanvasStartStyle = 'standard' | 'stagedEntry' | 'riskFirst'
 export type CanvasEndType = 'priceReaches' | 'portfolioValue' | 'timeBased' | 'maxDrawdown' | 'dailyLoss' | 'exposureLimit' | 'positionConcentration' | 'volatilityLimit'
+export type CanvasEndScope = 'endBranch' | 'stopPath' | 'closeHere'
 export type CanvasConditionOperator = '>=' | '<='
 export type CanvasTimeUnit = 'day' | 'week' | 'month'
 export type CanvasLoopType = 'timeInterval' | 'driftThreshold' | 'onNewDeposit'
@@ -116,14 +138,34 @@ export type CanvasRebalanceMode = 'equal' | 'target'
 export type CanvasRebalanceScope = 'branch' | 'selectedAssets' | 'portfolioSet'
 export type CanvasAllocateWeightingMode = 'percentage' | 'value'
 export type CanvasAllocateStyle = 'targetWeight' | 'addExposure'
+export type CanvasScaleOutMode = 'standard' | 'ladder' | 'trimOnly'
 export type CanvasRiskComparator = '>' | '<' | '>=' | '<='
-export type CanvasTakeProfitMode = 'single' | 'partial' | 'ladder'
-export type CanvasStopLossMode = 'fixed' | 'trailing' | 'breakEven'
+export type CanvasTakeProfitMode = 'single' | 'partial' | 'ladder' | 'atrBased'
+export type CanvasStopLossMode = 'fixed' | 'trailing' | 'breakEven' | 'atrBased'
 export type CanvasPortfolioMetric = 'cashPercent' | 'portfolioExposure' | 'openPositions' | 'unrealizedPnl' | 'drawdownPercent' | 'positionSizePercent'
 export type CanvasCooldownScope = 'branch' | 'strategy'
+export type CanvasPauseTradingMode = 'duration' | 'untilCondition'
 export type CanvasLimitMode = 'percentage' | 'value'
 export type CanvasPositionLimitApplyTo = 'singleAsset' | 'branchAssets'
+export type CanvasPositionCountScope = 'branch' | 'portfolio'
 export type CanvasExposureLimitType = 'assetClass' | 'basket' | 'portfolio'
+
+export function updateCanvasStartConfig(
+  nodeId: string,
+  config: Partial<Pick<CanvasNodeRecord, 'startReserveCashPercent' | 'startEntryLimit' | 'startStyle'>>,
+) {
+  commitCanvasGraphMutation((current) => ({
+    ...current,
+    nodes: current.nodes.map((node) =>
+      node.id === nodeId
+        ? {
+            ...node,
+            ...config,
+          }
+        : node,
+    ),
+  }))
+}
 
 export function addCanvasNode(node: CanvasNodeRecord) {
   commitCanvasGraphMutation((current) => ({
@@ -162,6 +204,31 @@ export function moveCanvasNodes(nodeIds: string[], delta: { x: number; y: number
   commitCanvasGraphMutation((current) => ({
     ...current,
     nodes: current.nodes.map((node) => (nodeIdSet.has(node.id) ? { ...node, x: node.x + delta.x, y: node.y + delta.y } : node)),
+  }))
+}
+
+export function setCanvasNodePositions(updates: Array<{ id: string; x: number; y: number }>) {
+  if (updates.length === 0) {
+    return
+  }
+
+  const updatesById = new Map(updates.map((update) => [update.id, update]))
+
+  commitCanvasGraphMutation((current) => ({
+    ...current,
+    nodes: current.nodes.map((node) => {
+      const nextPosition = updatesById.get(node.id)
+
+      if (!nextPosition) {
+        return node
+      }
+
+      return {
+        ...node,
+        x: nextPosition.x,
+        y: nextPosition.y,
+      }
+    }),
   }))
 }
 
@@ -247,7 +314,7 @@ export function updateCanvasEndType(nodeId: string, endType: CanvasEndType) {
 
 export function updateCanvasEndConfig(
   nodeId: string,
-  config: Partial<Pick<CanvasNodeRecord, 'endAssetNodeId' | 'endOperator' | 'endTargetValue' | 'endTimeValue' | 'endTimeUnit'>>,
+  config: Partial<Pick<CanvasNodeRecord, 'endScope' | 'endAssetNodeId' | 'endOperator' | 'endTargetValue' | 'endTimeValue' | 'endTimeUnit'>>,
 ) {
   commitCanvasGraphMutation((current) => ({
     ...current,
@@ -430,7 +497,7 @@ export function updateCanvasAllocateConfig(
 
 export function updateCanvasScaleOutConfig(
   nodeId: string,
-  config: Partial<Pick<CanvasNodeRecord, 'scaleOutPercent'>>,
+  config: Partial<Pick<CanvasNodeRecord, 'scaleOutPercent' | 'scaleOutMode' | 'scaleOutSteps'>>,
 ) {
   commitCanvasGraphMutation((current) => ({
     ...current,
@@ -447,7 +514,7 @@ export function updateCanvasScaleOutConfig(
 
 export function updateCanvasRiskConfig(
   nodeId: string,
-  config: Partial<Pick<CanvasNodeRecord, 'riskAssetNodeId' | 'riskComparator' | 'riskThresholdValue' | 'takeProfitMode' | 'stopLossMode'>>,
+  config: Partial<Pick<CanvasNodeRecord, 'riskAssetNodeId' | 'riskComparator' | 'riskThresholdValue' | 'riskAtrPeriod' | 'riskAtrMultiplier' | 'takeProfitMode' | 'stopLossMode'>>,
 ) {
   commitCanvasGraphMutation((current) => ({
     ...current,
@@ -516,6 +583,91 @@ export function updateCanvasPositionLimitConfig(
 export function updateCanvasExposureLimitConfig(
   nodeId: string,
   config: Partial<Pick<CanvasNodeRecord, 'exposureLimitType' | 'riskComparator' | 'exposureLimitValue'>>,
+) {
+  commitCanvasGraphMutation((current) => ({
+    ...current,
+    nodes: current.nodes.map((node) =>
+      node.id === nodeId
+        ? {
+            ...node,
+            ...config,
+          }
+        : node,
+    ),
+  }))
+}
+
+export function updateCanvasWaitConfig(
+  nodeId: string,
+  config: Partial<Pick<CanvasNodeRecord, 'waitDuration' | 'waitUnit'>>,
+) {
+  commitCanvasGraphMutation((current) => ({
+    ...current,
+    nodes: current.nodes.map((node) =>
+      node.id === nodeId
+        ? {
+            ...node,
+            ...config,
+          }
+        : node,
+    ),
+  }))
+}
+
+export function updateCanvasPauseTradingConfig(
+  nodeId: string,
+  config: Partial<Pick<CanvasNodeRecord, 'pauseTradingMode' | 'pauseTradingDuration' | 'pauseTradingUnit' | 'pauseTradingCondition'>>,
+) {
+  commitCanvasGraphMutation((current) => ({
+    ...current,
+    nodes: current.nodes.map((node) =>
+      node.id === nodeId
+        ? {
+            ...node,
+            ...config,
+          }
+        : node,
+    ),
+  }))
+}
+
+export function updateCanvasPositionCountLimitConfig(
+  nodeId: string,
+  config: Partial<Pick<CanvasNodeRecord, 'positionCountComparator' | 'positionCountValue' | 'positionCountScope'>>,
+) {
+  commitCanvasGraphMutation((current) => ({
+    ...current,
+    nodes: current.nodes.map((node) =>
+      node.id === nodeId
+        ? {
+            ...node,
+            ...config,
+          }
+        : node,
+    ),
+  }))
+}
+
+export function updateCanvasCashReserveConfig(
+  nodeId: string,
+  config: Partial<Pick<CanvasNodeRecord, 'cashReservePercent' | 'cashReserveLabel'>>,
+) {
+  commitCanvasGraphMutation((current) => ({
+    ...current,
+    nodes: current.nodes.map((node) =>
+      node.id === nodeId
+        ? {
+            ...node,
+            ...config,
+          }
+        : node,
+    ),
+  }))
+}
+
+export function updateCanvasAssetBasketConfig(
+  nodeId: string,
+  config: Partial<Pick<CanvasNodeRecord, 'assetBasketName'>>,
 ) {
   commitCanvasGraphMutation((current) => ({
     ...current,

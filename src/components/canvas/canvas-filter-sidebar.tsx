@@ -44,7 +44,7 @@ type CanvasFilterSidebarProps = {
   node: CanvasNodeRecord | null
   incomingAssetNodeOptions: Array<{
     id: string
-    type: 'stock' | 'token'
+    type: 'stock' | 'token' | 'assetBasket'
     assetSymbol?: string
     assetName?: string
   }>
@@ -64,10 +64,13 @@ export default function CanvasFilterSidebar({ active, node, incomingAssetNodeOpt
   const containerRef = useRef<HTMLDivElement | null>(null)
   const assetTriggerRef = useRef<HTMLButtonElement | null>(null)
   const sortTriggerRef = useRef<HTMLButtonElement | null>(null)
+  const secondarySortTriggerRef = useRef<HTMLButtonElement | null>(null)
   const orderingTriggerRef = useRef<HTMLButtonElement | null>(null)
   const conditionOperatorTriggerRef = useRef<HTMLButtonElement | null>(null)
+  const resultModeTriggerRef = useRef<HTMLButtonElement | null>(null)
   const [isAssetMenuOpen, setIsAssetMenuOpen] = useState(false)
   const [isSortMenuOpen, setIsSortMenuOpen] = useState(false)
+  const [isSecondarySortMenuOpen, setIsSecondarySortMenuOpen] = useState(false)
   const [isOrderingMenuOpen, setIsOrderingMenuOpen] = useState(false)
   const [isConditionOperatorMenuOpen, setIsConditionOperatorMenuOpen] = useState(false)
   const [isResultModeOpen, setIsResultModeOpen] = useState(false)
@@ -77,6 +80,60 @@ export default function CanvasFilterSidebar({ active, node, incomingAssetNodeOpt
   const selectedConditionOperator = conditionOperatorOptions.find((option) => option.value === node?.filterConditionOperator) ?? null
   const selectedOrdering = orderingOptions.find((option) => option.value === node?.filterOrdering) ?? null
   const selectedResultMode = resultModeOptions.find((option) => option.value === node?.filterResultMode) ?? resultModeOptions[1]
+  const closeAllMenus = () => {
+    setIsAssetMenuOpen(false)
+    setIsSortMenuOpen(false)
+    setIsSecondarySortMenuOpen(false)
+    setIsOrderingMenuOpen(false)
+    setIsConditionOperatorMenuOpen(false)
+    setIsResultModeOpen(false)
+  }
+
+  const toggleExclusiveMenu = (target: 'asset' | 'sort' | 'secondarySort' | 'ordering' | 'conditionOperator' | 'resultMode') => {
+    const nextOpen = target === 'asset'
+      ? !isAssetMenuOpen
+      : target === 'sort'
+        ? !isSortMenuOpen
+        : target === 'secondarySort'
+          ? !isSecondarySortMenuOpen
+        : target === 'ordering'
+          ? !isOrderingMenuOpen
+          : target === 'conditionOperator'
+            ? !isConditionOperatorMenuOpen
+            : !isResultModeOpen
+    closeAllMenus()
+
+    if (!nextOpen) {
+      return
+    }
+
+    if (target === 'asset') {
+      setIsAssetMenuOpen(true)
+      return
+    }
+
+    if (target === 'sort') {
+      setIsSortMenuOpen(true)
+      return
+    }
+
+    if (target === 'secondarySort') {
+      setIsSecondarySortMenuOpen(true)
+      return
+    }
+
+    if (target === 'ordering') {
+      setIsOrderingMenuOpen(true)
+      return
+    }
+
+    if (target === 'conditionOperator') {
+      setIsConditionOperatorMenuOpen(true)
+      return
+    }
+
+    setIsResultModeOpen(true)
+  }
   const assetMenuGroups = useMemo(
     () => [
       {
@@ -157,6 +214,7 @@ export default function CanvasFilterSidebar({ active, node, incomingAssetNodeOpt
     if (!active) {
       setIsAssetMenuOpen(false)
       setIsSortMenuOpen(false)
+      setIsSecondarySortMenuOpen(false)
       setIsOrderingMenuOpen(false)
       setIsConditionOperatorMenuOpen(false)
       setIsResultModeOpen(false)
@@ -164,7 +222,7 @@ export default function CanvasFilterSidebar({ active, node, incomingAssetNodeOpt
   }, [active])
 
   useEffect(() => {
-    if (!isAssetMenuOpen && !isSortMenuOpen && !isOrderingMenuOpen && !isConditionOperatorMenuOpen && !isResultModeOpen) {
+    if (!isAssetMenuOpen && !isSortMenuOpen && !isSecondarySortMenuOpen && !isOrderingMenuOpen && !isConditionOperatorMenuOpen && !isResultModeOpen) {
       return
     }
 
@@ -175,6 +233,7 @@ export default function CanvasFilterSidebar({ active, node, incomingAssetNodeOpt
 
       setIsAssetMenuOpen(false)
       setIsSortMenuOpen(false)
+      setIsSecondarySortMenuOpen(false)
       setIsOrderingMenuOpen(false)
       setIsConditionOperatorMenuOpen(false)
       setIsResultModeOpen(false)
@@ -185,7 +244,7 @@ export default function CanvasFilterSidebar({ active, node, incomingAssetNodeOpt
     return () => {
       document.removeEventListener('pointerdown', handlePointerDown)
     }
-  }, [isAssetMenuOpen, isConditionOperatorMenuOpen, isOrderingMenuOpen, isSortMenuOpen, isResultModeOpen])
+  }, [isAssetMenuOpen, isConditionOperatorMenuOpen, isOrderingMenuOpen, isSecondarySortMenuOpen, isSortMenuOpen, isResultModeOpen])
 
   return (
     <aside
@@ -227,7 +286,7 @@ export default function CanvasFilterSidebar({ active, node, incomingAssetNodeOpt
           <button
             ref={assetTriggerRef}
             type="button"
-            onClick={() => setIsAssetMenuOpen((current) => !current)}
+            onClick={() => toggleExclusiveMenu('asset')}
             style={{
               width: '100%',
               minHeight: 54,
@@ -253,7 +312,11 @@ export default function CanvasFilterSidebar({ active, node, incomingAssetNodeOpt
                   lineHeight: 1.2,
                 }}
               >
-                {selectedAssetNode?.assetName && selectedAssetNode.assetSymbol ? `${selectedAssetNode.assetName} ${selectedAssetNode.assetSymbol}` : 'Select incoming asset'}
+                {selectedAssetNode
+                  ? selectedAssetNode.assetName && selectedAssetNode.assetSymbol
+                    ? `${selectedAssetNode.assetName} ${selectedAssetNode.assetSymbol}`
+                    : selectedAssetNode.assetSymbol ?? selectedAssetNode.assetName ?? 'Select incoming asset'
+                  : 'Select incoming asset'}
               </span>
             </span>
 
@@ -298,7 +361,7 @@ export default function CanvasFilterSidebar({ active, node, incomingAssetNodeOpt
           <button
             ref={sortTriggerRef}
             type="button"
-            onClick={() => setIsSortMenuOpen((current) => !current)}
+            onClick={() => toggleExclusiveMenu('sort')}
             style={{
               width: '100%',
               minHeight: 54,
@@ -418,7 +481,7 @@ export default function CanvasFilterSidebar({ active, node, incomingAssetNodeOpt
           <button
             ref={conditionOperatorTriggerRef}
             type="button"
-            onClick={() => setIsConditionOperatorMenuOpen((current) => !current)}
+            onClick={() => toggleExclusiveMenu('conditionOperator')}
             style={{
               width: '100%',
               minHeight: 54,
@@ -480,9 +543,9 @@ export default function CanvasFilterSidebar({ active, node, incomingAssetNodeOpt
         <CanvasSidebarFieldSection title="Secondary rule" description="Optionally add one more filter metric to combine with the primary rule.">
         <div style={{ position: 'relative' }}>
           <button
-            ref={orderingTriggerRef}
+            ref={secondarySortTriggerRef}
             type="button"
-            onClick={() => setIsOrderingMenuOpen((current) => !current)}
+            onClick={() => toggleExclusiveMenu('secondarySort')}
             style={{
               width: '100%',
               minHeight: 54,
@@ -533,16 +596,16 @@ export default function CanvasFilterSidebar({ active, node, incomingAssetNodeOpt
               style={{
                 color: 'var(--canvas-text-secondary)',
                 flex: 'none',
-                transform: `rotate(${isOrderingMenuOpen ? '180deg' : '0deg'})`,
+                transform: `rotate(${isSecondarySortMenuOpen ? '180deg' : '0deg'})`,
                 transition: 'transform 160ms ease',
               }}
             />
           </button>
 
-          {isOrderingMenuOpen ? (
+          {isSecondarySortMenuOpen ? (
             <DropdownMenu
-              open={isOrderingMenuOpen}
-              anchorRef={orderingTriggerRef}
+              open={isSecondarySortMenuOpen}
+              anchorRef={secondarySortTriggerRef}
               boundaryRef={containerRef}
               groups={sortMenuGroups}
               position="bottom"
@@ -552,7 +615,7 @@ export default function CanvasFilterSidebar({ active, node, incomingAssetNodeOpt
                   onSecondarySortFunctionChange(item.value)
                 }
 
-                setIsOrderingMenuOpen(false)
+                setIsSecondarySortMenuOpen(false)
               }}
             />
           ) : null}
@@ -600,9 +663,9 @@ export default function CanvasFilterSidebar({ active, node, incomingAssetNodeOpt
         <CanvasSidebarFieldSection title="Keep results" description="Choose whether the flow keeps the top or bottom ranked assets after applying the rules.">
         <div style={{ position: 'relative' }}>
           <button
-            ref={sortTriggerRef}
+            ref={orderingTriggerRef}
             type="button"
-            onClick={() => setIsSortMenuOpen((current) => !current)}
+            onClick={() => toggleExclusiveMenu('ordering')}
             style={{
               width: '100%',
               minHeight: 54,
@@ -635,16 +698,16 @@ export default function CanvasFilterSidebar({ active, node, incomingAssetNodeOpt
               style={{
                 color: 'var(--canvas-text-secondary)',
                 flex: 'none',
-                transform: `rotate(${isSortMenuOpen ? '180deg' : '0deg'})`,
+                transform: `rotate(${isOrderingMenuOpen ? '180deg' : '0deg'})`,
                 transition: 'transform 160ms ease',
               }}
             />
           </button>
 
-          {isSortMenuOpen ? (
+          {isOrderingMenuOpen ? (
               <DropdownMenu
-                open={isSortMenuOpen}
-                anchorRef={sortTriggerRef}
+                open={isOrderingMenuOpen}
+                anchorRef={orderingTriggerRef}
                 boundaryRef={containerRef}
                 groups={orderingMenuGroups}
                 position="bottom"
@@ -654,7 +717,7 @@ export default function CanvasFilterSidebar({ active, node, incomingAssetNodeOpt
                   onOrderingChange(item.value)
                 }
 
-                setIsSortMenuOpen(false)
+                setIsOrderingMenuOpen(false)
               }}
             />
           ) : null}
@@ -664,15 +727,16 @@ export default function CanvasFilterSidebar({ active, node, incomingAssetNodeOpt
         <CanvasSidebarFieldSection title="Result mode" description="Choose whether this filter keeps the top result, top N, or all matches.">
         <div style={{ position: 'relative' }}>
           <button
+            ref={resultModeTriggerRef}
             type="button"
-            onClick={() => setIsResultModeOpen((current) => !current)}
+            onClick={() => toggleExclusiveMenu('resultMode')}
             style={{ width: '100%', minHeight: 54, borderRadius: 16, border: '1px solid var(--canvas-panel-divider)', background: 'var(--canvas-surface-soft)', padding: '0 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, cursor: 'pointer' }}
           >
             <span style={{ color: 'var(--canvas-text-primary)', fontFamily: 'var(--canvas-font-sans)', fontSize: 13, fontWeight: 700, lineHeight: 1.2 }}>{selectedResultMode?.label ?? 'Top N'}</span>
             <CaretDown size={14} weight="bold" style={{ color: 'var(--canvas-text-secondary)', flex: 'none', transform: `rotate(${isResultModeOpen ? '180deg' : '0deg'})`, transition: 'transform 160ms ease' }} />
           </button>
           {isResultModeOpen ? (
-            <DropdownMenu open={isResultModeOpen} boundaryRef={containerRef} groups={resultModeMenuGroups} position="bottom" portalToBody onItemClick={(item) => {
+            <DropdownMenu open={isResultModeOpen} anchorRef={resultModeTriggerRef} boundaryRef={containerRef} groups={resultModeMenuGroups} position="bottom" portalToBody onItemClick={(item) => {
               if (item.value === 'topOne' || item.value === 'topN' || item.value === 'allMatches') {
                 onResultModeChange(item.value)
               }

@@ -76,6 +76,7 @@ export const canvasLogicMenuItems: CanvasDockMenuItemConfig[] = [
 export const canvasAssetTypeMenuItems: CanvasDockMenuItemConfig[] = [
   { label: 'Stock', value: 'stock', shortcut: 'S' },
   { label: 'Token', value: 'token', shortcut: 'T' },
+  { label: 'Asset Basket', value: 'assetBasket', shortcut: 'B' },
 ]
 
 export const canvasActionMenuItems: CanvasDockMenuItemConfig[] = [
@@ -87,13 +88,17 @@ export const canvasActionMenuItems: CanvasDockMenuItemConfig[] = [
 export const canvasPortfolioMenuItems: CanvasDockMenuItemConfig[] = [
   { label: 'Allocate', value: 'allocate', shortcut: 'A' },
   { label: 'Scale Out', value: 'scaleOut', shortcut: 'O' },
+  { label: 'Cash Reserve', value: 'cashReserve', shortcut: 'C' },
 ]
 
 export const canvasRiskMenuItems: CanvasDockMenuItemConfig[] = [
   { label: 'Take Profit', value: 'takeProfit', shortcut: 'T' },
   { label: 'Stop Loss', value: 'stopLoss', shortcut: 'L' },
   { label: 'Cooldown', value: 'cooldown', shortcut: 'C' },
+  { label: 'Wait', value: 'wait', shortcut: 'W' },
+  { label: 'Pause Trading', value: 'pauseTrading', shortcut: 'U' },
   { label: 'Position Limit', value: 'positionLimit', shortcut: 'P' },
+  { label: 'Position Count Limit', value: 'positionCountLimit', shortcut: 'N' },
   { label: 'Exposure Limit', value: 'exposureLimit', shortcut: 'X' },
 ]
 
@@ -120,6 +125,12 @@ export const canvasActionShortcuts = {
   deleteSelectedNodes: ['Backspace', 'Delete'],
   undo: ['Ctrl+z'],
   redo: ['Ctrl+y'],
+  copy: ['Ctrl+c'],
+  paste: ['Ctrl+v'],
+  nudgeUp: ['ArrowUp'],
+  nudgeDown: ['ArrowDown'],
+  nudgeLeft: ['ArrowLeft'],
+  nudgeRight: ['ArrowRight'],
 } as const
 
 export const canvasKeybindingItems: CanvasKeybindingItem[] = [
@@ -139,6 +150,12 @@ export const canvasKeybindingItems: CanvasKeybindingItem[] = [
   { label: 'Zoom to Selection', shortcut: 'Shift+2' },
   { label: 'Undo', shortcut: 'Ctrl+Z' },
   { label: 'Redo', shortcut: 'Ctrl+Y' },
+  { label: 'Copy Selected Nodes', shortcut: 'Ctrl+C' },
+  { label: 'Paste Nodes', shortcut: 'Ctrl+V' },
+  { label: 'Nudge Up', shortcut: 'ArrowUp' },
+  { label: 'Nudge Down', shortcut: 'ArrowDown' },
+  { label: 'Nudge Left', shortcut: 'ArrowLeft' },
+  { label: 'Nudge Right', shortcut: 'ArrowRight' },
   { label: 'Delete Selected Nodes', shortcut: 'Backspace / Delete' },
   { label: 'Dropdown Previous Item', shortcut: 'ArrowUp' },
   { label: 'Dropdown Next Item', shortcut: 'ArrowDown' },

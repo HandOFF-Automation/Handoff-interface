@@ -9,6 +9,7 @@ import DropdownMenu, { type DropdownMenuItem } from '../dropdown/dropdown-menu'
 import AllocateNode from '../nodes/allocate/allocate-node'
 import AndNode from '../nodes/and/and-node'
 import BuyNode from '../nodes/buy/buy-node'
+import CashReserveNode from '../nodes/cash-reserve/cash-reserve-node'
 import ElseNode from '../nodes/else/else-node'
 import EndNode from '../nodes/end/end-node'
 import ExcludeNode from '../nodes/exclude/exclude-node'
@@ -20,6 +21,7 @@ import NotNode from '../nodes/not/not-node'
 import OrNode from '../nodes/or/or-node'
 import PortfolioConditionNode from '../nodes/portfolio-condition/portfolio-condition-node'
 import PositionLimitNode from '../nodes/position-limit/position-limit-node'
+import PositionCountLimitNode from '../nodes/position-count-limit/position-count-limit-node'
 import RebalanceNode from '../nodes/rebalance/rebalance-node'
 import ScaleOutNode from '../nodes/scale-out/scale-out-node'
 import SellNode from '../nodes/sell/sell-node'
@@ -29,18 +31,22 @@ import StockNode from '../nodes/stock/stock-node'
 import TakeProfitNode from '../nodes/take-profit/take-profit-node'
 import TokenNode from '../nodes/token/token-node'
 import UnionNode from '../nodes/union/union-node'
+import WaitNode from '../nodes/wait/wait-node'
 import XorNode from '../nodes/xor/xor-node'
 import CooldownNode from '../nodes/cooldown/cooldown-node'
 import ExposureLimitNode from '../nodes/exposure-limit/exposure-limit-node'
+import PauseTradingNode from '../nodes/pause-trading/pause-trading-node'
+import AssetBasketNode from '../nodes/asset-basket/asset-basket-node'
 import CommentThreadLayer from '../comment/comment-thread-layer'
 import Skeleton from '../loading/skeleton'
 import { useAppLoading } from '../../state/app-loading-store'
 import { addCanvasEdge, removeCanvasEdges, setSelectedCanvasEdgeIds, useCanvasEdges, type CanvasConnectorSide } from '../../state/canvas-edge-store'
 import { redoCanvasGraph, undoCanvasGraph } from '../../state/canvas-graph-store'
-import { addCanvasNode, moveCanvasNodes, removeCanvasNodes, setCanvasFilterAssetNodeId, setSelectedCanvasNodeId, setSelectedCanvasNodeIds, useCanvasNodes, type CanvasIfFunction, type CanvasNodeRecord } from '../../state/canvas-node-store'
+import { addCanvasNode, moveCanvasNodes, removeCanvasNodes, setCanvasFilterAssetNodeId, setCanvasNodePositions, setSelectedCanvasNodeId, setSelectedCanvasNodeIds, useCanvasNodes, type CanvasIfFunction, type CanvasNodeRecord } from '../../state/canvas-node-store'
+import { CANVAS_CONNECTION_DROP_TARGET_THRESHOLD, CANVAS_CONNECTION_INVALID_MESSAGE, CANVAS_CONNECTOR_SIDES, getCanvasConnectionValidation } from '../../config/canvas-connection'
 import { getCanvasEdgeLabelForNode } from '../../config/canvas-nodes/config'
 import { canvasActionShortcuts } from '../../config/keybinding/canvas-keybindings'
-import { executeCanvasZoomAction, setCanvasScale, setCanvasTool, useCanvasNodeType, useCanvasScale, useCanvasTool, type CanvasTool } from '../../state/canvas-tool-store'
+import { executeCanvasZoomAction, setCanvasScale, setCanvasTool, useCanvasNodeType, useCanvasScale, useCanvasTool, type CanvasNodeType, type CanvasTool } from '../../state/canvas-tool-store'
 import { toggleCanvasTheme } from '../../state/theme-store'
 import profileImage from '../../assets/icon/icon-dark-bg.png'
 import type { CommentThread } from '../comment/comment-types'
@@ -69,9 +75,26 @@ type OrthogonalEdgeGeometry = {
   }
 }
 
+type CanvasClipboardSnapshot = {
+  nodes: CanvasNodeRecord[]
+  edges: Array<{
+    fromNodeId: string
+    fromSide: CanvasConnectorSide
+    toNodeId: string
+    toSide: CanvasConnectorSide
+  }>
+}
+
 type AlignmentGuide = {
   verticalGuide: { x: number; fromY: number; toY: number } | null
   horizontalGuide: { y: number; fromX: number; toX: number } | null
+}
+
+type Rect = {
+  left: number
+  top: number
+  right: number
+  bottom: number
 }
 
 const TOOL_CODE_BINDINGS: Record<string, CanvasTool> = {
@@ -91,6 +114,12 @@ const TOOL_KEY_BINDINGS: Record<string, CanvasTool> = {
 const MIN_SCALE = 0.25
 const MAX_SCALE = 3
 const NODE_ALIGNMENT_THRESHOLD = 8
+const NODE_COLLISION_PADDING = 48
+const EDGE_LABEL_PADDING = 12
+const EDGE_LABEL_NUDGE_STEP = 16
+const EDGE_LABEL_MAX_NUDGES = 10
+const EDGE_LABEL_PROGRESS_STEP = 0.035
+const EDGE_LABEL_MAX_PROGRESS_OFFSET = 0.18
 
 const CURRENT_USER = {
   name: 'You',
@@ -104,6 +133,7 @@ const DUMMY_USER = {
 
 const AUTO_REPLY_TRIGGER = 'kamu sekarang cantikan deh?'
 const AUTO_REPLY_TEXT = 'masa iya:)'
+const PASTE_OFFSET = { x: 60, y: 60 }
 
 export default function CanvasViewport() {
   const activeTool = useCanvasTool()
@@ -144,6 +174,7 @@ export default function CanvasViewport() {
   const [commentThreads, setCommentThreads] = useState<CommentThread[]>([])
   const [contextMenuPosition, setContextMenuPosition] = useState<{ x: number; y: number } | null>(null)
   const [contextMenuThreadId, setContextMenuThreadId] = useState<string | null>(null)
+  const [canvasContextMenuPosition, setCanvasContextMenuPosition] = useState<{ x: number; y: number } | null>(null)
   const [hoveredThreadId, setHoveredThreadId] = useState<string | null>(null)
   const [pinnedThreadId, setPinnedThreadId] = useState<string | null>(null)
   const [drafts, setDrafts] = useState<Record<string, string>>({})
@@ -153,6 +184,10 @@ export default function CanvasViewport() {
   const [invalidConnectorHoverTarget, setInvalidConnectorHoverTarget] = useState<{ nodeId: string; side: CanvasConnectorSide; reason?: string } | null>(null)
   const [invalidConnectionMessage, setInvalidConnectionMessage] = useState<string | null>(null)
   const [openFilterViewNodeId, setOpenFilterViewNodeId] = useState<string | null>(null)
+  const isResolvingCollisionsRef = useRef(false)
+  const preferredNodePositionsRef = useRef<Record<string, { x: number; y: number }>>({})
+  const clipboardRef = useRef<CanvasClipboardSnapshot | null>(null)
+  const lastCanvasPointerClientPositionRef = useRef<Point | null>(null)
   const skeletonOpacity = Math.max(0, 1 - progress / 100)
   const alignmentGuide: AlignmentGuide | null = (() => {
     const nodeDragState = nodeDragStateRef.current
@@ -217,6 +252,297 @@ export default function CanvasViewport() {
     }
 
     return { x: centerX - halfWidth, y: centerY }
+  }
+
+  const getNodeWorldRect = (node: CanvasNodeRecord, position = { x: node.x, y: node.y }): Rect => {
+    const size = nodeSizes[node.id]
+    const width = size?.width ?? 62
+    const height = size?.height ?? 56
+    const halfWidth = width / 2
+    const halfHeight = height / 2
+
+    return {
+      left: position.x - halfWidth - NODE_COLLISION_PADDING,
+      right: position.x + halfWidth + NODE_COLLISION_PADDING,
+      top: position.y - halfHeight - NODE_COLLISION_PADDING,
+      bottom: position.y + halfHeight + NODE_COLLISION_PADDING,
+    }
+  }
+
+  const rectsOverlap = (a: Rect, b: Rect) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top
+
+  const getEdgeLabelRect = (center: Point, label: string): Rect => {
+    const labelScale = Math.max(0.65, Math.min(1.35, view.scale))
+    const width = (Math.max(60, label.length * 7) + EDGE_LABEL_PADDING * 2) * labelScale
+    const height = (26 + EDGE_LABEL_PADDING * 2) * labelScale
+
+    return {
+      left: center.x - width / 2,
+      right: center.x + width / 2,
+      top: center.y - height / 2,
+      bottom: center.y + height / 2,
+    }
+  }
+
+  const getEdgeLabelWorldRect = (center: Point, label: string): Rect => {
+    const labelScale = Math.max(0.65, Math.min(1.35, view.scale))
+    const width = ((Math.max(60, label.length * 7) + EDGE_LABEL_PADDING * 2) * labelScale) / view.scale
+    const height = ((26 + EDGE_LABEL_PADDING * 2) * labelScale) / view.scale
+
+    return {
+      left: center.x - width / 2,
+      right: center.x + width / 2,
+      top: center.y - height / 2,
+      bottom: center.y + height / 2,
+    }
+  }
+
+  const getNodeScreenRect = (node: CanvasNodeRecord): Rect => {
+    const size = nodeSizes[node.id]
+    const width = (size?.width ?? 62) * view.scale + EDGE_LABEL_PADDING * 2
+    const height = (size?.height ?? 56) * view.scale + EDGE_LABEL_PADDING * 2
+    const centerX = node.x * view.scale + view.x
+    const centerY = node.y * view.scale + view.y
+
+    return {
+      left: centerX - width / 2,
+      right: centerX + width / 2,
+      top: centerY - height / 2,
+      bottom: centerY + height / 2,
+    }
+  }
+
+  const getNodeWorldRectWithoutCollisionPadding = (node: CanvasNodeRecord): Rect => {
+    const size = nodeSizes[node.id]
+    const width = size?.width ?? 62
+    const height = size?.height ?? 56
+
+    return {
+      left: node.x - width / 2,
+      right: node.x + width / 2,
+      top: node.y - height / 2,
+      bottom: node.y + height / 2,
+    }
+  }
+
+  const getPointAlongGeometry = (geometry: OrthogonalEdgeGeometry, progress: number): Point => {
+    const clampedProgress = Math.max(0, Math.min(1, progress))
+    const points = geometry.points
+
+    if (points.length === 0) {
+      return geometry.midPoint
+    }
+
+    if (points.length === 1) {
+      return points[0]
+    }
+
+    const segmentLengths: number[] = []
+    let totalLength = 0
+
+    for (let index = 1; index < points.length; index += 1) {
+      const previous = points[index - 1]
+      const current = points[index]
+      const length = Math.hypot(current.x - previous.x, current.y - previous.y)
+      segmentLengths.push(length)
+      totalLength += length
+    }
+
+    if (totalLength === 0) {
+      return geometry.midPoint
+    }
+
+    let targetDistance = totalLength * clampedProgress
+
+    for (let index = 1; index < points.length; index += 1) {
+      const segmentLength = segmentLengths[index - 1]
+
+      if (targetDistance > segmentLength) {
+        targetDistance -= segmentLength
+        continue
+      }
+
+      const previous = points[index - 1]
+      const current = points[index]
+      const ratio = segmentLength === 0 ? 0 : targetDistance / segmentLength
+
+      return {
+        x: previous.x + (current.x - previous.x) * ratio,
+        y: previous.y + (current.y - previous.y) * ratio,
+      }
+    }
+
+    return points[points.length - 1]
+  }
+
+  const edgeLabelPlacements = (() => {
+    const occupiedRects: Rect[] = []
+    const nodeRects = placedNodes.map((node) => getNodeWorldRectWithoutCollisionPadding(node))
+    const placements = new Map<string, Point>()
+
+    edges.forEach((edge) => {
+      const fromNode = placedNodes.find((node) => node.id === edge.fromNodeId)
+      const toNode = placedNodes.find((node) => node.id === edge.toNodeId)
+
+      if (!fromNode || !toNode) {
+        return
+      }
+
+      const edgeLabel = getCanvasEdgeLabelForNode(fromNode.type, edge.fromSide)
+
+      if (!edgeLabel) {
+        return
+      }
+
+      const fromPoint = getConnectorScreenPosition(fromNode.id, fromNode, edge.fromSide)
+      const toPoint = getConnectorScreenPosition(toNode.id, toNode, edge.toSide)
+      const sourceSiblingEdges = edges.filter((candidate) => candidate.fromNodeId === edge.fromNodeId && candidate.fromSide === edge.fromSide)
+      const targetSiblingEdges = edges.filter((candidate) => candidate.toNodeId === edge.toNodeId && candidate.toSide === edge.toSide)
+      const sourceIndex = sourceSiblingEdges.findIndex((candidate) => candidate.id === edge.id)
+      const targetIndex = targetSiblingEdges.findIndex((candidate) => candidate.id === edge.id)
+      const sourceOffset = sourceSiblingEdges.length > 1 ? (sourceIndex - (sourceSiblingEdges.length - 1) / 2) * 14 : 0
+      const targetOffset = targetSiblingEdges.length > 1 ? (targetIndex - (targetSiblingEdges.length - 1) / 2) * 14 : 0
+      const geometry = getOrthogonalEdgeGeometry(fromPoint, toPoint, edge.fromSide, edge.toSide, sourceOffset, targetOffset)
+
+      let candidateCenter = { ...geometry.midPoint }
+      let candidateRect = getEdgeLabelWorldRect({ x: candidateCenter.x / view.scale - view.x / view.scale, y: candidateCenter.y / view.scale - view.y / view.scale }, edgeLabel)
+
+      for (let attempt = 0; attempt < EDGE_LABEL_MAX_NUDGES; attempt += 1) {
+        const collides = nodeRects.some((rect) => rectsOverlap(rect, candidateRect)) || occupiedRects.some((rect) => rectsOverlap(rect, candidateRect))
+
+        if (!collides) {
+          break
+        }
+
+        const direction = attempt % 2 === 0 ? 1 : -1
+        const level = Math.floor(attempt / 2) + 1
+        const progressOffset = Math.min(EDGE_LABEL_MAX_PROGRESS_OFFSET, EDGE_LABEL_PROGRESS_STEP * level) * direction
+        const nextProgress = 0.5 + progressOffset
+
+        candidateCenter = getPointAlongGeometry(geometry, nextProgress)
+        candidateRect = getEdgeLabelWorldRect({ x: candidateCenter.x / view.scale - view.x / view.scale, y: candidateCenter.y / view.scale - view.y / view.scale }, edgeLabel)
+      }
+
+      occupiedRects.push(candidateRect)
+      placements.set(edge.id, candidateCenter)
+    })
+
+    return placements
+  })()
+
+  const resolveNodeCollisions = () => {
+    const movableNodes = placedNodes.filter((node) => nodeSizes[node.id])
+
+    if (movableNodes.length < 2) {
+      return
+    }
+
+    movableNodes.forEach((node) => {
+      if (!preferredNodePositionsRef.current[node.id]) {
+        preferredNodePositionsRef.current[node.id] = { x: node.x, y: node.y }
+      }
+    })
+
+    const nextPositions = new Map(
+      movableNodes.map((node) => {
+        const preferred = preferredNodePositionsRef.current[node.id]
+        return [node.id, preferred ? { x: preferred.x, y: preferred.y } : { x: node.x, y: node.y }]
+      }),
+    )
+    let hasChanges = false
+
+    for (let iteration = 0; iteration < 12; iteration += 1) {
+      let movedThisPass = false
+
+      for (let index = 0; index < movableNodes.length; index += 1) {
+        for (let compareIndex = index + 1; compareIndex < movableNodes.length; compareIndex += 1) {
+          const nodeA = movableNodes[index]
+          const nodeB = movableNodes[compareIndex]
+          const positionA = nextPositions.get(nodeA.id) ?? { x: nodeA.x, y: nodeA.y }
+          const positionB = nextPositions.get(nodeB.id) ?? { x: nodeB.x, y: nodeB.y }
+          const rectA = getNodeWorldRect(nodeA, positionA)
+          const rectB = getNodeWorldRect(nodeB, positionB)
+
+          if (!rectsOverlap(rectA, rectB)) {
+            continue
+          }
+
+          const overlapX = Math.min(rectA.right, rectB.right) - Math.max(rectA.left, rectB.left)
+          const overlapY = Math.min(rectA.bottom, rectB.bottom) - Math.max(rectA.top, rectB.top)
+
+          if (overlapX <= 0 || overlapY <= 0) {
+            continue
+          }
+
+          const centerDeltaX = positionB.x - positionA.x
+          const centerDeltaY = positionB.y - positionA.y
+
+          const nodeAIsDragged = nodeDragStateRef.current?.nodeIds.includes(nodeA.id) ?? false
+          const nodeBIsDragged = nodeDragStateRef.current?.nodeIds.includes(nodeB.id) ?? false
+
+          if (overlapX <= overlapY) {
+            const push = overlapX / 2 + 6
+            const direction = centerDeltaX >= 0 ? 1 : -1
+
+            if (nodeAIsDragged && !nodeBIsDragged) {
+              nextPositions.set(nodeB.id, { x: positionB.x + push * direction * 2, y: positionB.y })
+            } else if (!nodeAIsDragged && nodeBIsDragged) {
+              nextPositions.set(nodeA.id, { x: positionA.x - push * direction * 2, y: positionA.y })
+            } else {
+              nextPositions.set(nodeA.id, { x: positionA.x - push * direction, y: positionA.y })
+              nextPositions.set(nodeB.id, { x: positionB.x + push * direction, y: positionB.y })
+            }
+          } else {
+            const push = overlapY / 2 + 6
+            const direction = centerDeltaY >= 0 ? 1 : -1
+
+            if (nodeAIsDragged && !nodeBIsDragged) {
+              nextPositions.set(nodeB.id, { x: positionB.x, y: positionB.y + push * direction * 2 })
+            } else if (!nodeAIsDragged && nodeBIsDragged) {
+              nextPositions.set(nodeA.id, { x: positionA.x, y: positionA.y - push * direction * 2 })
+            } else {
+              nextPositions.set(nodeA.id, { x: positionA.x, y: positionA.y - push * direction })
+              nextPositions.set(nodeB.id, { x: positionB.x, y: positionB.y + push * direction })
+            }
+          }
+
+          movedThisPass = true
+          hasChanges = true
+        }
+      }
+
+      if (!movedThisPass) {
+        break
+      }
+    }
+
+    if (!hasChanges) {
+      return
+    }
+
+    const updates = movableNodes.flatMap((node) => {
+      const nextPosition = nextPositions.get(node.id)
+
+      if (!nextPosition) {
+        return []
+      }
+
+      if (Math.abs(nextPosition.x - node.x) < 0.5 && Math.abs(nextPosition.y - node.y) < 0.5) {
+        return []
+      }
+
+      return [{ id: node.id, x: nextPosition.x, y: nextPosition.y }]
+    })
+
+    if (updates.length === 0) {
+      return
+    }
+
+    isResolvingCollisionsRef.current = true
+    setCanvasNodePositions(updates)
+    window.setTimeout(() => {
+      isResolvingCollisionsRef.current = false
+    }, 0)
   }
 
   const getIfFunctionLabel = (value?: string) => {
@@ -418,6 +744,62 @@ export default function CanvasViewport() {
     return undefined
   }
 
+  const getEndScopeLabel = (scope?: CanvasNodeRecord['endScope']) => {
+    if (scope === 'stopPath') {
+      return 'Stop Path'
+    }
+
+    if (scope === 'closeHere') {
+      return 'Close Here'
+    }
+
+    return 'End Branch'
+  }
+
+  const getEndLabelSegments = (node: CanvasNodeRecord): NodeShellLabelSegment[] => {
+    const scopeBadge: NodeShellLabelSegment = { kind: 'badge', text: getEndScopeLabel(node.endScope) }
+
+    if (node.endType === 'priceReaches') {
+      return [
+        scopeBadge,
+        { kind: 'text', text: 'Price' },
+        { kind: 'badge', text: getLinkedAssetLabel(node.endAssetNodeId), icon: getLinkedAssetIcon(node.endAssetNodeId) },
+        { kind: 'text', text: 'reaches' },
+        { kind: 'badge', text: `${node.endOperator ?? ''} ${node.endTargetValue?.trim() ? `$${node.endTargetValue.trim()}` : '$0'}`.trim() },
+      ]
+    }
+
+    if (node.endType === 'portfolioValue') {
+      return [scopeBadge, { kind: 'text', text: 'Portfolio' }, { kind: 'text', text: 'reaches' }, { kind: 'badge', text: `${node.endOperator ?? ''} ${node.endTargetValue?.trim() ? `$${node.endTargetValue.trim()}` : '$0'}`.trim() }]
+    }
+
+    if (node.endType === 'timeBased') {
+      return [scopeBadge, { kind: 'text', text: 'Time' }, { kind: 'text', text: 'after' }, { kind: 'badge', text: `${node.endTimeValue?.trim() ? node.endTimeValue.trim() : '0'} ${node.endTimeUnit ? node.endTimeUnit.charAt(0).toUpperCase() + node.endTimeUnit.slice(1) : 'Unit'}` }]
+    }
+
+    if (node.endType === 'maxDrawdown') {
+      return [scopeBadge, { kind: 'text', text: 'Max drawdown' }, { kind: 'text', text: 'hits' }, { kind: 'badge', text: `${node.endOperator ?? '<='} ${node.endTargetValue?.trim() ? `${node.endTargetValue.trim()}%` : '0%'}`.trim() }]
+    }
+
+    if (node.endType === 'dailyLoss') {
+      return [scopeBadge, { kind: 'text', text: 'Daily loss' }, { kind: 'text', text: 'hits' }, { kind: 'badge', text: `${node.endOperator ?? '<='} ${node.endTargetValue?.trim() ? `${node.endTargetValue.trim()}%` : '0%'}`.trim() }]
+    }
+
+    if (node.endType === 'exposureLimit') {
+      return [scopeBadge, { kind: 'text', text: 'Exposure' }, { kind: 'text', text: 'exceeds' }, { kind: 'badge', text: `${node.endOperator ?? '>='} ${node.endTargetValue?.trim() ? `${node.endTargetValue.trim()}%` : '0%'}`.trim() }]
+    }
+
+    if (node.endType === 'positionConcentration') {
+      return [scopeBadge, { kind: 'text', text: 'Position' }, { kind: 'text', text: 'exceeds' }, { kind: 'badge', text: `${node.endOperator ?? '>='} ${node.endTargetValue?.trim() ? `${node.endTargetValue.trim()}%` : '0%'}`.trim() }]
+    }
+
+    if (node.endType === 'volatilityLimit') {
+      return [scopeBadge, { kind: 'text', text: 'Volatility' }, { kind: 'text', text: 'exceeds' }, { kind: 'badge', text: `${node.endOperator ?? '>='} ${node.endTargetValue?.trim() ? `${node.endTargetValue.trim()}%` : '0%'}`.trim() }]
+    }
+
+    return [{ kind: 'text', text: 'End' }]
+  }
+
   const handleNodeMeasure = (nodeId: string, size: { width: number; height: number }) => {
     setNodeSizes((current) => {
       const previous = current[nodeId]
@@ -432,6 +814,24 @@ export default function CanvasViewport() {
       }
     })
   }
+
+  useEffect(() => {
+    if (isResolvingCollisionsRef.current) {
+      return
+    }
+
+    resolveNodeCollisions()
+  }, [nodeSizes, placedNodes])
+
+  useEffect(() => {
+    const nextPreferredPositions: Record<string, { x: number; y: number }> = {}
+
+    placedNodes.forEach((node) => {
+      nextPreferredPositions[node.id] = preferredNodePositionsRef.current[node.id] ?? { x: node.x, y: node.y }
+    })
+
+    preferredNodePositionsRef.current = nextPreferredPositions
+  }, [placedNodes])
 
   const getCommonNodeProps = (nodeId: string) => ({
     selected: selectedNodeIds.includes(nodeId),
@@ -456,103 +856,21 @@ export default function CanvasViewport() {
     onMeasure: (size: { width: number; height: number }) => handleNodeMeasure(nodeId, size),
   })
 
-  const getNodeCategory = (node: CanvasNodeRecord) => {
-    if (node.type === 'stock' || node.type === 'token') {
-      return 'asset'
-    }
-
-    if (node.type === 'filter' || node.type === 'start') {
-      return 'assetSet'
-    }
-
-    if (node.type === 'if' || node.type === 'portfolioCondition' || node.type === 'and' || node.type === 'or' || node.type === 'not' || node.type === 'xor') {
-      return 'boolean'
-    }
-
-    if (node.type === 'intersect' || node.type === 'union' || node.type === 'exclude') {
-      return 'assetSet'
-    }
-
-    if (node.type === 'else' || node.type === 'loop' || node.type === 'cooldown') {
-      return 'branch'
-    }
-
-    if (node.type === 'buy' || node.type === 'sell' || node.type === 'rebalance' || node.type === 'allocate' || node.type === 'scaleOut' || node.type === 'takeProfit' || node.type === 'stopLoss' || node.type === 'positionLimit' || node.type === 'exposureLimit') {
-      return 'execution'
-    }
-
-    return 'terminal'
-  }
-
   const getConnectionValidation = (sourceNodeId: string, targetNodeId: string) => {
     const sourceNode = placedNodes.find((node) => node.id === sourceNodeId)
     const targetNode = placedNodes.find((node) => node.id === targetNodeId)
 
-    if (!sourceNode || !targetNode) {
-      return { valid: false, reason: 'Missing source or target node.' }
-    }
-
-    if (sourceNode.id === targetNode.id) {
-      return { valid: false, reason: 'Cannot connect a node to itself.' }
-    }
-
-    if (targetNode.type === 'start') {
-      return { valid: false, reason: 'Start cannot receive incoming connections.' }
-    }
-
-    if (sourceNode.type === 'end') {
-      return { valid: false, reason: 'End cannot continue to another node.' }
-    }
-
-    const sourceCategory = getNodeCategory(sourceNode)
-
-    if (sourceNode.type === 'start') {
-      return targetNode.type === 'stock' || targetNode.type === 'token' || targetNode.type === 'filter' || targetNode.type === 'portfolioCondition'
-        ? { valid: true }
-        : { valid: false, reason: 'Start should connect into assets or a filter stage.' }
-    }
-
-    if (sourceCategory === 'asset') {
-      return targetNode.type === 'filter' || targetNode.type === 'if' || targetNode.type === 'portfolioCondition' || targetNode.type === 'intersect' || targetNode.type === 'union' || targetNode.type === 'exclude'
-        ? { valid: true }
-        : { valid: false, reason: 'Assets should connect into Filter, If, or asset-set logic nodes.' }
-    }
-
-    if (sourceNode.type === 'filter') {
-      return targetNode.type === 'filter' || targetNode.type === 'if' || targetNode.type === 'portfolioCondition' || targetNode.type === 'intersect' || targetNode.type === 'union' || targetNode.type === 'exclude'
-        ? { valid: true }
-        : { valid: false, reason: 'Filter results should continue into another Filter, an If node, or asset-set logic.' }
-    }
-
-    if (sourceCategory === 'boolean') {
-      return targetNode.type === 'and' || targetNode.type === 'or' || targetNode.type === 'not' || targetNode.type === 'xor' || targetNode.type === 'else' || getNodeCategory(targetNode) === 'execution'
-        ? { valid: true }
-        : { valid: false, reason: 'Condition results should connect into All Of, Any Of, Not, Only One, Else, or execution nodes.' }
-    }
-
-    if (sourceNode.type === 'else' || sourceNode.type === 'loop') {
-      return getNodeCategory(targetNode) === 'execution' || targetNode.type === 'end' || targetNode.type === 'loop' || targetNode.type === 'filter' || targetNode.type === 'if' || targetNode.type === 'portfolioCondition'
-        ? { valid: true }
-        : { valid: false, reason: `${sourceNode.type === 'else' ? 'Else' : 'Loop'} should continue into filtering, evaluation, execution, loop, or end.` }
-    }
-
-    if (sourceCategory === 'execution') {
-      return getNodeCategory(targetNode) === 'execution' || targetNode.type === 'loop' || targetNode.type === 'end' || targetNode.type === 'cooldown'
-        ? { valid: true }
-        : { valid: false, reason: 'Execution nodes should continue into execution, loop, or end nodes.' }
-    }
-
-    return { valid: false, reason: 'This connection is not allowed by the current flow rules.' }
+    return getCanvasConnectionValidation(sourceNode, targetNode)
   }
 
-  const getOrthogonalEdgeGeometry = (
+  function getOrthogonalEdgeGeometry(
     fromPoint: Point,
     toPoint: Point,
     fromSide: CanvasConnectorSide,
     toSide: CanvasConnectorSide,
     sourceOffset = 0,
     targetOffset = 0,
-  ): OrthogonalEdgeGeometry => {
+  ): OrthogonalEdgeGeometry {
     const points: Point[] = [{ ...fromPoint }]
     const isHorizontalStart = fromSide === 'left' || fromSide === 'right'
     const isHorizontalEnd = toSide === 'left' || toSide === 'right'
@@ -640,28 +958,35 @@ export default function CanvasViewport() {
       totalLength += segmentLength
     }
 
-    let traversedLength = 0
+    const visualCenter = {
+      x: (fromPoint.x + toPoint.x) / 2,
+      y: (fromPoint.y + toPoint.y) / 2,
+    }
     let midPoint = dedupedPoints[Math.floor(dedupedPoints.length / 2)] ?? fromPoint
+    let closestDistance = Number.POSITIVE_INFINITY
 
-    if (totalLength > 0) {
-      const targetLength = totalLength / 2
+    for (let index = 1; index < dedupedPoints.length; index += 1) {
+      const previous = dedupedPoints[index - 1]
+      const current = dedupedPoints[index]
+      const deltaX = current.x - previous.x
+      const deltaY = current.y - previous.y
+      const segmentLengthSquared = deltaX * deltaX + deltaY * deltaY
 
-      for (let index = 1; index < dedupedPoints.length; index += 1) {
-        const segmentLength = segmentLengths[index - 1]
+      if (segmentLengthSquared === 0) {
+        continue
+      }
 
-        if (traversedLength + segmentLength >= targetLength) {
-          const previous = dedupedPoints[index - 1]
-          const current = dedupedPoints[index]
-          const ratio = (targetLength - traversedLength) / segmentLength
+      const projection = ((visualCenter.x - previous.x) * deltaX + (visualCenter.y - previous.y) * deltaY) / segmentLengthSquared
+      const ratio = Math.max(0, Math.min(1, projection))
+      const candidatePoint = {
+        x: previous.x + deltaX * ratio,
+        y: previous.y + deltaY * ratio,
+      }
+      const distance = Math.hypot(candidatePoint.x - visualCenter.x, candidatePoint.y - visualCenter.y)
 
-          midPoint = {
-            x: previous.x + (current.x - previous.x) * ratio,
-            y: previous.y + (current.y - previous.y) * ratio,
-          }
-          break
-        }
-
-        traversedLength += segmentLength
+      if (distance < closestDistance) {
+        closestDistance = distance
+        midPoint = candidatePoint
       }
     }
 
@@ -690,10 +1015,12 @@ export default function CanvasViewport() {
 
     const localX = clientX - viewportRect.left
     const localY = clientY - viewportRect.top
-    const threshold = 12
+    const threshold = CANVAS_CONNECTION_DROP_TARGET_THRESHOLD
+    const candidates: Array<{ nodeId: string; side: CanvasConnectorSide; valid: true } | { nodeId: string; side: CanvasConnectorSide; valid: false; reason?: string; distance: number }> = []
+    const validCandidates: Array<{ nodeId: string; side: CanvasConnectorSide; valid: true; distance: number }> = []
 
     for (const node of placedNodes) {
-      for (const side of ['top', 'right', 'bottom', 'left'] as CanvasConnectorSide[]) {
+      for (const side of CANVAS_CONNECTOR_SIDES) {
         if (node.id === sourceNodeId && side === sourceSide) {
           continue
         }
@@ -701,17 +1028,32 @@ export default function CanvasViewport() {
         const point = getConnectorScreenPosition(node.id, node, side)
         const dx = point.x - localX
         const dy = point.y - localY
+        const distance = Math.hypot(dx, dy)
 
-        if (Math.hypot(dx, dy) <= threshold) {
-          const validation = getConnectionValidation(sourceNodeId, node.id)
+        if (distance <= threshold) {
+          const sourceNode = placedNodes.find((placedNode) => placedNode.id === sourceNodeId)
+          const validation = getCanvasConnectionValidation(sourceNode, node, { sourceSide, targetSide: side, edges })
 
           if (!validation.valid) {
-            return { nodeId: node.id, side, valid: false as const, reason: validation.reason }
+            candidates.push({ nodeId: node.id, side, valid: false as const, reason: validation.reason, distance })
+            continue
           }
 
-          return { nodeId: node.id, side, valid: true as const }
+          validCandidates.push({ nodeId: node.id, side, valid: true as const, distance })
         }
       }
+    }
+
+    if (validCandidates.length > 0) {
+      validCandidates.sort((left, right) => left.distance - right.distance)
+      const bestCandidate = validCandidates[0]
+      return { nodeId: bestCandidate.nodeId, side: bestCandidate.side, valid: true as const }
+    }
+
+    if (candidates.length > 0) {
+      candidates.sort((left, right) => left.distance - right.distance)
+      const bestCandidate = candidates[0]
+      return { nodeId: bestCandidate.nodeId, side: bestCandidate.side, valid: false as const, reason: bestCandidate.reason }
     }
 
     return null
@@ -720,6 +1062,164 @@ export default function CanvasViewport() {
   const closeCommentContextMenu = () => {
     setContextMenuPosition(null)
     setContextMenuThreadId(null)
+  }
+
+  const closeCanvasContextMenu = () => {
+    setCanvasContextMenuPosition(null)
+  }
+
+  const updateLastCanvasPointerClientPosition = (clientX: number, clientY: number) => {
+    lastCanvasPointerClientPositionRef.current = { x: clientX, y: clientY }
+  }
+
+  const copySelectedCanvasNodes = () => {
+    if (selectedNodeIds.length === 0) {
+      return
+    }
+
+    const selectedNodeIdSet = new Set(selectedNodeIds)
+    const nodesToCopy = placedNodes
+      .filter((node) => selectedNodeIdSet.has(node.id))
+      .map((node) => ({ ...node }))
+    const edgesToCopy = edges
+      .filter((edge) => selectedNodeIdSet.has(edge.fromNodeId) && selectedNodeIdSet.has(edge.toNodeId))
+      .map((edge) => ({
+        fromNodeId: edge.fromNodeId,
+        fromSide: edge.fromSide,
+        toNodeId: edge.toNodeId,
+        toSide: edge.toSide,
+      }))
+
+    clipboardRef.current = {
+      nodes: nodesToCopy,
+      edges: edgesToCopy,
+    }
+  }
+
+  const pasteCanvasNodes = (targetClientPoint?: Point | null) => {
+    const clipboard = clipboardRef.current
+
+    if (!clipboard || clipboard.nodes.length === 0) {
+      return
+    }
+
+    const viewportRect = viewportRef.current?.getBoundingClientRect()
+    const pasteClientPoint = targetClientPoint ?? canvasContextMenuPosition ?? lastCanvasPointerClientPositionRef.current
+    const clipboardBounds = clipboard.nodes.reduce<Rect>((bounds, node) => ({
+      left: Math.min(bounds.left, node.x),
+      top: Math.min(bounds.top, node.y),
+      right: Math.max(bounds.right, node.x),
+      bottom: Math.max(bounds.bottom, node.y),
+    }), {
+      left: clipboard.nodes[0].x,
+      top: clipboard.nodes[0].y,
+      right: clipboard.nodes[0].x,
+      bottom: clipboard.nodes[0].y,
+    })
+    const clipboardCenter = {
+      x: (clipboardBounds.left + clipboardBounds.right) / 2,
+      y: (clipboardBounds.top + clipboardBounds.bottom) / 2,
+    }
+    const pasteAnchor = viewportRect && pasteClientPoint
+      ? {
+          x: (pasteClientPoint.x - viewportRect.left - view.x) / view.scale,
+          y: (pasteClientPoint.y - viewportRect.top - view.y) / view.scale,
+        }
+      : null
+    const pasteDelta = pasteAnchor
+      ? {
+          x: pasteAnchor.x - clipboardCenter.x,
+          y: pasteAnchor.y - clipboardCenter.y,
+        }
+      : PASTE_OFFSET
+
+    const idMap = new Map<string, string>()
+    const pastedNodeIds: string[] = []
+    const timestamp = Date.now()
+
+    clipboard.nodes.forEach((node, index) => {
+      const nextId = `node-${timestamp}-${index}`
+      idMap.set(node.id, nextId)
+      pastedNodeIds.push(nextId)
+      const pastedNode: CanvasNodeRecord = {
+        ...node,
+        id: nextId,
+        x: node.x + pasteDelta.x,
+        y: node.y + pasteDelta.y,
+      }
+      addCanvasNode(pastedNode)
+      preferredNodePositionsRef.current[nextId] = { x: pastedNode.x, y: pastedNode.y }
+    })
+
+    clipboard.edges.forEach((edge, index) => {
+      const nextFromNodeId = idMap.get(edge.fromNodeId)
+      const nextToNodeId = idMap.get(edge.toNodeId)
+
+      if (!nextFromNodeId || !nextToNodeId) {
+        return
+      }
+
+      addCanvasEdge({
+        id: `edge-${timestamp}-${index}`,
+        fromNodeId: nextFromNodeId,
+        fromSide: edge.fromSide,
+        toNodeId: nextToNodeId,
+        toSide: edge.toSide,
+      })
+    })
+
+    setSelectedCanvasNodeIds(pastedNodeIds)
+    setSelectedCanvasEdgeIds([])
+  }
+
+  const canvasContextMenuGroups = [
+    {
+      items: [
+        { label: 'Delete', value: 'delete', shortcut: 'Del' },
+        { label: 'Copy', value: 'copy', shortcut: 'Ctrl+C' },
+        { label: 'Paste', value: 'paste', shortcut: 'Ctrl+V' },
+      ],
+    },
+  ]
+
+  const handleCanvasContextMenuAction = (value?: string) => {
+    if (value === 'delete') {
+      if (selectedEdgeIds.length > 0) {
+        removeCanvasEdges(selectedEdgeIds)
+      } else if (selectedNodeIds.length > 0) {
+        removeCanvasNodes(selectedNodeIds)
+      }
+      closeCanvasContextMenu()
+      return
+    }
+
+    if (value === 'copy') {
+      copySelectedCanvasNodes()
+      closeCanvasContextMenu()
+      return
+    }
+
+    if (value === 'paste') {
+      pasteCanvasNodes(canvasContextMenuPosition)
+      closeCanvasContextMenu()
+      return
+    }
+  }
+
+  const handleCanvasContextMenu = (event: React.MouseEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    closeCommentContextMenu()
+    updateLastCanvasPointerClientPosition(event.clientX, event.clientY)
+
+    const clickedNodeElement = (event.target as HTMLElement | null)?.closest('[data-canvas-node-id]') as HTMLElement | null
+    const clickedNodeId = clickedNodeElement?.dataset.canvasNodeId ?? null
+
+    if (clickedNodeId && !selectedNodeIds.includes(clickedNodeId)) {
+      setSelectedCanvasNodeIds([clickedNodeId])
+      setSelectedCanvasEdgeIds([])
+    }
+
+    setCanvasContextMenuPosition({ x: event.clientX, y: event.clientY })
   }
 
   const handleDeleteCommentThread = (threadId: string) => {
@@ -888,6 +1388,8 @@ export default function CanvasViewport() {
     }
 
     const handlePointerMove = (event: PointerEvent) => {
+      updateLastCanvasPointerClientPosition(event.clientX, event.clientY)
+
       const selectionState = selectionStateRef.current
       const dragState = dragStateRef.current
       const nodeDragState = nodeDragStateRef.current
@@ -911,6 +1413,20 @@ export default function CanvasViewport() {
       }
 
       if (nodeDragState && event.pointerId === nodeDragState.pointerId) {
+        if (!nodeDragState.hasExceededDragThreshold) {
+          const rawDeltaX = event.clientX - nodeDragState.start.x
+          const rawDeltaY = event.clientY - nodeDragState.start.y
+
+          if (Math.hypot(rawDeltaX, rawDeltaY) < 4) {
+            return
+          }
+
+          nodeDragStateRef.current = {
+            ...nodeDragState,
+            hasExceededDragThreshold: true,
+          }
+        }
+
         const nextDeltaX = (event.clientX - nodeDragState.start.x) / view.scale
         const nextDeltaY = (event.clientY - nodeDragState.start.y) / view.scale
         const stepDeltaX = nextDeltaX - nodeDragState.lastDelta.x
@@ -919,6 +1435,18 @@ export default function CanvasViewport() {
         moveCanvasNodes(nodeDragState.nodeIds, {
           x: stepDeltaX,
           y: stepDeltaY,
+        })
+        nodeDragState.nodeIds.forEach((nodeId) => {
+          const currentPreferredPosition = preferredNodePositionsRef.current[nodeId] ?? placedNodes.find((node) => node.id === nodeId)
+
+          if (!currentPreferredPosition) {
+            return
+          }
+
+          preferredNodePositionsRef.current[nodeId] = {
+            x: currentPreferredPosition.x + stepDeltaX,
+            y: currentPreferredPosition.y + stepDeltaY,
+          }
         })
         nodeDragStateRef.current = {
           ...nodeDragState,
@@ -976,7 +1504,7 @@ export default function CanvasViewport() {
             toSide: dropTarget.side,
           })
         } else if (dropTarget && !dropTarget.valid) {
-          setInvalidConnectionMessage(dropTarget.reason ?? 'Invalid connection.')
+          setInvalidConnectionMessage(dropTarget.reason ?? CANVAS_CONNECTION_INVALID_MESSAGE)
           window.setTimeout(() => {
             setInvalidConnectionMessage((current) => (current === dropTarget.reason ? null : current))
           }, 1800)
@@ -1027,8 +1555,8 @@ export default function CanvasViewport() {
               const targetSiblingEdges = edges.filter((candidate) => candidate.toNodeId === edge.toNodeId && candidate.toSide === edge.toSide)
               const sourceIndex = sourceSiblingEdges.findIndex((candidate) => candidate.id === edge.id)
               const targetIndex = targetSiblingEdges.findIndex((candidate) => candidate.id === edge.id)
-              const sourceOffset = sourceSiblingEdges.length > 1 ? (sourceIndex - (sourceSiblingEdges.length - 1) / 2) * 14 * view.scale : 0
-              const targetOffset = targetSiblingEdges.length > 1 ? (targetIndex - (targetSiblingEdges.length - 1) / 2) * 14 * view.scale : 0
+              const sourceOffset = sourceSiblingEdges.length > 1 ? (sourceIndex - (sourceSiblingEdges.length - 1) / 2) * 14 : 0
+              const targetOffset = targetSiblingEdges.length > 1 ? (targetIndex - (targetSiblingEdges.length - 1) / 2) * 14 : 0
               const geometry = getOrthogonalEdgeGeometry(fromPoint, toPoint, edge.fromSide, edge.toSide, sourceOffset, targetOffset)
 
               return geometry.bounds.maxX >= left && geometry.bounds.minX <= right && geometry.bounds.maxY >= top && geometry.bounds.minY <= bottom
@@ -1073,69 +1601,108 @@ export default function CanvasViewport() {
         return
       }
 
-      const nextTool = TOOL_CODE_BINDINGS[event.code] ?? TOOL_KEY_BINDINGS[event.key.toLowerCase()]
+      if (canvasActionShortcuts.deleteSelectedNodes.includes(event.key as 'Backspace' | 'Delete')) {
+        event.preventDefault()
+
+        if (selectedEdgeIds.length > 0) {
+          removeCanvasEdges(selectedEdgeIds)
+          return
+        }
+
+        if (selectedNodeIds.length === 0) {
+          return
+        }
+
+        removeCanvasNodes(selectedNodeIds)
+        return
+      }
+
+      const isMetaOrCtrl = event.ctrlKey || event.metaKey
+
+      if (isMetaOrCtrl && event.key.toLowerCase() === 'z' && !event.shiftKey) {
+        event.preventDefault()
+        undoCanvasGraph()
+        return
+      }
+
+      if (isMetaOrCtrl && event.key.toLowerCase() === 'y') {
+        event.preventDefault()
+        redoCanvasGraph()
+        return
+      }
+
+      if (isMetaOrCtrl && event.key.toLowerCase() === 'c') {
+        event.preventDefault()
+        copySelectedCanvasNodes()
+        return
+      }
+
+      if (isMetaOrCtrl && event.key.toLowerCase() === 'v') {
+        event.preventDefault()
+        pasteCanvasNodes()
+        return
+      }
+
+      if (isMetaOrCtrl && event.key === '=') {
+        event.preventDefault()
+        executeCanvasZoomAction('zoomIn')
+        return
+      }
+
+      if (isMetaOrCtrl && event.key === '-') {
+        event.preventDefault()
+        executeCanvasZoomAction('zoomOut')
+        return
+      }
+
+      if (event.shiftKey && event.key === '0') {
+        event.preventDefault()
+        executeCanvasZoomAction('zoom100')
+        return
+      }
+
+      if (event.shiftKey && event.key === '1') {
+        event.preventDefault()
+        executeCanvasZoomAction('zoomFit')
+        return
+      }
+
+      if (event.shiftKey && event.key === '2') {
+        event.preventDefault()
+        executeCanvasZoomAction('zoomSelection')
+        return
+      }
+
+      if (selectedNodeIds.length > 0 && (event.key === 'ArrowUp' || event.key === 'ArrowDown' || event.key === 'ArrowLeft' || event.key === 'ArrowRight')) {
+        event.preventDefault()
+        const delta = event.shiftKey ? 24 : 8
+        const movement = event.key === 'ArrowUp'
+          ? { x: 0, y: -delta }
+          : event.key === 'ArrowDown'
+            ? { x: 0, y: delta }
+            : event.key === 'ArrowLeft'
+              ? { x: -delta, y: 0 }
+              : { x: delta, y: 0 }
+
+        moveCanvasNodes(selectedNodeIds, movement)
+        selectedNodeIds.forEach((nodeId) => {
+          const currentPreferredPosition = preferredNodePositionsRef.current[nodeId] ?? placedNodes.find((node) => node.id === nodeId)
+
+          if (!currentPreferredPosition) {
+            return
+          }
+
+          preferredNodePositionsRef.current[nodeId] = {
+            x: currentPreferredPosition.x + movement.x,
+            y: currentPreferredPosition.y + movement.y,
+          }
+        })
+        return
+      }
+
+      const nextTool = isMetaOrCtrl ? undefined : (TOOL_CODE_BINDINGS[event.code] ?? TOOL_KEY_BINDINGS[event.key.toLowerCase()])
 
       if (!nextTool) {
-        if (canvasActionShortcuts.deleteSelectedNodes.includes(event.key as 'Backspace' | 'Delete')) {
-          event.preventDefault()
-
-          if (selectedEdgeIds.length > 0) {
-            removeCanvasEdges(selectedEdgeIds)
-            return
-          }
-
-          if (selectedNodeIds.length === 0) {
-            return
-          }
-
-          removeCanvasNodes(selectedNodeIds)
-          return
-        }
-
-        const isMetaOrCtrl = event.ctrlKey || event.metaKey
-
-        if (isMetaOrCtrl && event.key.toLowerCase() === 'z' && !event.shiftKey) {
-          event.preventDefault()
-          undoCanvasGraph()
-          return
-        }
-
-        if (isMetaOrCtrl && event.key.toLowerCase() === 'y') {
-          event.preventDefault()
-          redoCanvasGraph()
-          return
-        }
-
-        if (isMetaOrCtrl && event.key === '=') {
-          event.preventDefault()
-          executeCanvasZoomAction('zoomIn')
-          return
-        }
-
-        if (isMetaOrCtrl && event.key === '-') {
-          event.preventDefault()
-          executeCanvasZoomAction('zoomOut')
-          return
-        }
-
-        if (event.shiftKey && event.key === '0') {
-          event.preventDefault()
-          executeCanvasZoomAction('zoom100')
-          return
-        }
-
-        if (event.shiftKey && event.key === '1') {
-          event.preventDefault()
-          executeCanvasZoomAction('zoomFit')
-          return
-        }
-
-        if (event.shiftKey && event.key === '2') {
-          event.preventDefault()
-          executeCanvasZoomAction('zoomSelection')
-          return
-        }
-
         return
       }
 
@@ -1157,7 +1724,9 @@ export default function CanvasViewport() {
 
   const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     closeCommentContextMenu()
+    closeCanvasContextMenu()
     setSelectedCanvasEdgeIds([])
+    updateLastCanvasPointerClientPosition(event.clientX, event.clientY)
 
     const visibleThreadId = pinnedThreadId ?? hoveredThreadId
 
@@ -1204,12 +1773,7 @@ export default function CanvasViewport() {
       const worldX = (event.clientX - view.x) / view.scale
       const worldY = (event.clientY - view.y) / view.scale
 
-      addCanvasNode({
-        id: `node-${Date.now()}`,
-        type: activeNodeType,
-        x: worldX,
-        y: worldY,
-      })
+      addCanvasNode(createCanvasNodeDraft(activeNodeType, worldX, worldY))
       return
     }
 
@@ -1284,6 +1848,7 @@ export default function CanvasViewport() {
   }
 
   const handleNodePointerDown = (event: ReactPointerEvent<HTMLDivElement>, nodeId: string) => {
+    closeCanvasContextMenu()
     event.stopPropagation()
 
     if (event.button !== 0) {
@@ -1303,6 +1868,7 @@ export default function CanvasViewport() {
       nodeIds: nextSelectedNodeIds,
       start: { x: event.clientX, y: event.clientY },
       lastDelta: { x: 0, y: 0 },
+      hasExceededDragThreshold: false,
     }
 
     if (activeTool !== 'click') {
@@ -1368,7 +1934,7 @@ export default function CanvasViewport() {
         touchAction: 'none',
       }}
     >
-      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }} onContextMenu={handleCanvasContextMenu}>
         {invalidConnectionMessage ? (
           <div
             style={{
@@ -1428,6 +1994,7 @@ export default function CanvasViewport() {
           {placedNodes.map((node) => (
             <div
               key={node.id}
+              data-canvas-node-id={node.id}
               style={{
                 position: 'absolute',
                 left: node.x * view.scale + view.x,
@@ -1617,14 +2184,14 @@ export default function CanvasViewport() {
                   const incomingAssetNodes = edges
                     .filter((edge) => edge.toNodeId === node.id)
                     .map((edge) => placedNodes.find((placedNode) => placedNode.id === edge.fromNodeId))
-                    .filter((placedNode): placedNode is CanvasNodeRecord => Boolean(placedNode && (placedNode.type === 'stock' || placedNode.type === 'token')))
+                    .filter((placedNode): placedNode is CanvasNodeRecord => Boolean(placedNode && (placedNode.type === 'stock' || placedNode.type === 'token' || placedNode.type === 'assetBasket')))
                   const incomingAssetCount = incomingAssetNodes.length
                   const configuredAssetIds = Object.keys(node.filterConfigsByAssetNodeId ?? {})
                   const availableFilterAssetIds = Array.from(new Set([...incomingAssetNodes.map((assetNode) => assetNode.id), ...configuredAssetIds]))
                   const availableFilterAssetCount = availableFilterAssetIds.length
                   const activeConfigAsset = node.filterAssetNodeId ? placedNodes.find((placedNode) => placedNode.id === node.filterAssetNodeId) : null
                   const targetLabel = incomingAssetCount === 1
-                    ? incomingAssetNodes[0]?.assetSymbol ?? incomingAssetNodes[0]?.assetName ?? ''
+                    ? incomingAssetNodes[0]?.assetSymbol ?? incomingAssetNodes[0]?.assetName ?? incomingAssetNodes[0]?.assetBasketName ?? ''
                     : incomingAssetCount > 1
                       ? `${incomingAssetCount} assets`
                       : ''
@@ -1717,15 +2284,15 @@ export default function CanvasViewport() {
 
                     const filterAssetOptions = availableFilterAssetIds
                       .map((assetNodeId) => placedNodes.find((placedNode) => placedNode.id === assetNodeId))
-                      .filter((placedNode): placedNode is CanvasNodeRecord => Boolean(placedNode && (placedNode.type === 'stock' || placedNode.type === 'token')))
-                    const activeAssetLabel = activeConfigAsset?.assetSymbol ?? activeConfigAsset?.assetName ?? 'Asset'
+                      .filter((placedNode): placedNode is CanvasNodeRecord => Boolean(placedNode && (placedNode.type === 'stock' || placedNode.type === 'token' || placedNode.type === 'assetBasket')))
+                    const activeAssetLabel = activeConfigAsset?.assetSymbol ?? activeConfigAsset?.assetName ?? activeConfigAsset?.assetBasketName ?? 'Asset'
                     const activeAssetIcon = activeConfigAsset?.type === 'stock' && activeConfigAsset.assetSymbol
                       ? <CanvasAssetLogo assetType="stock" symbol={activeConfigAsset.assetSymbol} size={12} />
                       : activeConfigAsset?.type === 'token' && activeConfigAsset.assetSymbol
                         ? <CanvasAssetLogo assetType="token" symbol={activeConfigAsset.assetSymbol} size={12} />
                         : undefined
                     const assetMenuItems: DropdownMenuItem[] = filterAssetOptions.map((assetNode) => ({
-                      label: assetNode.assetSymbol ?? assetNode.assetName ?? 'Asset',
+                      label: assetNode.assetSymbol ?? assetNode.assetName ?? assetNode.assetBasketName ?? 'Asset',
                       value: assetNode.id,
                       active: assetNode.id === node.filterAssetNodeId,
                       icon: assetNode.assetSymbol && (assetNode.type === 'stock' || assetNode.type === 'token') ? <CanvasAssetLogo assetType={assetNode.type} symbol={assetNode.assetSymbol} size={16} /> : null,
@@ -1886,27 +2453,45 @@ export default function CanvasViewport() {
                   />
                 ) : node.type === 'takeProfit' ? (
                   <TakeProfitNode
-                    labelSegments={[
-                      { kind: 'text', text: 'Take profit' },
-                      { kind: 'badge', text: node.takeProfitMode === 'partial' ? 'Partial' : node.takeProfitMode === 'ladder' ? 'Ladder' : 'Single' },
-                      { kind: 'text', text: 'if' },
-                      { kind: 'badge', text: getLinkedAssetLabel(node.riskAssetNodeId), icon: getLinkedAssetIcon(node.riskAssetNodeId) },
-                      { kind: 'badge', text: node.riskComparator ?? '>=' },
-                      { kind: 'badge', text: `$${node.riskThresholdValue?.trim() ? node.riskThresholdValue.trim() : '0'}` },
-                    ]}
+                    labelSegments={node.takeProfitMode === 'atrBased'
+                      ? [
+                          { kind: 'text', text: 'Take profit' },
+                          { kind: 'badge', text: 'ATR-based' },
+                          { kind: 'badge', text: getLinkedAssetLabel(node.riskAssetNodeId), icon: getLinkedAssetIcon(node.riskAssetNodeId) },
+                          { kind: 'text', text: 'ATR' },
+                          { kind: 'badge', text: node.riskAtrPeriod?.trim() ? node.riskAtrPeriod.trim() : '14' },
+                          { kind: 'badge', text: `x ${node.riskAtrMultiplier?.trim() ? node.riskAtrMultiplier.trim() : '2'}` },
+                        ]
+                      : [
+                          { kind: 'text', text: 'Take profit' },
+                          { kind: 'badge', text: node.takeProfitMode === 'partial' ? 'Partial' : node.takeProfitMode === 'ladder' ? 'Ladder' : 'Single' },
+                          { kind: 'text', text: 'if' },
+                          { kind: 'badge', text: getLinkedAssetLabel(node.riskAssetNodeId), icon: getLinkedAssetIcon(node.riskAssetNodeId) },
+                          { kind: 'badge', text: node.riskComparator ?? '>=' },
+                          { kind: 'badge', text: `$${node.riskThresholdValue?.trim() ? node.riskThresholdValue.trim() : '0'}` },
+                        ]}
                     icon={<TrendUp size={18} weight="bold" />}
                     {...getCommonNodeProps(node.id)}
                   />
                 ) : node.type === 'stopLoss' ? (
                   <StopLossNode
-                    labelSegments={[
-                      { kind: 'text', text: 'Stop loss' },
-                      { kind: 'badge', text: node.stopLossMode === 'trailing' ? 'Trailing' : node.stopLossMode === 'breakEven' ? 'Break-even' : 'Fixed' },
-                      { kind: 'text', text: 'if' },
-                      { kind: 'badge', text: getLinkedAssetLabel(node.riskAssetNodeId), icon: getLinkedAssetIcon(node.riskAssetNodeId) },
-                      { kind: 'badge', text: node.riskComparator ?? '<=' },
-                      { kind: 'badge', text: `$${node.riskThresholdValue?.trim() ? node.riskThresholdValue.trim() : '0'}` },
-                    ]}
+                    labelSegments={node.stopLossMode === 'atrBased'
+                      ? [
+                          { kind: 'text', text: 'Stop loss' },
+                          { kind: 'badge', text: 'ATR-based' },
+                          { kind: 'badge', text: getLinkedAssetLabel(node.riskAssetNodeId), icon: getLinkedAssetIcon(node.riskAssetNodeId) },
+                          { kind: 'text', text: 'ATR' },
+                          { kind: 'badge', text: node.riskAtrPeriod?.trim() ? node.riskAtrPeriod.trim() : '14' },
+                          { kind: 'badge', text: `x ${node.riskAtrMultiplier?.trim() ? node.riskAtrMultiplier.trim() : '2'}` },
+                        ]
+                      : [
+                          { kind: 'text', text: 'Stop loss' },
+                          { kind: 'badge', text: node.stopLossMode === 'trailing' ? 'Trailing' : node.stopLossMode === 'breakEven' ? 'Break-even' : 'Fixed' },
+                          { kind: 'text', text: 'if' },
+                          { kind: 'badge', text: getLinkedAssetLabel(node.riskAssetNodeId), icon: getLinkedAssetIcon(node.riskAssetNodeId) },
+                          { kind: 'badge', text: node.riskComparator ?? '<=' },
+                          { kind: 'badge', text: `$${node.riskThresholdValue?.trim() ? node.riskThresholdValue.trim() : '0'}` },
+                        ]}
                     icon={<TrendDown size={18} weight="bold" />}
                     {...getCommonNodeProps(node.id)}
                   />
@@ -1932,6 +2517,32 @@ export default function CanvasViewport() {
                     ]}
                     {...getCommonNodeProps(node.id)}
                   />
+                ) : node.type === 'wait' ? (
+                  <WaitNode
+                    labelSegments={[
+                      { kind: 'text', text: 'Wait' },
+                      { kind: 'text', text: 'for' },
+                      { kind: 'badge', text: `${node.waitDuration?.trim() ? node.waitDuration.trim() : '0'} ${node.waitUnit ? node.waitUnit.charAt(0).toUpperCase() + node.waitUnit.slice(1) : 'Day'}` },
+                    ]}
+                    {...getCommonNodeProps(node.id)}
+                  />
+                ) : node.type === 'pauseTrading' ? (
+                  <PauseTradingNode
+                    labelSegments={node.pauseTradingMode === 'untilCondition'
+                      ? [
+                          { kind: 'text', text: 'Pause' },
+                          { kind: 'badge', text: 'Trading' },
+                          { kind: 'text', text: 'until' },
+                          { kind: 'badge', text: node.pauseTradingCondition?.trim() ? node.pauseTradingCondition.trim() : 'Condition' },
+                        ]
+                      : [
+                          { kind: 'text', text: 'Pause' },
+                          { kind: 'badge', text: 'Trading' },
+                          { kind: 'text', text: 'for' },
+                          { kind: 'badge', text: `${node.pauseTradingDuration?.trim() ? node.pauseTradingDuration.trim() : '0'} ${node.pauseTradingUnit ? node.pauseTradingUnit.charAt(0).toUpperCase() + node.pauseTradingUnit.slice(1) : 'Day'}` },
+                        ]}
+                    {...getCommonNodeProps(node.id)}
+                  />
                 ) : node.type === 'positionLimit' ? (
                   <PositionLimitNode
                     labelSegments={[
@@ -1939,6 +2550,17 @@ export default function CanvasViewport() {
                       { kind: 'badge', text: 'Limit' },
                       { kind: 'badge', text: node.positionLimitApplyTo === 'branchAssets' ? 'Branch Assets' : 'Single Asset' },
                       { kind: 'badge', text: node.positionLimitMode === 'value' ? `$${node.positionLimitValue?.trim() ? node.positionLimitValue.trim() : '0'}` : `${node.positionLimitValue?.trim() ? node.positionLimitValue.trim() : '0'}%` },
+                    ]}
+                    {...getCommonNodeProps(node.id)}
+                  />
+                ) : node.type === 'positionCountLimit' ? (
+                  <PositionCountLimitNode
+                    labelSegments={[
+                      { kind: 'text', text: 'Position Count' },
+                      { kind: 'badge', text: 'Limit' },
+                      { kind: 'badge', text: node.positionCountScope === 'portfolio' ? 'Whole Portfolio' : 'This Branch' },
+                      { kind: 'badge', text: node.positionCountComparator ?? '>=' },
+                      { kind: 'badge', text: node.positionCountValue?.trim() ? node.positionCountValue.trim() : '0' },
                     ]}
                     {...getCommonNodeProps(node.id)}
                   />
@@ -1950,6 +2572,25 @@ export default function CanvasViewport() {
                       { kind: 'badge', text: node.exposureLimitType === 'basket' ? 'Basket' : node.exposureLimitType === 'portfolio' ? 'Portfolio' : 'Asset Class' },
                       { kind: 'badge', text: node.riskComparator ?? '>=' },
                       { kind: 'badge', text: `${node.exposureLimitValue?.trim() ? node.exposureLimitValue.trim() : '0'}%` },
+                    ]}
+                    {...getCommonNodeProps(node.id)}
+                  />
+                ) : node.type === 'cashReserve' ? (
+                  <CashReserveNode
+                    labelSegments={[
+                      { kind: 'text', text: 'Reserve' },
+                      { kind: 'badge', text: 'Cash' },
+                      { kind: 'badge', text: `${node.cashReservePercent?.trim() ? node.cashReservePercent.trim() : '0'}%` },
+                      ...(node.cashReserveLabel?.trim() ? [{ kind: 'badge' as const, text: node.cashReserveLabel.trim() }] : []),
+                    ]}
+                    {...getCommonNodeProps(node.id)}
+                  />
+                ) : node.type === 'assetBasket' ? (
+                  <AssetBasketNode
+                    labelSegments={[
+                      { kind: 'text', text: 'Asset' },
+                      { kind: 'badge', text: 'Basket' },
+                      { kind: 'badge', text: node.assetBasketName?.trim() ? node.assetBasketName.trim() : 'Grouped Assets' },
                     ]}
                     {...getCommonNodeProps(node.id)}
                   />
@@ -1984,22 +2625,7 @@ export default function CanvasViewport() {
                     })
                   }} />
                 ) : (
-                  <EndNode labelSegments={node.endType === 'priceReaches' ? (() => {
-                    const targetNode = placedNodes.find((placedNode) => placedNode.id === node.endAssetNodeId)
-                    const targetLabel = targetNode?.assetSymbol ?? targetNode?.assetName ?? 'Asset'
-                    const targetIcon = targetNode?.type === 'stock' && targetNode.assetSymbol
-                      ? <CanvasAssetLogo assetType="stock" symbol={targetNode.assetSymbol} size={14} />
-                      : targetNode?.type === 'token' && targetNode.assetSymbol
-                        ? <CanvasAssetLogo assetType="token" symbol={targetNode.assetSymbol} size={14} />
-                        : undefined
-
-                    return [
-                      { kind: 'text' as const, text: 'Price' },
-                      { kind: 'badge' as const, text: targetLabel, icon: targetIcon },
-                      { kind: 'text' as const, text: 'reaches' },
-                      { kind: 'badge' as const, text: `${node.endOperator ?? ''} ${node.endTargetValue && node.endTargetValue.trim().length > 0 ? `$${node.endTargetValue}` : '$0'}`.trim() },
-                    ]
-                  })() : node.endType === 'portfolioValue' ? [{ kind: 'text', text: 'Portfolio' }, { kind: 'text', text: 'reaches' }, { kind: 'badge', text: `${node.endOperator ?? ''} ${node.endTargetValue && node.endTargetValue.trim().length > 0 ? `$${node.endTargetValue}` : '$0'}`.trim() }] : node.endType === 'timeBased' ? [{ kind: 'text', text: 'Time' }, { kind: 'text', text: 'after' }, { kind: 'badge', text: `${node.endTimeValue && node.endTimeValue.trim().length > 0 ? node.endTimeValue : '0'} ${node.endTimeUnit ? node.endTimeUnit.charAt(0).toUpperCase() + node.endTimeUnit.slice(1) : 'Unit'}` }] : node.endType === 'maxDrawdown' ? [{ kind: 'text', text: 'Max drawdown' }, { kind: 'text', text: 'hits' }, { kind: 'badge', text: `${node.endOperator ?? '<='} ${node.endTargetValue && node.endTargetValue.trim().length > 0 ? `${node.endTargetValue}%` : '0%'}`.trim() }] : node.endType === 'dailyLoss' ? [{ kind: 'text', text: 'Daily loss' }, { kind: 'text', text: 'hits' }, { kind: 'badge', text: `${node.endOperator ?? '<='} ${node.endTargetValue && node.endTargetValue.trim().length > 0 ? `${node.endTargetValue}%` : '0%'}`.trim() }] : node.endType === 'exposureLimit' ? [{ kind: 'text', text: 'Exposure' }, { kind: 'text', text: 'exceeds' }, { kind: 'badge', text: `${node.endOperator ?? '>='} ${node.endTargetValue && node.endTargetValue.trim().length > 0 ? `${node.endTargetValue}%` : '0%'}`.trim() }] : node.endType === 'positionConcentration' ? [{ kind: 'text', text: 'Position' }, { kind: 'text', text: 'exceeds' }, { kind: 'badge', text: `${node.endOperator ?? '>='} ${node.endTargetValue && node.endTargetValue.trim().length > 0 ? `${node.endTargetValue}%` : '0%'}`.trim() }] : node.endType === 'volatilityLimit' ? [{ kind: 'text', text: 'Volatility' }, { kind: 'text', text: 'exceeds' }, { kind: 'badge', text: `${node.endOperator ?? '>='} ${node.endTargetValue && node.endTargetValue.trim().length > 0 ? `${node.endTargetValue}%` : '0%'}`.trim() }] : [{ kind: 'text', text: 'End' }]} icon={node.endType === 'priceReaches' ? <ChartLineUp size={18} weight="bold" /> : node.endType === 'portfolioValue' ? <Wallet size={18} weight="fill" /> : node.endType === 'timeBased' ? <ClockCountdown size={18} weight="fill" /> : node.endType === 'maxDrawdown' ? <TrendDown size={18} weight="bold" /> : node.endType === 'dailyLoss' ? <ShieldWarning size={18} weight="fill" /> : node.endType === 'exposureLimit' ? <Percent size={18} weight="bold" /> : node.endType === 'positionConcentration' ? <Wallet size={18} weight="fill" /> : node.endType === 'volatilityLimit' ? <WaveSine size={18} weight="bold" /> : <FlagCheckered size={18} weight="fill" />} selected={selectedNodeIds.includes(node.id)} activeConnectorSide={connectorDragStateRef.current?.fromNodeId === node.id ? connectorDragStateRef.current.fromSide : connectorHoverTarget?.nodeId === node.id ? connectorHoverTarget.side : null} onConnectorPointerDown={(side, event) => handleConnectorPointerDown(event, node.id, side)} onMeasure={(size) => {
+                  <EndNode labelSegments={getEndLabelSegments(node)} selected={selectedNodeIds.includes(node.id)} activeConnectorSide={connectorDragStateRef.current?.fromNodeId === node.id ? connectorDragStateRef.current.fromSide : connectorHoverTarget?.nodeId === node.id ? connectorHoverTarget.side : null} onConnectorPointerDown={(side, event) => handleConnectorPointerDown(event, node.id, side)} onMeasure={(size) => {
                     setNodeSizes((current) => {
                       const previous = current[node.id]
 
@@ -2043,8 +2669,8 @@ export default function CanvasViewport() {
               const targetSiblingEdges = edges.filter((candidate) => candidate.toNodeId === edge.toNodeId && candidate.toSide === edge.toSide)
               const sourceIndex = sourceSiblingEdges.findIndex((candidate) => candidate.id === edge.id)
               const targetIndex = targetSiblingEdges.findIndex((candidate) => candidate.id === edge.id)
-              const sourceOffset = sourceSiblingEdges.length > 1 ? (sourceIndex - (sourceSiblingEdges.length - 1) / 2) * 14 * view.scale : 0
-              const targetOffset = targetSiblingEdges.length > 1 ? (targetIndex - (targetSiblingEdges.length - 1) / 2) * 14 * view.scale : 0
+              const sourceOffset = sourceSiblingEdges.length > 1 ? (sourceIndex - (sourceSiblingEdges.length - 1) / 2) * 14 : 0
+              const targetOffset = targetSiblingEdges.length > 1 ? (targetIndex - (targetSiblingEdges.length - 1) / 2) * 14 : 0
               const geometry = getOrthogonalEdgeGeometry(fromPoint, toPoint, edge.fromSide, edge.toSide, sourceOffset, targetOffset)
               const isConnectedToSelectedNode = selectedNodeIds.includes(edge.fromNodeId) || selectedNodeIds.includes(edge.toNodeId)
               const selectEdge = (event: React.PointerEvent<SVGElement>) => {
@@ -2184,8 +2810,8 @@ export default function CanvasViewport() {
               const targetSiblingEdges = edges.filter((candidate) => candidate.toNodeId === edge.toNodeId && candidate.toSide === edge.toSide)
               const sourceIndex = sourceSiblingEdges.findIndex((candidate) => candidate.id === edge.id)
               const targetIndex = targetSiblingEdges.findIndex((candidate) => candidate.id === edge.id)
-              const sourceOffset = sourceSiblingEdges.length > 1 ? (sourceIndex - (sourceSiblingEdges.length - 1) / 2) * 14 * view.scale : 0
-              const targetOffset = targetSiblingEdges.length > 1 ? (targetIndex - (targetSiblingEdges.length - 1) / 2) * 14 * view.scale : 0
+              const sourceOffset = sourceSiblingEdges.length > 1 ? (sourceIndex - (sourceSiblingEdges.length - 1) / 2) * 14 : 0
+              const targetOffset = targetSiblingEdges.length > 1 ? (targetIndex - (targetSiblingEdges.length - 1) / 2) * 14 : 0
               const geometry = getOrthogonalEdgeGeometry(fromPoint, toPoint, edge.fromSide, edge.toSide, sourceOffset, targetOffset)
               const edgeLabel = getCanvasEdgeLabelForNode(fromNode.type, edge.fromSide)
 
@@ -2221,10 +2847,10 @@ export default function CanvasViewport() {
                   />
                   {edgeLabel ? (
                     <g
-                      transform={`translate(${geometry.midPoint.x}, ${geometry.midPoint.y})`}
+                      transform={`translate(${(edgeLabelPlacements.get(edge.id) ?? geometry.midPoint).x}, ${(edgeLabelPlacements.get(edge.id) ?? geometry.midPoint).y})`}
                       style={{ pointerEvents: 'none' }}
                     >
-                      <g transform={`scale(${view.scale})`}>
+                      <g transform={`scale(${Math.max(0.65, Math.min(1.35, view.scale))})`}>
                         <rect
                           x={-(Math.max(60, edgeLabel.length * 7) / 2)}
                           y={-13}
@@ -2328,9 +2954,77 @@ export default function CanvasViewport() {
             }}
             onSendThread={handleCommentSend}
           />
+
+          {canvasContextMenuPosition ? (
+            <div
+              onPointerDown={(event) => event.stopPropagation()}
+              style={{
+                position: 'fixed',
+                left: canvasContextMenuPosition.x,
+                top: canvasContextMenuPosition.y,
+                transform: 'translate(-8px, 8px)',
+                pointerEvents: 'auto',
+                zIndex: 31,
+              }}
+            >
+              <DropdownMenu
+                open
+                groups={canvasContextMenuGroups}
+                onClose={closeCanvasContextMenu}
+                onItemClick={(item) => handleCanvasContextMenuAction(item.value)}
+                style={{ left: 0, transform: 'translateY(0)', minWidth: 180 }}
+              />
+            </div>
+          ) : null}
         </div>
       </div>
 
     </div>
   )
 }
+  const createCanvasNodeDraft = (type: CanvasNodeType, x: number, y: number): CanvasNodeRecord => {
+    const baseNode: CanvasNodeRecord = {
+      id: `node-${Date.now()}`,
+      type,
+      x,
+      y,
+    }
+
+    if (type === 'start') {
+      return { ...baseNode, startWeightingType: 'equal', startStyle: 'standard', startReserveCashPercent: '20', startEntryLimit: '35' }
+    }
+
+    if (type === 'end') {
+      return { ...baseNode, endType: 'timeBased', endScope: 'endBranch', endTimeValue: '7', endTimeUnit: 'day' }
+    }
+
+    if (type === 'scaleOut') {
+      return { ...baseNode, scaleOutPercent: '10', scaleOutMode: 'standard', scaleOutSteps: '3' }
+    }
+
+    if (type === 'cooldown') {
+      return { ...baseNode, cooldownDuration: '7', cooldownUnit: 'day', cooldownScope: 'branch' }
+    }
+
+    if (type === 'wait') {
+      return { ...baseNode, waitDuration: '1', waitUnit: 'day' }
+    }
+
+    if (type === 'pauseTrading') {
+      return { ...baseNode, pauseTradingMode: 'duration', pauseTradingDuration: '3', pauseTradingUnit: 'day' }
+    }
+
+    if (type === 'positionCountLimit') {
+      return { ...baseNode, positionCountComparator: '>=', positionCountValue: '5', positionCountScope: 'branch' }
+    }
+
+    if (type === 'cashReserve') {
+      return { ...baseNode, cashReservePercent: '20', cashReserveLabel: 'Reserve Buffer' }
+    }
+
+    if (type === 'assetBasket') {
+      return { ...baseNode, assetBasketName: 'Asset Basket' }
+    }
+
+    return baseNode
+  }

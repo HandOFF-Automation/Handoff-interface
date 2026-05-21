@@ -81,7 +81,7 @@ export default function NodeShell({ icon, label, labelBadge, labelBadges, labelS
         position: 'relative',
         width: 'fit-content',
         minHeight: 56,
-        padding: '8px 14px 8px 8px',
+        padding: '8px 14px',
         borderRadius: 999,
         border: `1px solid ${selected ? 'var(--canvas-accent)' : 'var(--canvas-panel-divider)'}`,
         background: selected ? 'var(--canvas-surface-soft)' : 'var(--canvas-surface)',

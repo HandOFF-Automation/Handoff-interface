@@ -1,7 +1,7 @@
 import { CaretDown, ChartLineUp, ClockCountdown, FlagCheckered, Percent, ShieldWarning, TrendDown, Wallet, WaveSine } from '@phosphor-icons/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
-import type { CanvasConditionOperator, CanvasEndType, CanvasNodeRecord, CanvasTimeUnit } from '../../state/canvas-node-store'
+import type { CanvasConditionOperator, CanvasEndScope, CanvasEndType, CanvasNodeRecord, CanvasTimeUnit } from '../../state/canvas-node-store'
 import { CanvasAssetLogo } from './canvas-asset-options'
 import CanvasSidebarFieldSection from './canvas-sidebar-field-section'
 import CanvasNodeSidebarHeader from './canvas-node-sidebar-header'
@@ -40,6 +40,12 @@ const timeUnitOptions: Array<{ value: CanvasTimeUnit; label: string }> = [
   { value: 'month', label: 'Month' },
 ]
 
+const endScopeOptions: Array<{ value: CanvasEndScope; label: string }> = [
+  { value: 'endBranch', label: 'End Branch' },
+  { value: 'stopPath', label: 'Stop Path' },
+  { value: 'closeHere', label: 'Close Here' },
+]
+
 type CanvasEndAssetNodeOption = {
   id: string
   type: 'stock' | 'token'
@@ -58,6 +64,7 @@ type CanvasEndSidebarProps = {
   onEndTargetValueChange: (value: string) => void
   onEndTimeValueChange: (value: string) => void
   onEndTimeUnitChange: (value: CanvasTimeUnit) => void
+  onEndScopeChange: (value: CanvasEndScope) => void
 }
 
 export default function CanvasEndSidebar({
@@ -71,21 +78,25 @@ export default function CanvasEndSidebar({
   onEndTargetValueChange,
   onEndTimeValueChange,
   onEndTimeUnitChange,
+  onEndScopeChange,
 }: CanvasEndSidebarProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const endTypeTriggerRef = useRef<HTMLButtonElement | null>(null)
   const assetTriggerRef = useRef<HTMLButtonElement | null>(null)
   const operatorTriggerRef = useRef<HTMLButtonElement | null>(null)
   const timeUnitTriggerRef = useRef<HTMLButtonElement | null>(null)
+  const scopeTriggerRef = useRef<HTMLButtonElement | null>(null)
   const [isEndMenuOpen, setIsEndMenuOpen] = useState(false)
   const [isAssetMenuOpen, setIsAssetMenuOpen] = useState(false)
   const [isOperatorMenuOpen, setIsOperatorMenuOpen] = useState(false)
   const [isTimeUnitMenuOpen, setIsTimeUnitMenuOpen] = useState(false)
+  const [isScopeMenuOpen, setIsScopeMenuOpen] = useState(false)
   const selectedEndType = endOptions.find((option) => option.value === node?.endType) ?? null
   const selectedEndIcon = selectedEndType ? endIconByValue[selectedEndType.value] : <FlagCheckered size={16} weight="fill" />
   const selectedAssetNode = assetNodeOptions.find((option) => option.id === node?.endAssetNodeId) ?? null
   const selectedOperator = operatorOptions.find((option) => option.value === node?.endOperator) ?? null
   const selectedTimeUnit = timeUnitOptions.find((option) => option.value === node?.endTimeUnit) ?? null
+  const selectedEndScope = endScopeOptions.find((option) => option.value === node?.endScope) ?? endScopeOptions[0]
   const isRiskThresholdType = selectedEndType?.value === 'maxDrawdown'
     || selectedEndType?.value === 'dailyLoss'
     || selectedEndType?.value === 'exposureLimit'
@@ -153,6 +164,65 @@ export default function CanvasEndSidebar({
     ],
     [selectedTimeUnit?.value],
   )
+  const endScopeMenuGroups = useMemo(
+    () => [
+      {
+        items: endScopeOptions.map<DropdownMenuItem>((option) => ({
+          label: option.label,
+          value: option.value,
+          active: option.value === selectedEndScope.value,
+          trailingIcon: option.value === selectedEndScope.value ? '✓' : undefined,
+        })),
+      },
+    ],
+    [selectedEndScope.value],
+  )
+  const closeAllMenus = () => {
+    setIsEndMenuOpen(false)
+    setIsAssetMenuOpen(false)
+    setIsOperatorMenuOpen(false)
+    setIsTimeUnitMenuOpen(false)
+    setIsScopeMenuOpen(false)
+  }
+
+  const toggleExclusiveMenu = (target: 'endType' | 'scope' | 'asset' | 'operator' | 'timeUnit') => {
+    const nextOpen = target === 'endType'
+      ? !isEndMenuOpen
+      : target === 'scope'
+        ? !isScopeMenuOpen
+        : target === 'asset'
+          ? !isAssetMenuOpen
+          : target === 'operator'
+            ? !isOperatorMenuOpen
+            : !isTimeUnitMenuOpen
+    closeAllMenus()
+
+    if (!nextOpen) {
+      return
+    }
+
+    if (target === 'endType') {
+      setIsEndMenuOpen(true)
+      return
+    }
+
+    if (target === 'scope') {
+      setIsScopeMenuOpen(true)
+      return
+    }
+
+    if (target === 'asset') {
+      setIsAssetMenuOpen(true)
+      return
+    }
+
+    if (target === 'operator') {
+      setIsOperatorMenuOpen(true)
+      return
+    }
+
+    setIsTimeUnitMenuOpen(true)
+  }
 
   useEffect(() => {
     if (!active) {
@@ -160,11 +230,12 @@ export default function CanvasEndSidebar({
       setIsAssetMenuOpen(false)
       setIsOperatorMenuOpen(false)
       setIsTimeUnitMenuOpen(false)
+      setIsScopeMenuOpen(false)
     }
   }, [active])
 
   useEffect(() => {
-    if (!isEndMenuOpen && !isAssetMenuOpen && !isOperatorMenuOpen && !isTimeUnitMenuOpen) {
+    if (!isEndMenuOpen && !isAssetMenuOpen && !isOperatorMenuOpen && !isTimeUnitMenuOpen && !isScopeMenuOpen) {
       return
     }
 
@@ -177,6 +248,7 @@ export default function CanvasEndSidebar({
       setIsAssetMenuOpen(false)
       setIsOperatorMenuOpen(false)
       setIsTimeUnitMenuOpen(false)
+      setIsScopeMenuOpen(false)
     }
 
     document.addEventListener('pointerdown', handlePointerDown)
@@ -184,7 +256,7 @@ export default function CanvasEndSidebar({
     return () => {
       document.removeEventListener('pointerdown', handlePointerDown)
     }
-  }, [isAssetMenuOpen, isEndMenuOpen, isOperatorMenuOpen, isTimeUnitMenuOpen])
+  }, [isAssetMenuOpen, isEndMenuOpen, isOperatorMenuOpen, isScopeMenuOpen, isTimeUnitMenuOpen])
 
   return (
     <aside
@@ -226,7 +298,7 @@ export default function CanvasEndSidebar({
           <button
             ref={endTypeTriggerRef}
             type="button"
-            onClick={() => setIsEndMenuOpen((current) => !current)}
+            onClick={() => toggleExclusiveMenu('endType')}
             style={{
               width: '100%',
               minHeight: 54,
@@ -308,13 +380,56 @@ export default function CanvasEndSidebar({
         </div>
         </CanvasSidebarFieldSection>
 
+        <CanvasSidebarFieldSection title="End Scope" description="Choose whether this node ends the current branch, stops the whole path, or simply closes the flow here.">
+          <div style={{ position: 'relative' }}>
+            <button
+              ref={scopeTriggerRef}
+              type="button"
+              onClick={() => toggleExclusiveMenu('scope')}
+              style={{
+                width: '100%',
+                minHeight: 54,
+                borderRadius: 16,
+                border: '1px solid var(--canvas-panel-divider)',
+                background: 'var(--canvas-surface-soft)',
+                padding: '0 14px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 12,
+                cursor: 'pointer',
+              }}
+            >
+              <span style={{ color: 'var(--canvas-text-primary)', fontFamily: 'var(--canvas-font-sans)', fontSize: 13, fontWeight: 700 }}>{selectedEndScope.label}</span>
+              <CaretDown size={14} weight="bold" style={{ color: 'var(--canvas-text-secondary)', transform: `rotate(${isScopeMenuOpen ? '180deg' : '0deg'})`, transition: 'transform 160ms ease' }} />
+            </button>
+            {isScopeMenuOpen ? (
+              <DropdownMenu
+                open={isScopeMenuOpen}
+                anchorRef={scopeTriggerRef}
+                boundaryRef={containerRef}
+                groups={endScopeMenuGroups}
+                position="bottom"
+                portalToBody
+                onItemClick={(item) => {
+                  if (item.value === 'endBranch' || item.value === 'stopPath' || item.value === 'closeHere') {
+                    onEndScopeChange(item.value)
+                  }
+
+                  setIsScopeMenuOpen(false)
+                }}
+              />
+            ) : null}
+          </div>
+        </CanvasSidebarFieldSection>
+
         {selectedEndType?.value === 'priceReaches' ? (
           <CanvasSidebarFieldSection title="Asset Node" description="Choose which connected asset should be watched for the price-based end condition.">
             <div style={{ position: 'relative' }}>
               <button
                 ref={assetTriggerRef}
                 type="button"
-                onClick={() => setIsAssetMenuOpen((current) => !current)}
+                onClick={() => toggleExclusiveMenu('asset')}
                 style={{
                   width: '100%',
                   minHeight: 54,
@@ -461,7 +576,7 @@ export default function CanvasEndSidebar({
                 <button
                   ref={operatorTriggerRef}
                   type="button"
-                  onClick={() => setIsOperatorMenuOpen((current) => !current)}
+                  onClick={() => toggleExclusiveMenu('operator')}
                   style={{
                     width: '100%',
                     minHeight: 54,

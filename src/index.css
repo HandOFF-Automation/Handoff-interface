@@ -23,6 +23,8 @@
   --canvas-text-secondary: rgba(255, 255, 255, 0.68);
   --canvas-text-tertiary: rgba(255, 255, 255, 0.5);
   --canvas-text-on-accent: #ffffff;
+  --canvas-danger: #ff6b6b;
+  --canvas-warning: #f59e0b;
   --canvas-negative: #ff6b6b;
   --canvas-surface-soft: rgba(255, 255, 255, 0.02);
   --canvas-surface-soft-strong: rgba(255, 255, 255, 0.04);
@@ -67,6 +69,8 @@
   --canvas-text-secondary: rgba(17, 24, 39, 0.72);
   --canvas-text-tertiary: rgba(17, 24, 39, 0.52);
   --canvas-text-on-accent: #ffffff;
+  --canvas-danger: #dc5a5a;
+  --canvas-warning: #d97706;
   --canvas-negative: #dc5a5a;
   --canvas-surface-soft: rgba(15, 23, 42, 0.03);
   --canvas-surface-soft-strong: rgba(15, 23, 42, 0.06);

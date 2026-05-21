@@ -1,41 +1,48 @@
 import type { CanvasGraphSnapshot } from '../../state/canvas-graph-store'
 
-export const complexCanvasTemplate: CanvasGraphSnapshot = {
+export type CanvasTemplateDefinition = {
+  id: 'logicShowcase' | 'realStrategy' | 'portfolioGuardrails' | 'dipBuyWithRecheck' | 'basketRotation'
+  label: string
+  description: string
+  snapshot: CanvasGraphSnapshot
+}
+
+export const logicShowcaseTemplate: CanvasGraphSnapshot = {
   nodes: [
-    { id: 'start-1', type: 'start', x: 180, y: 340, startWeightingType: 'specificPercentage', startSpecificPercentages: { 'token-btc': '50', 'token-eth': '30', 'stock-nvda': '20' } },
-    { id: 'token-btc', type: 'token', x: 470, y: 160, assetSymbol: 'BTC', assetName: 'Bitcoin' },
-    { id: 'token-eth', type: 'token', x: 470, y: 340, assetSymbol: 'ETH', assetName: 'Ethereum' },
-    { id: 'stock-nvda', type: 'stock', x: 470, y: 520, assetSymbol: 'NVDA', assetName: 'NVIDIA' },
-    { id: 'filter-1', type: 'filter', x: 820, y: 340, filterAssetNodeId: 'token-btc', filterSortFunction: 'rsi', filterSortPeriod: '14', filterConditionOperator: 'and', filterSecondarySortFunction: 'volume', filterOrdering: 'top', filterHowMany: '2', filterResultMode: 'topN', filterConfigsByAssetNodeId: { 'token-btc': { filterSortFunction: 'rsi', filterSortPeriod: '14', filterConditionOperator: 'and', filterSecondarySortFunction: 'volume', filterOrdering: 'top', filterHowMany: '2', filterResultMode: 'topN' }, 'token-eth': { filterSortFunction: 'exponentialMovingAverage', filterSortPeriod: '20', filterConditionOperator: 'or', filterSecondarySortFunction: 'atr', filterSecondarySortPeriod: '14', filterOrdering: 'top', filterHowMany: '1', filterResultMode: 'topOne' }, 'stock-nvda': { filterSortFunction: 'currentPrice', filterConditionOperator: 'and', filterSecondarySortFunction: 'macdHistogram', filterOrdering: 'bottom', filterHowMany: '1', filterResultMode: 'allMatches' } } },
-    { id: 'if-btc-1', type: 'if', x: 1180, y: 180, ifSourceType: 'market', ifConditionType: 'threshold', ifPrimaryFunction: 'rsi', ifPrimaryAssetNodeId: 'token-btc', ifPrimaryPeriod: '14', ifComparator: '<', ifComparisonValue: '30' },
-    { id: 'if-nvda-1', type: 'if', x: 1180, y: 500, ifConditionType: 'threshold', ifPrimaryFunction: 'simpleMovingAverage', ifPrimaryAssetNodeId: 'stock-nvda', ifPrimaryPeriod: '20', ifComparator: '>', ifComparisonValue: '1100' },
-    { id: 'and-1', type: 'and', x: 1520, y: 260 },
-    { id: 'or-1', type: 'or', x: 1520, y: 580 },
-    { id: 'not-1', type: 'not', x: 1520, y: 120 },
-    { id: 'xor-1', type: 'xor', x: 1520, y: 740 },
-    { id: 'filter-growth-1', type: 'filter', x: 1180, y: 920, filterAssetNodeId: 'token-eth', filterSortFunction: 'volume', filterConditionOperator: 'and', filterSecondarySortFunction: 'percentGain', filterOrdering: 'top', filterHowMany: '2' },
-    { id: 'filter-value-1', type: 'filter', x: 1180, y: 1100, filterAssetNodeId: 'stock-nvda', filterSortFunction: 'currentMarketCap', filterConditionOperator: 'or', filterSecondarySortFunction: 'atr', filterSecondarySortPeriod: '14', filterOrdering: 'bottom', filterHowMany: '1' },
-    { id: 'intersect-1', type: 'intersect', x: 1520, y: 1010 },
-    { id: 'union-1', type: 'union', x: 1520, y: 1180 },
-    { id: 'exclude-1', type: 'exclude', x: 1880, y: 1100 },
-    { id: 'if-logic-1', type: 'if', x: 2240, y: 1100, ifConditionType: 'threshold', ifPrimaryFunction: 'rsi', ifPrimaryAssetNodeId: 'token-eth', ifPrimaryPeriod: '14', ifComparator: '<', ifComparisonValue: '40' },
-    { id: 'portfolio-condition-1', type: 'portfolioCondition', x: 1880, y: 20, portfolioMetric: 'cashPercent', portfolioComparator: '>=', portfolioValue: '15' },
-    { id: 'position-limit-1', type: 'positionLimit', x: 1880, y: 100, positionLimitMode: 'percentage', positionLimitValue: '20', positionLimitApplyTo: 'singleAsset' },
-    { id: 'buy-1', type: 'buy', x: 1880, y: 200, actionAssetNodeId: 'token-btc', actionAmountMode: 'percentage', actionAmountValue: '25', buyType: 'open' },
-    { id: 'allocate-1', type: 'allocate', x: 2240, y: 200, allocateWeightingMode: 'percentage', allocateAmountValue: '15', allocateStyle: 'targetWeight' },
-    { id: 'take-profit-1', type: 'takeProfit', x: 2600, y: 120, riskAssetNodeId: 'stock-nvda', riskComparator: '>=', riskThresholdValue: '1200', takeProfitMode: 'partial' },
-    { id: 'stop-loss-1', type: 'stopLoss', x: 2600, y: 280, riskAssetNodeId: 'token-btc', riskComparator: '<=', riskThresholdValue: '58000', stopLossMode: 'trailing' },
-    { id: 'cooldown-1', type: 'cooldown', x: 2960, y: 200, cooldownDuration: '7', cooldownUnit: 'day', cooldownScope: 'branch' },
-    { id: 'loop-1', type: 'loop', x: 3320, y: 200, loopType: 'timeInterval', loopIntervalValue: '7', loopTimeUnit: 'day', loopRunMode: 'oncePerPeriod', loopPostAction: 'cooldown', loopPostActionValue: '2', loopPostActionUnit: 'day' },
-    { id: 'else-1', type: 'else', x: 1880, y: 580 },
-    { id: 'sell-1', type: 'sell', x: 2240, y: 500, actionAssetNodeId: 'token-eth', actionAmountMode: 'percentage', actionAmountValue: '20', sellType: 'reduce' },
-    { id: 'scale-out-1', type: 'scaleOut', x: 2240, y: 680, scaleOutPercent: '10' },
-    { id: 'exposure-limit-1', type: 'exposureLimit', x: 2240, y: 920, exposureLimitType: 'portfolio', riskComparator: '>=', exposureLimitValue: '65' },
-    { id: 'rebalance-logic-1', type: 'rebalance', x: 2240, y: 1010, rebalanceMode: 'equal', rebalanceThreshold: '3', rebalanceScope: 'selectedAssets' },
-    { id: 'rebalance-1', type: 'rebalance', x: 2600, y: 580, rebalanceMode: 'target', rebalanceThreshold: '5', rebalanceScope: 'branch' },
-    { id: 'loop-logic-1', type: 'loop', x: 2600, y: 1010, loopType: 'driftThreshold', loopDriftThreshold: '4' },
-    { id: 'end-logic-1', type: 'end', x: 2960, y: 1010, endType: 'positionConcentration', endOperator: '>=', endTargetValue: '35' },
-    { id: 'end-1', type: 'end', x: 2960, y: 580, endType: 'maxDrawdown', endOperator: '<=', endTargetValue: '12' },
+    { id: 'start-1', type: 'start', x: 180, y: 360, startWeightingType: 'specificPercentage', startSpecificPercentages: { 'token-btc': '50', 'token-eth': '30', 'stock-nvda': '20' }, startStyle: 'standard', startReserveCashPercent: '20', startEntryLimit: '35' },
+    { id: 'token-btc', type: 'token', x: 600, y: 120, assetSymbol: 'BTC', assetName: 'Bitcoin' },
+    { id: 'token-eth', type: 'token', x: 600, y: 380, assetSymbol: 'ETH', assetName: 'Ethereum' },
+    { id: 'stock-nvda', type: 'stock', x: 600, y: 640, assetSymbol: 'NVDA', assetName: 'NVIDIA' },
+    { id: 'filter-1', type: 'filter', x: 1160, y: 380, filterAssetNodeId: 'token-btc', filterSortFunction: 'rsi', filterSortPeriod: '14', filterConditionOperator: 'and', filterSecondarySortFunction: 'volume', filterOrdering: 'top', filterHowMany: '2', filterResultMode: 'topN', filterConfigsByAssetNodeId: { 'token-btc': { filterSortFunction: 'rsi', filterSortPeriod: '14', filterConditionOperator: 'and', filterSecondarySortFunction: 'volume', filterOrdering: 'top', filterHowMany: '2', filterResultMode: 'topN' }, 'token-eth': { filterSortFunction: 'exponentialMovingAverage', filterSortPeriod: '20', filterConditionOperator: 'or', filterSecondarySortFunction: 'atr', filterSecondarySortPeriod: '14', filterOrdering: 'top', filterHowMany: '1', filterResultMode: 'topOne' }, 'stock-nvda': { filterSortFunction: 'currentPrice', filterConditionOperator: 'and', filterSecondarySortFunction: 'macdHistogram', filterOrdering: 'bottom', filterHowMany: '1', filterResultMode: 'allMatches' } } },
+    { id: 'if-btc-1', type: 'if', x: 1760, y: 180, ifSourceType: 'market', ifConditionType: 'threshold', ifPrimaryFunction: 'rsi', ifPrimaryAssetNodeId: 'token-btc', ifPrimaryPeriod: '14', ifComparator: '<', ifComparisonValue: '30' },
+    { id: 'if-nvda-1', type: 'if', x: 1760, y: 620, ifConditionType: 'threshold', ifPrimaryFunction: 'simpleMovingAverage', ifPrimaryAssetNodeId: 'stock-nvda', ifPrimaryPeriod: '20', ifComparator: '>', ifComparisonValue: '1100' },
+    { id: 'and-1', type: 'and', x: 2320, y: 320 },
+    { id: 'or-1', type: 'or', x: 2320, y: 760 },
+    { id: 'not-1', type: 'not', x: 2320, y: 100 },
+    { id: 'xor-1', type: 'xor', x: 2320, y: 960 },
+    { id: 'filter-growth-1', type: 'filter', x: 1760, y: 1240, filterAssetNodeId: 'token-eth', filterSortFunction: 'volume', filterConditionOperator: 'and', filterSecondarySortFunction: 'percentGain', filterOrdering: 'top', filterHowMany: '2' },
+    { id: 'filter-value-1', type: 'filter', x: 1760, y: 1520, filterAssetNodeId: 'stock-nvda', filterSortFunction: 'currentMarketCap', filterConditionOperator: 'or', filterSecondarySortFunction: 'atr', filterSecondarySortPeriod: '14', filterOrdering: 'bottom', filterHowMany: '1' },
+    { id: 'intersect-1', type: 'intersect', x: 2320, y: 1360 },
+    { id: 'union-1', type: 'union', x: 2320, y: 1640 },
+    { id: 'exclude-1', type: 'exclude', x: 2920, y: 1520 },
+    { id: 'if-logic-1', type: 'if', x: 3640, y: 1520, ifConditionType: 'threshold', ifPrimaryFunction: 'rsi', ifPrimaryAssetNodeId: 'token-eth', ifPrimaryPeriod: '14', ifComparator: '<', ifComparisonValue: '40' },
+    { id: 'portfolio-condition-1', type: 'portfolioCondition', x: 2920, y: 40, portfolioMetric: 'cashPercent', portfolioComparator: '>=', portfolioValue: '15' },
+    { id: 'position-limit-1', type: 'positionLimit', x: 2920, y: 180, positionLimitMode: 'percentage', positionLimitValue: '20', positionLimitApplyTo: 'singleAsset' },
+    { id: 'buy-1', type: 'buy', x: 2920, y: 340, actionAssetNodeId: 'token-btc', actionAmountMode: 'percentage', actionAmountValue: '25', buyType: 'open' },
+    { id: 'allocate-1', type: 'allocate', x: 3640, y: 340, allocateWeightingMode: 'percentage', allocateAmountValue: '15', allocateStyle: 'targetWeight' },
+    { id: 'take-profit-1', type: 'takeProfit', x: 4320, y: 180, riskAssetNodeId: 'stock-nvda', riskComparator: '>=', riskThresholdValue: '1200', takeProfitMode: 'partial' },
+    { id: 'stop-loss-1', type: 'stopLoss', x: 4320, y: 460, riskAssetNodeId: 'token-btc', riskComparator: '<=', riskThresholdValue: '58000', stopLossMode: 'trailing' },
+    { id: 'cooldown-1', type: 'cooldown', x: 5000, y: 340, cooldownDuration: '7', cooldownUnit: 'day', cooldownScope: 'branch' },
+    { id: 'loop-1', type: 'loop', x: 5680, y: 340, loopType: 'timeInterval', loopIntervalValue: '7', loopTimeUnit: 'day', loopRunMode: 'oncePerPeriod', loopPostAction: 'cooldown', loopPostActionValue: '2', loopPostActionUnit: 'day' },
+    { id: 'else-1', type: 'else', x: 2920, y: 760 },
+    { id: 'sell-1', type: 'sell', x: 3640, y: 620, actionAssetNodeId: 'token-eth', actionAmountMode: 'percentage', actionAmountValue: '20', sellType: 'reduce' },
+    { id: 'scale-out-1', type: 'scaleOut', x: 3640, y: 920, scaleOutPercent: '10', scaleOutMode: 'ladder', scaleOutSteps: '3' },
+    { id: 'exposure-limit-1', type: 'exposureLimit', x: 3640, y: 1280, exposureLimitType: 'portfolio', riskComparator: '>=', exposureLimitValue: '65' },
+    { id: 'rebalance-logic-1', type: 'rebalance', x: 3640, y: 1420, rebalanceMode: 'equal', rebalanceThreshold: '3', rebalanceScope: 'selectedAssets' },
+    { id: 'rebalance-1', type: 'rebalance', x: 4320, y: 760, rebalanceMode: 'target', rebalanceThreshold: '5', rebalanceScope: 'branch' },
+    { id: 'loop-logic-1', type: 'loop', x: 4320, y: 1420, loopType: 'driftThreshold', loopDriftThreshold: '4' },
+    { id: 'end-logic-1', type: 'end', x: 5000, y: 1420, endType: 'positionConcentration', endOperator: '>=', endTargetValue: '35', endScope: 'endBranch' },
+    { id: 'end-1', type: 'end', x: 5000, y: 760, endType: 'maxDrawdown', endOperator: '<=', endTargetValue: '12', endScope: 'stopPath' },
   ],
   selectedNodeIds: [],
   edges: [
@@ -88,4 +95,139 @@ export const complexCanvasTemplate: CanvasGraphSnapshot = {
     { id: 'edge-39', fromNodeId: 'loop-logic-1', fromSide: 'right', toNodeId: 'end-logic-1', toSide: 'left' },
   ],
   selectedEdgeIds: [],
+}
+
+export const realStrategyTemplate: CanvasGraphSnapshot = {
+  nodes: [
+    { id: 'start-real', type: 'start', x: 180, y: 300, startWeightingType: 'equal', startStyle: 'riskFirst', startReserveCashPercent: '25', startEntryLimit: '30' },
+    { id: 'basket-core', type: 'assetBasket', x: 980, y: 300, assetBasketName: 'Core Growth' },
+    { id: 'token-btc-real', type: 'token', x: 540, y: 100, assetSymbol: 'BTC', assetName: 'Bitcoin' },
+    { id: 'token-eth-real', type: 'token', x: 540, y: 360, assetSymbol: 'ETH', assetName: 'Ethereum' },
+    { id: 'token-sol-real', type: 'token', x: 540, y: 500, assetSymbol: 'SOL', assetName: 'Solana' },
+    { id: 'filter-real', type: 'filter', x: 1500, y: 300, filterAssetNodeId: 'token-btc-real', filterSortFunction: 'rsi', filterSortPeriod: '14', filterConditionOperator: 'and', filterSecondarySortFunction: 'macdHistogram', filterOrdering: 'top', filterHowMany: '2', filterResultMode: 'topN' },
+    { id: 'portfolio-real', type: 'portfolioCondition', x: 1660, y: 160, portfolioMetric: 'cashPercent', portfolioComparator: '>=', portfolioValue: '15' },
+    { id: 'count-limit-real', type: 'positionCountLimit', x: 1660, y: 420, positionCountComparator: '<', positionCountValue: '5', positionCountScope: 'portfolio' },
+    { id: 'buy-real', type: 'buy', x: 2160, y: 220, actionAssetNodeId: 'token-btc-real', actionAmountMode: 'percentage', actionAmountValue: '18', buyType: 'open' },
+    { id: 'cash-reserve-real', type: 'cashReserve', x: 2160, y: 480, cashReservePercent: '20', cashReserveLabel: 'Dry Powder' },
+    { id: 'take-profit-real', type: 'takeProfit', x: 2660, y: 120, riskAssetNodeId: 'token-btc-real', riskComparator: '>=', riskThresholdValue: '72000', takeProfitMode: 'ladder' },
+    { id: 'stop-loss-real', type: 'stopLoss', x: 2660, y: 300, riskAssetNodeId: 'token-btc-real', riskComparator: '<=', riskThresholdValue: '58000', stopLossMode: 'trailing' },
+    { id: 'wait-real', type: 'wait', x: 2660, y: 480, waitDuration: '1', waitUnit: 'day' },
+    { id: 'loop-real', type: 'loop', x: 3160, y: 300, loopType: 'timeInterval', loopIntervalValue: '1', loopTimeUnit: 'day', loopRunMode: 'oncePerPeriod', loopPostAction: 'wait', loopPostActionValue: '1', loopPostActionUnit: 'day' },
+    { id: 'end-real', type: 'end', x: 3660, y: 300, endType: 'maxDrawdown', endOperator: '<=', endTargetValue: '12', endScope: 'stopPath' },
+  ],
+  selectedNodeIds: [],
+  edges: [
+    { id: 'real-1', fromNodeId: 'start-real', fromSide: 'right', toNodeId: 'basket-core', toSide: 'left' },
+    { id: 'real-2', fromNodeId: 'token-btc-real', fromSide: 'right', toNodeId: 'basket-core', toSide: 'top' },
+    { id: 'real-3', fromNodeId: 'token-eth-real', fromSide: 'right', toNodeId: 'basket-core', toSide: 'left' },
+    { id: 'real-4', fromNodeId: 'token-sol-real', fromSide: 'right', toNodeId: 'basket-core', toSide: 'bottom' },
+    { id: 'real-5', fromNodeId: 'basket-core', fromSide: 'right', toNodeId: 'filter-real', toSide: 'left' },
+    { id: 'real-6', fromNodeId: 'filter-real', fromSide: 'top', toNodeId: 'portfolio-real', toSide: 'left' },
+    { id: 'real-7', fromNodeId: 'filter-real', fromSide: 'bottom', toNodeId: 'count-limit-real', toSide: 'left' },
+    { id: 'real-8', fromNodeId: 'portfolio-real', fromSide: 'right', toNodeId: 'buy-real', toSide: 'left' },
+    { id: 'real-9', fromNodeId: 'count-limit-real', fromSide: 'right', toNodeId: 'buy-real', toSide: 'bottom' },
+    { id: 'real-10', fromNodeId: 'buy-real', fromSide: 'bottom', toNodeId: 'cash-reserve-real', toSide: 'left' },
+    { id: 'real-11', fromNodeId: 'buy-real', fromSide: 'right', toNodeId: 'take-profit-real', toSide: 'left' },
+    { id: 'real-12', fromNodeId: 'buy-real', fromSide: 'bottom', toNodeId: 'stop-loss-real', toSide: 'left' },
+    { id: 'real-13', fromNodeId: 'cash-reserve-real', fromSide: 'right', toNodeId: 'wait-real', toSide: 'left' },
+    { id: 'real-14', fromNodeId: 'take-profit-real', fromSide: 'right', toNodeId: 'loop-real', toSide: 'top' },
+    { id: 'real-15', fromNodeId: 'stop-loss-real', fromSide: 'right', toNodeId: 'loop-real', toSide: 'left' },
+    { id: 'real-16', fromNodeId: 'wait-real', fromSide: 'right', toNodeId: 'loop-real', toSide: 'bottom' },
+    { id: 'real-17', fromNodeId: 'loop-real', fromSide: 'right', toNodeId: 'end-real', toSide: 'left' },
+  ],
+  selectedEdgeIds: [],
+}
+
+export const portfolioGuardrailsTemplate: CanvasGraphSnapshot = {
+  nodes: [
+    { id: 'guard-start', type: 'start', x: 180, y: 240, startWeightingType: 'equal', startStyle: 'riskFirst', startReserveCashPercent: '30', startEntryLimit: '25' },
+    { id: 'guard-portfolio', type: 'portfolioCondition', x: 700, y: 140, portfolioMetric: 'portfolioExposure', portfolioComparator: '<=', portfolioValue: '60' },
+    { id: 'guard-position-limit', type: 'positionLimit', x: 700, y: 340, positionLimitMode: 'percentage', positionLimitValue: '15', positionLimitApplyTo: 'branchAssets' },
+    { id: 'guard-count-limit', type: 'positionCountLimit', x: 1260, y: 140, positionCountComparator: '<', positionCountValue: '6', positionCountScope: 'portfolio' },
+    { id: 'guard-exposure', type: 'exposureLimit', x: 1260, y: 340, exposureLimitType: 'portfolio', riskComparator: '<=', exposureLimitValue: '65' },
+    { id: 'guard-cash', type: 'cashReserve', x: 1820, y: 240, cashReservePercent: '20', cashReserveLabel: 'Reserve Buffer' },
+    { id: 'guard-end', type: 'end', x: 2380, y: 240, endType: 'exposureLimit', endOperator: '>=', endTargetValue: '65', endScope: 'stopPath' },
+  ],
+  selectedNodeIds: [],
+  edges: [
+    { id: 'guard-1', fromNodeId: 'guard-start', fromSide: 'right', toNodeId: 'guard-portfolio', toSide: 'left' },
+    { id: 'guard-2', fromNodeId: 'guard-start', fromSide: 'bottom', toNodeId: 'guard-position-limit', toSide: 'left' },
+    { id: 'guard-3', fromNodeId: 'guard-portfolio', fromSide: 'right', toNodeId: 'guard-count-limit', toSide: 'left' },
+    { id: 'guard-4', fromNodeId: 'guard-position-limit', fromSide: 'right', toNodeId: 'guard-exposure', toSide: 'left' },
+    { id: 'guard-5', fromNodeId: 'guard-count-limit', fromSide: 'right', toNodeId: 'guard-cash', toSide: 'left' },
+    { id: 'guard-6', fromNodeId: 'guard-exposure', fromSide: 'right', toNodeId: 'guard-cash', toSide: 'bottom' },
+    { id: 'guard-7', fromNodeId: 'guard-cash', fromSide: 'right', toNodeId: 'guard-end', toSide: 'left' },
+  ],
+  selectedEdgeIds: [],
+}
+
+export const dipBuyWithRecheckTemplate: CanvasGraphSnapshot = {
+  nodes: [
+    { id: 'dip-start', type: 'start', x: 160, y: 240, startWeightingType: 'equal', startStyle: 'stagedEntry', startReserveCashPercent: '20', startEntryLimit: '25' },
+    { id: 'dip-btc', type: 'token', x: 560, y: 240, assetSymbol: 'BTC', assetName: 'Bitcoin' },
+    { id: 'dip-if', type: 'if', x: 1040, y: 240, ifSourceType: 'market', ifConditionType: 'threshold', ifPrimaryFunction: 'rsi', ifPrimaryAssetNodeId: 'dip-btc', ifPrimaryPeriod: '14', ifComparator: '<', ifComparisonValue: '30' },
+    { id: 'dip-buy', type: 'buy', x: 1520, y: 180, actionAssetNodeId: 'dip-btc', actionAmountMode: 'percentage', actionAmountValue: '15', buyType: 'add' },
+    { id: 'dip-stop', type: 'stopLoss', x: 2000, y: 80, riskAssetNodeId: 'dip-btc', riskComparator: '<=', riskThresholdValue: '56000', stopLossMode: 'fixed' },
+    { id: 'dip-profit', type: 'takeProfit', x: 2000, y: 240, riskAssetNodeId: 'dip-btc', riskComparator: '>=', riskThresholdValue: '71000', takeProfitMode: 'partial' },
+    { id: 'dip-wait', type: 'wait', x: 2000, y: 420, waitDuration: '2', waitUnit: 'day' },
+    { id: 'dip-loop', type: 'loop', x: 2480, y: 240, loopType: 'timeInterval', loopIntervalValue: '1', loopTimeUnit: 'day', loopRunMode: 'oncePerPeriod', loopPostAction: 'wait', loopPostActionValue: '2', loopPostActionUnit: 'day' },
+    { id: 'dip-end', type: 'end', x: 2960, y: 240, endType: 'timeBased', endTimeValue: '14', endTimeUnit: 'day', endScope: 'closeHere' },
+  ],
+  selectedNodeIds: [],
+  edges: [
+    { id: 'dip-1', fromNodeId: 'dip-start', fromSide: 'right', toNodeId: 'dip-btc', toSide: 'left' },
+    { id: 'dip-2', fromNodeId: 'dip-btc', fromSide: 'right', toNodeId: 'dip-if', toSide: 'left' },
+    { id: 'dip-3', fromNodeId: 'dip-if', fromSide: 'right', toNodeId: 'dip-buy', toSide: 'left' },
+    { id: 'dip-4', fromNodeId: 'dip-buy', fromSide: 'right', toNodeId: 'dip-stop', toSide: 'left' },
+    { id: 'dip-5', fromNodeId: 'dip-buy', fromSide: 'bottom', toNodeId: 'dip-profit', toSide: 'left' },
+    { id: 'dip-6', fromNodeId: 'dip-buy', fromSide: 'bottom', toNodeId: 'dip-wait', toSide: 'left' },
+    { id: 'dip-7', fromNodeId: 'dip-stop', fromSide: 'right', toNodeId: 'dip-loop', toSide: 'top' },
+    { id: 'dip-8', fromNodeId: 'dip-profit', fromSide: 'right', toNodeId: 'dip-loop', toSide: 'left' },
+    { id: 'dip-9', fromNodeId: 'dip-wait', fromSide: 'right', toNodeId: 'dip-loop', toSide: 'bottom' },
+    { id: 'dip-10', fromNodeId: 'dip-loop', fromSide: 'right', toNodeId: 'dip-end', toSide: 'left' },
+  ],
+  selectedEdgeIds: [],
+}
+
+export const basketRotationTemplate: CanvasGraphSnapshot = {
+  nodes: [
+    { id: 'basket-start', type: 'start', x: 180, y: 280, startWeightingType: 'marketCap', startStyle: 'standard', startReserveCashPercent: '15', startEntryLimit: '40' },
+    { id: 'basket-a', type: 'token', x: 560, y: 80, assetSymbol: 'BTC', assetName: 'Bitcoin' },
+    { id: 'basket-b', type: 'token', x: 560, y: 280, assetSymbol: 'ETH', assetName: 'Ethereum' },
+    { id: 'basket-c', type: 'stock', x: 560, y: 480, assetSymbol: 'NVDA', assetName: 'NVIDIA' },
+    { id: 'basket-node', type: 'assetBasket', x: 1080, y: 280, assetBasketName: 'Rotation Basket' },
+    { id: 'basket-filter', type: 'filter', x: 1680, y: 280, filterAssetNodeId: 'basket-a', filterSortFunction: 'volume', filterConditionOperator: 'and', filterSecondarySortFunction: 'rsi', filterOrdering: 'top', filterHowMany: '2', filterResultMode: 'topN' },
+    { id: 'basket-allocate', type: 'allocate', x: 2140, y: 180, allocateWeightingMode: 'percentage', allocateAmountValue: '25', allocateStyle: 'targetWeight' },
+    { id: 'basket-rebalance', type: 'rebalance', x: 2140, y: 380, rebalanceMode: 'target', rebalanceThreshold: '4', rebalanceScope: 'selectedAssets' },
+    { id: 'basket-end', type: 'end', x: 2660, y: 280, endType: 'positionConcentration', endOperator: '>=', endTargetValue: '35', endScope: 'endBranch' },
+  ],
+  selectedNodeIds: [],
+  edges: [
+    { id: 'basket-1', fromNodeId: 'basket-start', fromSide: 'right', toNodeId: 'basket-a', toSide: 'left' },
+    { id: 'basket-2', fromNodeId: 'basket-start', fromSide: 'right', toNodeId: 'basket-b', toSide: 'left' },
+    { id: 'basket-3', fromNodeId: 'basket-start', fromSide: 'right', toNodeId: 'basket-c', toSide: 'left' },
+    { id: 'basket-4', fromNodeId: 'basket-a', fromSide: 'right', toNodeId: 'basket-node', toSide: 'top' },
+    { id: 'basket-5', fromNodeId: 'basket-b', fromSide: 'right', toNodeId: 'basket-node', toSide: 'left' },
+    { id: 'basket-6', fromNodeId: 'basket-c', fromSide: 'right', toNodeId: 'basket-node', toSide: 'bottom' },
+    { id: 'basket-7', fromNodeId: 'basket-node', fromSide: 'right', toNodeId: 'basket-filter', toSide: 'left' },
+    { id: 'basket-8', fromNodeId: 'basket-filter', fromSide: 'top', toNodeId: 'basket-allocate', toSide: 'left' },
+    { id: 'basket-9', fromNodeId: 'basket-filter', fromSide: 'bottom', toNodeId: 'basket-rebalance', toSide: 'left' },
+    { id: 'basket-10', fromNodeId: 'basket-allocate', fromSide: 'right', toNodeId: 'basket-end', toSide: 'left' },
+    { id: 'basket-11', fromNodeId: 'basket-rebalance', fromSide: 'right', toNodeId: 'basket-end', toSide: 'bottom' },
+  ],
+  selectedEdgeIds: [],
+}
+
+export const canvasTemplates: CanvasTemplateDefinition[] = [
+  { id: 'logicShowcase', label: 'Logic Showcase', description: 'Shows the broadest mix of logic, filters, risk, and branch behaviors.', snapshot: logicShowcaseTemplate },
+  { id: 'realStrategy', label: 'Real Strategy', description: 'A more realistic strategy flow with risk gates, cash reserve, wait, and loop behavior.', snapshot: realStrategyTemplate },
+  { id: 'portfolioGuardrails', label: 'Portfolio Guardrails', description: 'A policy-first template focused on branch and portfolio guardrails.', snapshot: portfolioGuardrailsTemplate },
+  { id: 'dipBuyWithRecheck', label: 'Dip Buy With Recheck', description: 'A time-aware dip-buy template using wait, loop, and exits.', snapshot: dipBuyWithRecheckTemplate },
+  { id: 'basketRotation', label: 'Basket Rotation', description: 'A grouped-asset template for basket filtering, allocation, and rebalance.', snapshot: basketRotationTemplate },
+]
+
+export const complexCanvasTemplate = logicShowcaseTemplate
+
+export function getCanvasTemplateById(templateId: CanvasTemplateDefinition['id']) {
+  return canvasTemplates.find((template) => template.id === templateId) ?? canvasTemplates[0]
 }

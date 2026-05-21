@@ -1,6 +1,8 @@
 import CanvasAllocateSidebar from '../../../components/canvas/canvas-allocate-sidebar'
 import CanvasAssetSidebar from '../../../components/canvas/canvas-asset-sidebar'
+import CanvasAssetBasketSidebar from '../../../components/canvas/canvas-asset-basket-sidebar'
 import CanvasBuySidebar from '../../../components/canvas/canvas-buy-sidebar'
+import CanvasCashReserveSidebar from '../../../components/canvas/canvas-cash-reserve-sidebar'
 import CanvasCooldownSidebar from '../../../components/canvas/canvas-cooldown-sidebar'
 import CanvasElseSidebar from '../../../components/canvas/canvas-else-sidebar'
 import CanvasEndSidebar from '../../../components/canvas/canvas-end-sidebar'
@@ -10,21 +12,24 @@ import CanvasIfSidebar from '../../../components/canvas/canvas-if-sidebar'
 import CanvasLogicAggregatorSidebar from '../../../components/canvas/canvas-logic-aggregator-sidebar'
 import CanvasLoopSidebar from '../../../components/canvas/canvas-loop-sidebar'
 import CanvasPortfolioConditionSidebar from '../../../components/canvas/canvas-portfolio-condition-sidebar'
+import CanvasPositionCountLimitSidebar from '../../../components/canvas/canvas-position-count-limit-sidebar'
 import CanvasPositionLimitSidebar from '../../../components/canvas/canvas-position-limit-sidebar'
+import CanvasPauseTradingSidebar from '../../../components/canvas/canvas-pause-trading-sidebar'
 import CanvasRebalanceSidebar from '../../../components/canvas/canvas-rebalance-sidebar'
 import CanvasScaleOutSidebar from '../../../components/canvas/canvas-scale-out-sidebar'
 import CanvasSellSidebar from '../../../components/canvas/canvas-sell-sidebar'
 import CanvasStartSidebar from '../../../components/canvas/canvas-start-sidebar'
 import CanvasStopLossSidebar from '../../../components/canvas/canvas-stop-loss-sidebar'
 import CanvasTakeProfitSidebar from '../../../components/canvas/canvas-take-profit-sidebar'
+import CanvasWaitSidebar from '../../../components/canvas/canvas-wait-sidebar'
 import { getCanvasAssetOptions } from '../../../components/canvas/canvas-asset-options'
 import CanvasViewport from '../../../components/canvas/canvas-viewport'
-import { complexCanvasTemplate } from '../../../config/canvas-template/config'
+import { canvasTemplates, getCanvasTemplateById } from '../../../config/canvas-template/config'
 import { useEffect, useRef, useState } from 'react'
 import { appLoadingController } from '../../../state/app-loading-store'
 import { useCanvasEdges } from '../../../state/canvas-edge-store'
 import { replaceCanvasGraph } from '../../../state/canvas-graph-store'
-import { setCanvasFilterAssetNodeId, updateCanvasActionConfig, updateCanvasAllocateConfig, updateCanvasCooldownConfig, updateCanvasEndConfig, updateCanvasEndType, updateCanvasExposureLimitConfig, updateCanvasFilterConfig, updateCanvasIfConfig, updateCanvasLoopConfig, updateCanvasLoopType, updateCanvasNodeAsset, updateCanvasPortfolioConditionConfig, updateCanvasPositionLimitConfig, updateCanvasRebalanceConfig, updateCanvasRiskConfig, updateCanvasScaleOutConfig, updateCanvasStartSpecificPercentage, updateCanvasStartWeightingType, useCanvasNodes } from '../../../state/canvas-node-store'
+import { setCanvasFilterAssetNodeId, updateCanvasActionConfig, updateCanvasAllocateConfig, updateCanvasAssetBasketConfig, updateCanvasCashReserveConfig, updateCanvasCooldownConfig, updateCanvasEndConfig, updateCanvasEndType, updateCanvasExposureLimitConfig, updateCanvasFilterConfig, updateCanvasIfConfig, updateCanvasLoopConfig, updateCanvasLoopType, updateCanvasNodeAsset, updateCanvasPauseTradingConfig, updateCanvasPortfolioConditionConfig, updateCanvasPositionCountLimitConfig, updateCanvasPositionLimitConfig, updateCanvasRebalanceConfig, updateCanvasRiskConfig, updateCanvasScaleOutConfig, updateCanvasStartConfig, updateCanvasStartSpecificPercentage, updateCanvasStartWeightingType, updateCanvasWaitConfig, useCanvasNodes } from '../../../state/canvas-node-store'
 
 export default function StagingCanvasPage() {
   const { nodes, selectedNodeIds } = useCanvasNodes()
@@ -34,6 +39,7 @@ export default function StagingCanvasPage() {
   const [isEditingCanvasName, setIsEditingCanvasName] = useState(false)
   const [isCanvasNameHovered, setIsCanvasNameHovered] = useState(false)
   const [isSelectionSidebarEnabled, setIsSelectionSidebarEnabled] = useState(true)
+  const [selectedTemplateId, setSelectedTemplateId] = useState<(typeof canvasTemplates)[number]['id']>('realStrategy')
   const inputRef = useRef<HTMLInputElement | null>(null)
   const hasSelectedNodes = selectedNodeIds.length > 0
   const selectedNodesKey = selectedNodeIds.join('|')
@@ -53,6 +59,7 @@ export default function StagingCanvasPage() {
   const isFilterNodeSelected = selectedNode?.type === 'filter'
   const isPortfolioConditionNodeSelected = selectedNode?.type === 'portfolioCondition'
   const isAssetNodeSelected = selectedNode?.type === 'stock' || selectedNode?.type === 'token'
+  const isAssetBasketNodeSelected = selectedNode?.type === 'assetBasket'
   const isBuyNodeSelected = selectedNode?.type === 'buy'
   const isSellNodeSelected = selectedNode?.type === 'sell'
   const isRebalanceNodeSelected = selectedNode?.type === 'rebalance'
@@ -61,8 +68,12 @@ export default function StagingCanvasPage() {
   const isTakeProfitNodeSelected = selectedNode?.type === 'takeProfit'
   const isStopLossNodeSelected = selectedNode?.type === 'stopLoss'
   const isCooldownNodeSelected = selectedNode?.type === 'cooldown'
+  const isWaitNodeSelected = selectedNode?.type === 'wait'
+  const isPauseTradingNodeSelected = selectedNode?.type === 'pauseTrading'
   const isPositionLimitNodeSelected = selectedNode?.type === 'positionLimit'
+  const isPositionCountLimitNodeSelected = selectedNode?.type === 'positionCountLimit'
   const isExposureLimitNodeSelected = selectedNode?.type === 'exposureLimit'
+  const isCashReserveNodeSelected = selectedNode?.type === 'cashReserve'
   const isStartSidebarActive = isSelectionSidebarEnabled && hasSelectedNodes && isStartNodeSelected
   const isEndSidebarActive = isSelectionSidebarEnabled && hasSelectedNodes && isEndNodeSelected
   const isLoopSidebarActive = isSelectionSidebarEnabled && hasSelectedNodes && isLoopNodeSelected
@@ -72,6 +83,7 @@ export default function StagingCanvasPage() {
   const isFilterSidebarActive = isSelectionSidebarEnabled && hasSelectedNodes && isFilterNodeSelected
   const isPortfolioConditionSidebarActive = isSelectionSidebarEnabled && hasSelectedNodes && isPortfolioConditionNodeSelected
   const isAssetSidebarActive = isSelectionSidebarEnabled && hasSelectedNodes && isAssetNodeSelected
+  const isAssetBasketSidebarActive = isSelectionSidebarEnabled && hasSelectedNodes && isAssetBasketNodeSelected
   const isBuySidebarActive = isSelectionSidebarEnabled && hasSelectedNodes && isBuyNodeSelected
   const isSellSidebarActive = isSelectionSidebarEnabled && hasSelectedNodes && isSellNodeSelected
   const isRebalanceSidebarActive = isSelectionSidebarEnabled && hasSelectedNodes && isRebalanceNodeSelected
@@ -80,8 +92,12 @@ export default function StagingCanvasPage() {
   const isTakeProfitSidebarActive = isSelectionSidebarEnabled && hasSelectedNodes && isTakeProfitNodeSelected
   const isStopLossSidebarActive = isSelectionSidebarEnabled && hasSelectedNodes && isStopLossNodeSelected
   const isCooldownSidebarActive = isSelectionSidebarEnabled && hasSelectedNodes && isCooldownNodeSelected
+  const isWaitSidebarActive = isSelectionSidebarEnabled && hasSelectedNodes && isWaitNodeSelected
+  const isPauseTradingSidebarActive = isSelectionSidebarEnabled && hasSelectedNodes && isPauseTradingNodeSelected
   const isPositionLimitSidebarActive = isSelectionSidebarEnabled && hasSelectedNodes && isPositionLimitNodeSelected
+  const isPositionCountLimitSidebarActive = isSelectionSidebarEnabled && hasSelectedNodes && isPositionCountLimitNodeSelected
   const isExposureLimitSidebarActive = isSelectionSidebarEnabled && hasSelectedNodes && isExposureLimitNodeSelected
+  const isCashReserveSidebarActive = isSelectionSidebarEnabled && hasSelectedNodes && isCashReserveNodeSelected
   const assetNodeOptions = nodes.flatMap((node) =>
     node.type === 'stock' || node.type === 'token'
       ? [{ id: node.id, type: node.type, assetSymbol: node.assetSymbol, assetName: node.assetName }]
@@ -140,8 +156,8 @@ export default function StagingCanvasPage() {
       .map((edge) => edge.fromNodeId)
 
     return nodes.flatMap((node) =>
-      sourceNodeIds.includes(node.id) && (node.type === 'stock' || node.type === 'token')
-        ? [{ id: node.id, type: node.type, assetSymbol: node.assetSymbol, assetName: node.assetName }]
+      sourceNodeIds.includes(node.id) && (node.type === 'stock' || node.type === 'token' || node.type === 'assetBasket')
+        ? [{ id: node.id, type: node.type, assetSymbol: node.assetSymbol, assetName: node.assetName ?? node.assetBasketName }]
         : [],
     )
   })()
@@ -208,8 +224,8 @@ export default function StagingCanvasPage() {
       return
     }
 
-    replaceCanvasGraph(complexCanvasTemplate)
-  }, [edges.length, nodes.length])
+    replaceCanvasGraph(getCanvasTemplateById(selectedTemplateId).snapshot)
+  }, [edges.length, nodes.length, selectedTemplateId])
 
   const commitCanvasName = () => {
     const nextName = draftCanvasName.trim()
@@ -254,6 +270,27 @@ export default function StagingCanvasPage() {
           }
 
           updateCanvasStartSpecificPercentage(selectedNode.id, targetNodeId, value)
+        }}
+        onReserveCashChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'start') {
+            return
+          }
+
+          updateCanvasStartConfig(selectedNode.id, { startReserveCashPercent: value })
+        }}
+        onEntryLimitChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'start') {
+            return
+          }
+
+          updateCanvasStartConfig(selectedNode.id, { startEntryLimit: value })
+        }}
+        onStartStyleChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'start') {
+            return
+          }
+
+          updateCanvasStartConfig(selectedNode.id, { startStyle: value })
         }}
       />
 
@@ -303,6 +340,13 @@ export default function StagingCanvasPage() {
           }
 
           updateCanvasEndConfig(selectedNode.id, { endTimeUnit: value })
+        }}
+        onEndScopeChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'end') {
+            return
+          }
+
+          updateCanvasEndConfig(selectedNode.id, { endScope: value })
         }}
       />
 
@@ -622,6 +666,19 @@ export default function StagingCanvasPage() {
         }}
       />
 
+      <CanvasAssetBasketSidebar
+        active={isAssetBasketSidebarActive}
+        node={selectedNode}
+        onClose={() => setIsSelectionSidebarEnabled(false)}
+        onNameChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'assetBasket') {
+            return
+          }
+
+          updateCanvasAssetBasketConfig(selectedNode.id, { assetBasketName: value })
+        }}
+      />
+
       <CanvasBuySidebar
         active={isBuySidebarActive}
         node={selectedNode}
@@ -757,6 +814,20 @@ export default function StagingCanvasPage() {
 
           updateCanvasScaleOutConfig(selectedNode.id, { scaleOutPercent: value })
         }}
+        onModeChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'scaleOut') {
+            return
+          }
+
+          updateCanvasScaleOutConfig(selectedNode.id, { scaleOutMode: value })
+        }}
+        onStepsChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'scaleOut') {
+            return
+          }
+
+          updateCanvasScaleOutConfig(selectedNode.id, { scaleOutSteps: value })
+        }}
       />
 
       <CanvasTakeProfitSidebar
@@ -780,6 +851,16 @@ export default function StagingCanvasPage() {
         }}
         onThresholdChange={(value) => {
           if (!selectedNode || selectedNode.type !== 'takeProfit') {
+            return
+          }
+
+          if (value.startsWith('atrPeriod:')) {
+            updateCanvasRiskConfig(selectedNode.id, { riskAtrPeriod: value.slice('atrPeriod:'.length) })
+            return
+          }
+
+          if (value.startsWith('atrMultiplier:')) {
+            updateCanvasRiskConfig(selectedNode.id, { riskAtrMultiplier: value.slice('atrMultiplier:'.length) })
             return
           }
 
@@ -815,6 +896,16 @@ export default function StagingCanvasPage() {
         }}
         onThresholdChange={(value) => {
           if (!selectedNode || selectedNode.type !== 'stopLoss') {
+            return
+          }
+
+          if (value.startsWith('atrPeriod:')) {
+            updateCanvasRiskConfig(selectedNode.id, { riskAtrPeriod: value.slice('atrPeriod:'.length) })
+            return
+          }
+
+          if (value.startsWith('atrMultiplier:')) {
+            updateCanvasRiskConfig(selectedNode.id, { riskAtrMultiplier: value.slice('atrMultiplier:'.length) })
             return
           }
 
@@ -856,6 +947,60 @@ export default function StagingCanvasPage() {
         }}
       />
 
+      <CanvasWaitSidebar
+        active={isWaitSidebarActive}
+        node={selectedNode}
+        onClose={() => setIsSelectionSidebarEnabled(false)}
+        onDurationChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'wait') {
+            return
+          }
+
+          updateCanvasWaitConfig(selectedNode.id, { waitDuration: value })
+        }}
+        onUnitChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'wait') {
+            return
+          }
+
+          updateCanvasWaitConfig(selectedNode.id, { waitUnit: value })
+        }}
+      />
+
+      <CanvasPauseTradingSidebar
+        active={isPauseTradingSidebarActive}
+        node={selectedNode}
+        onClose={() => setIsSelectionSidebarEnabled(false)}
+        onModeChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'pauseTrading') {
+            return
+          }
+
+          updateCanvasPauseTradingConfig(selectedNode.id, { pauseTradingMode: value })
+        }}
+        onDurationChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'pauseTrading') {
+            return
+          }
+
+          updateCanvasPauseTradingConfig(selectedNode.id, { pauseTradingDuration: value })
+        }}
+        onUnitChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'pauseTrading') {
+            return
+          }
+
+          updateCanvasPauseTradingConfig(selectedNode.id, { pauseTradingUnit: value })
+        }}
+        onConditionChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'pauseTrading') {
+            return
+          }
+
+          updateCanvasPauseTradingConfig(selectedNode.id, { pauseTradingCondition: value })
+        }}
+      />
+
       <CanvasPositionLimitSidebar
         active={isPositionLimitSidebarActive}
         node={selectedNode}
@@ -880,6 +1025,33 @@ export default function StagingCanvasPage() {
           }
 
           updateCanvasPositionLimitConfig(selectedNode.id, { positionLimitValue: value })
+        }}
+      />
+
+      <CanvasPositionCountLimitSidebar
+        active={isPositionCountLimitSidebarActive}
+        node={selectedNode}
+        onClose={() => setIsSelectionSidebarEnabled(false)}
+        onComparatorChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'positionCountLimit') {
+            return
+          }
+
+          updateCanvasPositionCountLimitConfig(selectedNode.id, { positionCountComparator: value })
+        }}
+        onCountChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'positionCountLimit') {
+            return
+          }
+
+          updateCanvasPositionCountLimitConfig(selectedNode.id, { positionCountValue: value })
+        }}
+        onScopeChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'positionCountLimit') {
+            return
+          }
+
+          updateCanvasPositionCountLimitConfig(selectedNode.id, { positionCountScope: value })
         }}
       />
 
@@ -910,6 +1082,26 @@ export default function StagingCanvasPage() {
         }}
       />
 
+      <CanvasCashReserveSidebar
+        active={isCashReserveSidebarActive}
+        node={selectedNode}
+        onClose={() => setIsSelectionSidebarEnabled(false)}
+        onPercentChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'cashReserve') {
+            return
+          }
+
+          updateCanvasCashReserveConfig(selectedNode.id, { cashReservePercent: value })
+        }}
+        onLabelChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'cashReserve') {
+            return
+          }
+
+          updateCanvasCashReserveConfig(selectedNode.id, { cashReserveLabel: value })
+        }}
+      />
+
       <div
         style={{
           position: 'absolute',
@@ -918,8 +1110,56 @@ export default function StagingCanvasPage() {
           transform: 'translateX(-50%)',
           zIndex: 4,
           pointerEvents: 'none',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
         }}
       >
+        <div
+          style={{
+            minHeight: 38,
+            padding: '0 14px',
+            borderRadius: 999,
+            border: '1px solid var(--canvas-panel-divider)',
+            background: 'var(--canvas-surface)',
+            color: 'var(--canvas-text-primary)',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 8,
+            fontFamily: 'var(--canvas-font-sans)',
+            fontSize: 12,
+            fontWeight: 600,
+            backdropFilter: 'blur(12px)',
+            pointerEvents: 'auto',
+          }}
+        >
+          <span style={{ color: 'var(--canvas-text-secondary)' }}>Template</span>
+          <select
+            value={selectedTemplateId}
+            onChange={(event) => {
+              const nextTemplateId = event.target.value as (typeof canvasTemplates)[number]['id']
+              setSelectedTemplateId(nextTemplateId)
+              replaceCanvasGraph(getCanvasTemplateById(nextTemplateId).snapshot)
+            }}
+            style={{
+              border: 'none',
+              outline: 'none',
+              background: 'transparent',
+              color: 'var(--canvas-text-primary)',
+              fontFamily: 'var(--canvas-font-sans)',
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: 'pointer',
+            }}
+            title={canvasTemplates.find((template) => template.id === selectedTemplateId)?.description ?? 'Canvas template'}
+          >
+            {canvasTemplates.map((template) => (
+              <option key={template.id} value={template.id}>
+                {template.label}
+              </option>
+            ))}
+          </select>
+        </div>
         <div
           style={{
             minHeight: 38,

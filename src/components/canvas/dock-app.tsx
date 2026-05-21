@@ -1,5 +1,5 @@
-import AIProviderPanel from '../ai/ai-provider-panel'
 import BrandBadge from '../brand/brand-badge'
+import CanvasDebugPanel from './canvas-debug-panel'
 import CanvasDock from './canvas-dock'
 import HelpFaq from '../help/help-faq'
 import HelpKeybindings from '../help/help-keybindings'
@@ -24,7 +24,7 @@ export default function DockApp() {
 
   return (
     <>
-      <AIProviderPanel />
+      <CanvasDebugPanel />
       <BrandBadge />
       <ProfileAvatar />
       <HelpFaq />

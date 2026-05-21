@@ -1,6 +1,6 @@
 import './dropdown-menu.css'
 import { createPortal } from 'react-dom'
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { CanvasZoomAction } from '../../state/canvas-tool-store'
 
 export type DropdownMenuItem = {
@@ -40,6 +40,7 @@ export default function DropdownMenu({ open, groups, position = 'top', anchorRef
   const itemRefs = useRef<Array<HTMLButtonElement | null>>([])
   const [resolvedPosition, setResolvedPosition] = useState<'top' | 'bottom'>(position)
   const [portalStyle, setPortalStyle] = useState<React.CSSProperties | null>(null)
+  const lockedPositionRef = useRef<'top' | 'bottom' | null>(null)
   const flattenedItems = useMemo(
     () => groups.flatMap((group) => group.items.filter((item) => !item.disabled)),
     [groups],
@@ -52,6 +53,13 @@ export default function DropdownMenu({ open, groups, position = 'top', anchorRef
   useEffect(() => {
     setResolvedPosition(position)
   }, [position])
+
+  useEffect(() => {
+    if (!open) {
+      lockedPositionRef.current = null
+      setPortalStyle(null)
+    }
+  }, [open])
 
   useEffect(() => {
     if (!open) {
@@ -77,34 +85,64 @@ export default function DropdownMenu({ open, groups, position = 'top', anchorRef
     nextButton.scrollIntoView({ block: 'nearest' })
   }, [highlightedIndex, open])
 
-  useEffect(() => {
-    if (!open || !portalToBody || !anchorRef?.current) {
+  useLayoutEffect(() => {
+    if (!open || !portalToBody) {
       return
     }
 
-    let lockedPosition: 'top' | 'bottom' | null = null
+    const getAnchorElement = () => {
+      if (anchorRef?.current) {
+        return anchorRef.current
+      }
+
+      if (typeof document === 'undefined') {
+        return null
+      }
+
+      const activeElement = document.activeElement
+
+      if (!(activeElement instanceof HTMLElement)) {
+        return null
+      }
+
+      if (boundaryRef?.current && !boundaryRef.current.contains(activeElement)) {
+        return null
+      }
+
+      return activeElement
+    }
 
     const updatePortalPosition = () => {
-      const anchorRect = anchorRef.current?.getBoundingClientRect()
-      const boundaryRect = boundaryRef?.current?.getBoundingClientRect()
+      const anchorElement = getAnchorElement()
+      const anchorRect = anchorElement?.getBoundingClientRect()
 
       if (!anchorRect) {
         return
       }
 
-      const estimatedHeight = Math.min(320, 52 + groups.reduce((total, group) => total + group.items.length * 40, 0))
-      const spaceBelow = boundaryRect ? boundaryRect.bottom - anchorRect.bottom : window.innerHeight - anchorRect.bottom
-      const spaceAbove = boundaryRect ? anchorRect.top - boundaryRect.top : anchorRect.top
-      const nextPosition = lockedPosition ?? (position === 'bottom' && spaceBelow < estimatedHeight && spaceAbove > spaceBelow ? 'top' : position)
+      const measuredMenuRect = containerRef.current?.getBoundingClientRect()
+      const estimatedWidth = measuredMenuRect?.width ?? Math.min(420, Math.max(anchorRect.width, 240))
+      const estimatedHeight = measuredMenuRect?.height ?? Math.min(320, 52 + groups.reduce((total, group) => total + group.items.length * 40, 0))
+      const spaceBelow = window.innerHeight - anchorRect.bottom
+      const spaceAbove = anchorRect.top
+      const preferredPosition = position === 'bottom'
+        ? (spaceBelow < estimatedHeight && spaceAbove > spaceBelow ? 'top' : 'bottom')
+        : (spaceAbove < estimatedHeight && spaceBelow > spaceAbove ? 'bottom' : 'top')
+      const nextPosition = lockedPositionRef.current ?? preferredPosition
+      const viewportPadding = 12
+      const centeredLeft = anchorRect.left + anchorRect.width / 2
+      const minLeft = viewportPadding + estimatedWidth / 2
+      const maxLeft = window.innerWidth - viewportPadding - estimatedWidth / 2
+      const clampedLeft = Math.min(Math.max(centeredLeft, minLeft), Math.max(minLeft, maxLeft))
 
-      if (lockedPosition === null) {
-        lockedPosition = nextPosition
+      if (lockedPositionRef.current === null) {
+        lockedPositionRef.current = nextPosition
       }
 
       setResolvedPosition(nextPosition)
       setPortalStyle({
         position: 'fixed',
-        left: anchorRect.left + anchorRect.width / 2,
+        left: clampedLeft,
         top: nextPosition === 'bottom' ? anchorRect.bottom + 10 : undefined,
         bottom: nextPosition === 'top' ? window.innerHeight - anchorRect.top + 18 : undefined,
         width: 'max-content',
@@ -115,6 +153,7 @@ export default function DropdownMenu({ open, groups, position = 'top', anchorRef
     }
 
     updatePortalPosition()
+    window.requestAnimationFrame(updatePortalPosition)
     window.addEventListener('resize', updatePortalPosition)
     window.addEventListener('scroll', updatePortalPosition, true)
 
@@ -123,6 +162,40 @@ export default function DropdownMenu({ open, groups, position = 'top', anchorRef
       window.removeEventListener('scroll', updatePortalPosition, true)
     }
   }, [anchorRef, boundaryRef, groups, open, portalToBody, position])
+
+  useEffect(() => {
+    if (!open) {
+      return
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node | null
+
+      if (!target) {
+        return
+      }
+
+      if (containerRef.current?.contains(target)) {
+        return
+      }
+
+      if (anchorRef?.current?.contains(target)) {
+        return
+      }
+
+      if (boundaryRef?.current?.contains(target) && !portalToBody) {
+        return
+      }
+
+      onClose?.()
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown)
+
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown)
+    }
+  }, [anchorRef, boundaryRef, onClose, open, portalToBody])
 
   useEffect(() => {
     if (!open) {
@@ -193,6 +266,7 @@ export default function DropdownMenu({ open, groups, position = 'top', anchorRef
         transform: `translateX(-50%) translateY(${open ? '0' : '6px'})`,
         pointerEvents: open ? 'auto' : 'none',
         opacity: open ? 1 : 0,
+        visibility: portalToBody && open && !portalStyle ? 'hidden' : 'visible',
         transition: 'opacity 140ms ease, transform 140ms ease',
         ...(portalToBody ? portalStyle ?? {} : {}),
         ...style,
