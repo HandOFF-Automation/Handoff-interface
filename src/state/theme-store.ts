@@ -4,7 +4,7 @@ export type CanvasTheme = 'dark' | 'light'
 
 const listeners = new Set<() => void>()
 
-let activeTheme: CanvasTheme = 'dark'
+let activeTheme: CanvasTheme = 'light'
 
 function emitChange() {
   listeners.forEach((listener) => listener())

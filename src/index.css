@@ -1,3 +1,31 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--canvas-font-sans);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
 :root {
   --canvas-bg: #000000;
   --canvas-font-sans: 'Poppins', system-ui, sans-serif;
@@ -44,6 +72,34 @@
   --canvas-chart-negative-line: rgba(255, 107, 107, 0.58);
   --canvas-chart-marker-border: rgba(255, 255, 255, 0.92);
   --canvas-bubble-muted: rgba(255, 255, 255, 0.08);
+  --background: #080808;
+  --foreground: #ffffff;
+  --card: rgba(10, 10, 10, 0.96);
+  --card-foreground: #ffffff;
+  --popover: rgba(17, 17, 17, 0.98);
+  --popover-foreground: #ffffff;
+  --primary: #00a4ff;
+  --primary-foreground: #ffffff;
+  --secondary: rgba(255, 255, 255, 0.06);
+  --secondary-foreground: #ffffff;
+  --muted: rgba(255, 255, 255, 0.045);
+  --muted-foreground: rgba(255, 255, 255, 0.68);
+  --accent: rgba(0, 164, 255, 0.16);
+  --accent-foreground: #ffffff;
+  --destructive: #ff6b6b;
+  --border: rgba(255, 255, 255, 0.1);
+  --input: rgba(255, 255, 255, 0.06);
+  --ring: rgba(0, 164, 255, 0.45);
+  --radius: 16px;
+
+  --wormhole-line-color: rgba(255, 255, 255, 0.45); /* Whitish semi-transparent */
+  --wormhole-ring-color-1: #00d2ff;
+  --wormhole-ring-color-2: #0066ff;
+  --wormhole-ring-color-3: #1a0066;
+  --wormhole-pulse-color-1: #001133;
+  --wormhole-pulse-color-2: #80ccff;
+  --wormhole-pulse-color-3: #b3f0ff;
+  --wormhole-ambient-glow: radial-gradient(circle, rgba(0, 164, 255, 0.08) 0%, rgba(0, 75, 135, 0.03) 60%, rgba(0, 0, 0, 0) 100%);
 }
 
 :root[data-theme='light'] {
@@ -92,6 +148,34 @@
   --canvas-bubble-muted: rgba(15, 23, 42, 0.06);
   --canvas-light-soft-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
   --canvas-light-floating-shadow: 0 14px 30px rgba(15, 23, 42, 0.06);
+  --background: #f3f5f8;
+  --foreground: #111827;
+  --card: #ffffff;
+  --card-foreground: #111827;
+  --popover: #ffffff;
+  --popover-foreground: #111827;
+  --primary: #00a4ff;
+  --primary-foreground: #ffffff;
+  --secondary: rgba(15, 23, 42, 0.06);
+  --secondary-foreground: #111827;
+  --muted: rgba(15, 23, 42, 0.04);
+  --muted-foreground: rgba(17, 24, 39, 0.68);
+  --accent: rgba(0, 164, 255, 0.12);
+  --accent-foreground: #111827;
+  --destructive: #dc5a5a;
+  --border: rgba(15, 23, 42, 0.1);
+  --input: rgba(15, 23, 42, 0.05);
+  --ring: rgba(0, 164, 255, 0.35);
+
+  /* Wormhole Animation Colors (Light Mode) */
+  --wormhole-line-color: #d8d8d8; /* Light mode: whitish */
+  --wormhole-ring-color-1: #0099ff;
+  --wormhole-ring-color-2: #0055ff;
+  --wormhole-ring-color-3: #80ccff;
+  --wormhole-pulse-color-1: #80ccff;
+  --wormhole-pulse-color-2: #80ccff;
+  --wormhole-pulse-color-3: #80ccff;
+  --wormhole-ambient-glow: radial-gradient(circle, rgba(0, 164, 255, 0.07) 0%, rgba(0, 85, 255, 0.02) 60%, rgba(0, 0, 0, 0) 100%);
 }
 
 :root[data-theme='light'] body {
@@ -356,4 +440,49 @@ button:not(:disabled):active {
 
 :root[data-theme='light'] .appSkeleton {
   background: linear-gradient(90deg, rgba(15, 23, 42, 0.05) 0%, rgba(15, 23, 42, 0.1) 50%, rgba(15, 23, 42, 0.05) 100%);
+}
+
+/* Skeleton Screen Loading Animation */
+@keyframes skeletonPulse {
+  0% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.4;
+  }
+}
+
+.skeleton-pulse {
+  animation: skeletonPulse 1.6s ease-in-out infinite;
+  background: linear-gradient(
+    90deg,
+    rgba(128, 128, 128, 0.06) 0%,
+    rgba(128, 128, 128, 0.12) 50%,
+    rgba(128, 128, 128, 0.06) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.8s ease-in-out infinite, skeletonPulse 1.6s ease-in-out infinite;
+}
+
+@keyframes skeletonShimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes skeletonFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

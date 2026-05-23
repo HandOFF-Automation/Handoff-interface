@@ -1,3 +1,4 @@
+import CanvasAiSidebar from '../../../components/canvas/canvas-ai-sidebar'
 import CanvasAllocateSidebar from '../../../components/canvas/canvas-allocate-sidebar'
 import CanvasAssetSidebar from '../../../components/canvas/canvas-asset-sidebar'
 import CanvasAssetBasketSidebar from '../../../components/canvas/canvas-asset-basket-sidebar'
@@ -27,6 +28,7 @@ import CanvasViewport from '../../../components/canvas/canvas-viewport'
 import { canvasTemplates, getCanvasTemplateById } from '../../../config/canvas-template/config'
 import { useEffect, useRef, useState } from 'react'
 import { appLoadingController } from '../../../state/app-loading-store'
+import { setCanvasAiSidebarOpen, useCanvasAiSidebarOpen } from '../../../state/canvas-ai-sidebar-store'
 import { useCanvasEdges } from '../../../state/canvas-edge-store'
 import { replaceCanvasGraph } from '../../../state/canvas-graph-store'
 import { setCanvasFilterAssetNodeId, updateCanvasActionConfig, updateCanvasAllocateConfig, updateCanvasAssetBasketConfig, updateCanvasCashReserveConfig, updateCanvasCooldownConfig, updateCanvasEndConfig, updateCanvasEndType, updateCanvasExposureLimitConfig, updateCanvasFilterConfig, updateCanvasIfConfig, updateCanvasLoopConfig, updateCanvasLoopType, updateCanvasNodeAsset, updateCanvasPauseTradingConfig, updateCanvasPortfolioConditionConfig, updateCanvasPositionCountLimitConfig, updateCanvasPositionLimitConfig, updateCanvasRebalanceConfig, updateCanvasRiskConfig, updateCanvasScaleOutConfig, updateCanvasStartConfig, updateCanvasStartSpecificPercentage, updateCanvasStartWeightingType, updateCanvasWaitConfig, useCanvasNodes } from '../../../state/canvas-node-store'
@@ -40,6 +42,7 @@ export default function StagingCanvasPage() {
   const [isCanvasNameHovered, setIsCanvasNameHovered] = useState(false)
   const [isSelectionSidebarEnabled, setIsSelectionSidebarEnabled] = useState(true)
   const [selectedTemplateId, setSelectedTemplateId] = useState<(typeof canvasTemplates)[number]['id']>('realStrategy')
+  const isAiSidebarOpen = useCanvasAiSidebarOpen()
   const inputRef = useRef<HTMLInputElement | null>(null)
   const hasSelectedNodes = selectedNodeIds.length > 0
   const selectedNodesKey = selectedNodeIds.join('|')
@@ -251,6 +254,8 @@ export default function StagingCanvasPage() {
       <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
         <CanvasViewport />
       </div>
+
+      <CanvasAiSidebar active={isAiSidebarOpen} onClose={() => setCanvasAiSidebarOpen(false)} />
 
       <CanvasStartSidebar
         active={isStartSidebarActive}

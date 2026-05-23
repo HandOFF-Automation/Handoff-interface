@@ -1,8 +1,12 @@
 import { useEffect } from 'react'
+import CanvasAiSidebar from '../../../components/canvas/canvas-ai-sidebar'
 import CanvasViewport from '../../../components/canvas/canvas-viewport'
 import { appLoadingController } from '../../../state/app-loading-store'
+import { setCanvasAiSidebarOpen, useCanvasAiSidebarOpen } from '../../../state/canvas-ai-sidebar-store'
 
 export default function CanvasPage() {
+  const isAiSidebarOpen = useCanvasAiSidebarOpen()
+
   useEffect(() => {
     appLoadingController.start('Fetching strategy details', 10)
 
@@ -37,6 +41,8 @@ export default function CanvasPage() {
       <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
         <CanvasViewport />
       </div>
+
+      <CanvasAiSidebar active={isAiSidebarOpen} onClose={() => setCanvasAiSidebarOpen(false)} />
     </div>
   )
 }
