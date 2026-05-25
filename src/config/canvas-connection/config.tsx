@@ -53,6 +53,7 @@ const CANVAS_NODE_CONNECTION_CATEGORY: Record<CanvasNodeType, CanvasConnectionCa
   exclude: 'assetSet',
   filter: 'assetSet',
   portfolioCondition: 'boolean',
+  rethink: 'boolean',
   stock: 'asset',
   token: 'asset',
   assetBasket: 'assetSet',
@@ -74,7 +75,7 @@ const CANVAS_NODE_CONNECTION_CATEGORY: Record<CanvasNodeType, CanvasConnectionCa
 
 const CANVAS_CONNECTION_RULES: Partial<Record<CanvasNodeType, CanvasConnectionRule>> = {
   start: {
-    allowedTargetTypes: ['stock', 'token', 'assetBasket', 'filter', 'portfolioCondition'],
+    allowedTargetTypes: ['stock', 'token', 'assetBasket', 'filter', 'portfolioCondition', 'rethink'],
     reason: 'Start should connect into assets or a filter stage.',
     maxOutgoing: 2,
     maxOutgoingPerSide: {
@@ -86,40 +87,40 @@ const CANVAS_CONNECTION_RULES: Partial<Record<CanvasNodeType, CanvasConnectionRu
     },
   },
   stock: {
-    allowedTargetTypes: ['assetBasket', 'filter', 'if', 'portfolioCondition', 'intersect', 'union', 'exclude'],
+    allowedTargetTypes: ['assetBasket', 'filter', 'if', 'portfolioCondition', 'rethink', 'intersect', 'union', 'exclude'],
     reason: 'Assets should connect into Filter, If, or asset-set logic nodes.',
   },
   token: {
-    allowedTargetTypes: ['assetBasket', 'filter', 'if', 'portfolioCondition', 'intersect', 'union', 'exclude'],
+    allowedTargetTypes: ['assetBasket', 'filter', 'if', 'portfolioCondition', 'rethink', 'intersect', 'union', 'exclude'],
     reason: 'Assets should connect into Filter, If, or asset-set logic nodes.',
   },
   filter: {
-    allowedTargetTypes: ['filter', 'if', 'portfolioCondition', 'intersect', 'union', 'exclude'],
+    allowedTargetTypes: ['filter', 'if', 'portfolioCondition', 'rethink', 'intersect', 'union', 'exclude'],
     allowedTargetCategories: ['execution'],
     reason: 'Filter results should continue into another Filter, an If node, or asset-set logic.',
   },
   assetBasket: {
-    allowedTargetTypes: ['filter', 'if', 'portfolioCondition', 'intersect', 'union', 'exclude'],
+    allowedTargetTypes: ['filter', 'if', 'portfolioCondition', 'rethink', 'intersect', 'union', 'exclude'],
     allowedTargetCategories: ['execution'],
     reason: 'Filter results should continue into another Filter, an If node, or asset-set logic.',
   },
   intersect: {
-    allowedTargetTypes: ['filter', 'if', 'portfolioCondition', 'intersect', 'union', 'exclude'],
+    allowedTargetTypes: ['filter', 'if', 'portfolioCondition', 'rethink', 'intersect', 'union', 'exclude'],
     allowedTargetCategories: ['execution'],
     reason: 'Filter results should continue into another Filter, an If node, or asset-set logic.',
   },
   union: {
-    allowedTargetTypes: ['filter', 'if', 'portfolioCondition', 'intersect', 'union', 'exclude'],
+    allowedTargetTypes: ['filter', 'if', 'portfolioCondition', 'rethink', 'intersect', 'union', 'exclude'],
     allowedTargetCategories: ['execution'],
     reason: 'Filter results should continue into another Filter, an If node, or asset-set logic.',
   },
   exclude: {
-    allowedTargetTypes: ['filter', 'if', 'portfolioCondition', 'intersect', 'union', 'exclude'],
+    allowedTargetTypes: ['filter', 'if', 'portfolioCondition', 'rethink', 'intersect', 'union', 'exclude'],
     allowedTargetCategories: ['execution'],
     reason: 'Filter results should continue into another Filter, an If node, or asset-set logic.',
   },
   if: {
-    allowedTargetTypes: ['and', 'or', 'not', 'xor', 'else'],
+    allowedTargetTypes: ['and', 'or', 'not', 'xor', 'else', 'rethink'],
     allowedTargetCategories: ['execution'],
     reason: 'Condition results should connect into All Of, Any Of, Not, Only One, Else, or execution nodes.',
     maxOutgoing: 2,
@@ -132,32 +133,37 @@ const CANVAS_CONNECTION_RULES: Partial<Record<CanvasNodeType, CanvasConnectionRu
     },
   },
   portfolioCondition: {
-    allowedTargetTypes: ['and', 'or', 'not', 'xor', 'else'],
+    allowedTargetTypes: ['and', 'or', 'not', 'xor', 'else', 'rethink'],
     allowedTargetCategories: ['execution'],
     reason: 'Condition results should connect into All Of, Any Of, Not, Only One, Else, or execution nodes.',
   },
-  and: {
+  rethink: {
     allowedTargetTypes: ['and', 'or', 'not', 'xor', 'else'],
+    allowedTargetCategories: ['execution'],
+    reason: 'Rethink should continue into logic branching or execution nodes.',
+  },
+  and: {
+    allowedTargetTypes: ['and', 'or', 'not', 'xor', 'else', 'rethink'],
     allowedTargetCategories: ['execution'],
     reason: 'Condition results should connect into All Of, Any Of, Not, Only One, Else, or execution nodes.',
   },
   or: {
-    allowedTargetTypes: ['and', 'or', 'not', 'xor', 'else'],
+    allowedTargetTypes: ['and', 'or', 'not', 'xor', 'else', 'rethink'],
     allowedTargetCategories: ['execution'],
     reason: 'Condition results should connect into All Of, Any Of, Not, Only One, Else, or execution nodes.',
   },
   not: {
-    allowedTargetTypes: ['and', 'or', 'not', 'xor', 'else'],
+    allowedTargetTypes: ['and', 'or', 'not', 'xor', 'else', 'rethink'],
     allowedTargetCategories: ['execution'],
     reason: 'Condition results should connect into All Of, Any Of, Not, Only One, Else, or execution nodes.',
   },
   xor: {
-    allowedTargetTypes: ['and', 'or', 'not', 'xor', 'else'],
+    allowedTargetTypes: ['and', 'or', 'not', 'xor', 'else', 'rethink'],
     allowedTargetCategories: ['execution'],
     reason: 'Condition results should connect into All Of, Any Of, Not, Only One, Else, or execution nodes.',
   },
   else: {
-    allowedTargetTypes: ['end', 'loop', 'filter', 'if', 'portfolioCondition'],
+    allowedTargetTypes: ['end', 'loop', 'filter', 'if', 'portfolioCondition', 'rethink'],
     allowedTargetCategories: ['execution'],
     reason: 'Else should continue into filtering, evaluation, execution, loop, or end.',
     maxOutgoing: 1,
@@ -169,7 +175,7 @@ const CANVAS_CONNECTION_RULES: Partial<Record<CanvasNodeType, CanvasConnectionRu
     },
   },
   loop: {
-    allowedTargetTypes: ['end', 'loop', 'filter', 'if', 'portfolioCondition'],
+    allowedTargetTypes: ['end', 'loop', 'filter', 'if', 'portfolioCondition', 'rethink'],
     allowedTargetCategories: ['execution'],
     reason: 'Loop should continue into filtering, evaluation, execution, loop, or end.',
     sideRules: {
@@ -177,72 +183,72 @@ const CANVAS_CONNECTION_RULES: Partial<Record<CanvasNodeType, CanvasConnectionRu
     },
   },
   cooldown: {
-    allowedTargetTypes: ['end', 'loop', 'filter', 'if', 'portfolioCondition'],
+    allowedTargetTypes: ['end', 'loop', 'filter', 'if', 'portfolioCondition', 'rethink'],
     allowedTargetCategories: ['execution'],
     reason: 'Cooldown should continue into filtering, evaluation, execution, loop, or end.',
   },
   wait: {
-    allowedTargetTypes: ['end', 'loop', 'filter', 'if', 'portfolioCondition'],
+    allowedTargetTypes: ['end', 'loop', 'filter', 'if', 'portfolioCondition', 'rethink'],
     allowedTargetCategories: ['execution'],
     reason: 'Wait should continue into filtering, evaluation, execution, loop, or end.',
   },
   pauseTrading: {
-    allowedTargetTypes: ['end', 'loop', 'filter', 'if', 'portfolioCondition'],
+    allowedTargetTypes: ['end', 'loop', 'filter', 'if', 'portfolioCondition', 'rethink'],
     allowedTargetCategories: ['execution'],
     reason: 'Pause Trading should continue into filtering, evaluation, execution, loop, or end.',
   },
   buy: {
-    allowedTargetTypes: ['loop', 'end', 'cooldown', 'wait', 'pauseTrading'],
+    allowedTargetTypes: ['loop', 'end', 'cooldown', 'wait', 'pauseTrading', 'rethink'],
     allowedTargetCategories: ['execution'],
     reason: 'Execution nodes should continue into execution, loop, or end nodes.',
   },
   sell: {
-    allowedTargetTypes: ['loop', 'end', 'cooldown', 'wait', 'pauseTrading'],
+    allowedTargetTypes: ['loop', 'end', 'cooldown', 'wait', 'pauseTrading', 'rethink'],
     allowedTargetCategories: ['execution'],
     reason: 'Execution nodes should continue into execution, loop, or end nodes.',
   },
   rebalance: {
-    allowedTargetTypes: ['loop', 'end', 'cooldown', 'wait', 'pauseTrading'],
+    allowedTargetTypes: ['loop', 'end', 'cooldown', 'wait', 'pauseTrading', 'rethink'],
     allowedTargetCategories: ['execution'],
     reason: 'Execution nodes should continue into execution, loop, or end nodes.',
   },
   allocate: {
-    allowedTargetTypes: ['loop', 'end', 'cooldown', 'wait', 'pauseTrading'],
+    allowedTargetTypes: ['loop', 'end', 'cooldown', 'wait', 'pauseTrading', 'rethink'],
     allowedTargetCategories: ['execution'],
     reason: 'Execution nodes should continue into execution, loop, or end nodes.',
   },
   scaleOut: {
-    allowedTargetTypes: ['loop', 'end', 'cooldown', 'wait', 'pauseTrading'],
+    allowedTargetTypes: ['loop', 'end', 'cooldown', 'wait', 'pauseTrading', 'rethink'],
     allowedTargetCategories: ['execution'],
     reason: 'Execution nodes should continue into execution, loop, or end nodes.',
   },
   takeProfit: {
-    allowedTargetTypes: ['loop', 'end', 'cooldown', 'wait', 'pauseTrading'],
+    allowedTargetTypes: ['loop', 'end', 'cooldown', 'wait', 'pauseTrading', 'rethink'],
     allowedTargetCategories: ['execution'],
     reason: 'Execution nodes should continue into execution, loop, or end nodes.',
   },
   stopLoss: {
-    allowedTargetTypes: ['loop', 'end', 'cooldown', 'wait', 'pauseTrading'],
+    allowedTargetTypes: ['loop', 'end', 'cooldown', 'wait', 'pauseTrading', 'rethink'],
     allowedTargetCategories: ['execution'],
     reason: 'Execution nodes should continue into execution, loop, or end nodes.',
   },
   positionLimit: {
-    allowedTargetTypes: ['loop', 'end', 'cooldown', 'wait', 'pauseTrading'],
+    allowedTargetTypes: ['loop', 'end', 'cooldown', 'wait', 'pauseTrading', 'rethink'],
     allowedTargetCategories: ['execution'],
     reason: 'Execution nodes should continue into execution, loop, or end nodes.',
   },
   positionCountLimit: {
-    allowedTargetTypes: ['loop', 'end', 'cooldown', 'wait', 'pauseTrading'],
+    allowedTargetTypes: ['loop', 'end', 'cooldown', 'wait', 'pauseTrading', 'rethink'],
     allowedTargetCategories: ['execution'],
     reason: 'Execution nodes should continue into execution, loop, or end nodes.',
   },
   exposureLimit: {
-    allowedTargetTypes: ['loop', 'end', 'cooldown', 'wait', 'pauseTrading'],
+    allowedTargetTypes: ['loop', 'end', 'cooldown', 'wait', 'pauseTrading', 'rethink'],
     allowedTargetCategories: ['execution'],
     reason: 'Execution nodes should continue into execution, loop, or end nodes.',
   },
   cashReserve: {
-    allowedTargetTypes: ['loop', 'end', 'cooldown', 'wait', 'pauseTrading'],
+    allowedTargetTypes: ['loop', 'end', 'cooldown', 'wait', 'pauseTrading', 'rethink'],
     allowedTargetCategories: ['execution'],
     reason: 'Execution nodes should continue into execution, loop, or end nodes.',
   },

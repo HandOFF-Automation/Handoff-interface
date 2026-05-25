@@ -1,9 +1,11 @@
 import type { UTCTimestamp } from 'lightweight-charts'
-import { CaretDown, CaretLeft, CaretRight, Question, Rows, SquaresFour } from '@phosphor-icons/react'
+import { CaretDown, CaretLeft, CaretRight, Coins, Question, Rows, SquaresFour } from '@phosphor-icons/react'
 import { useEffect, useState } from 'react'
 
 import { DashboardCard, DashboardMetricCard, DashboardSectionCard } from '../../../components/card/dashboard-card'
 import DropdownMenu, { type DropdownMenuItem } from '../../../components/dropdown/dropdown-menu'
+import FundsModalController from '../../../components/funds/funds-modal-controller'
+import type { FundsModalMode } from '../../../components/funds/funds-types'
 import { SocialActionCard } from '../../../components/card/social-action-card'
 import { StrategyPreviewCard, type StrategyCollaborator } from '../../../components/card/strategy-preview-card'
 import { StrategyTrendChart } from '../../../components/chart/strategy-trend-chart'
@@ -202,6 +204,7 @@ export default function StrategiesContent() {
   const [strategyPage, setStrategyPage] = useState(1)
   const [strategyPageSize, setStrategyPageSize] = useState<StrategyPageSize>(3)
   const [isStrategyPageSizeMenuOpen, setIsStrategyPageSizeMenuOpen] = useState(false)
+  const [activeFundsModal, setActiveFundsModal] = useState<FundsModalMode | null>(null)
 
   const selectedPeriod = strategyDataset.periods.find((period) => period.id === activePeriodId) ?? strategyDataset.periods[0]
   const currentValue = strategyDataset.chartSeries[strategyDataset.chartSeries.length - 1]?.value ?? strategyDataset.totalValue
@@ -408,29 +411,7 @@ export default function StrategiesContent() {
         ))}
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-        <div style={{ color: 'var(--canvas-text-primary)', fontSize: 22, fontWeight: 700, lineHeight: 1.1 }}>Your Strategies</div>
-        <button
-          type="button"
-          style={{
-            height: 34,
-            padding: '0 14px',
-            borderRadius: 999,
-            border: '1px solid var(--canvas-accent)',
-            background: 'var(--canvas-accent)',
-            color: 'var(--canvas-text-on-accent)',
-            cursor: 'pointer',
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontFamily: 'var(--canvas-font-sans)',
-            fontSize: 11,
-            fontWeight: 600,
-          }}
-        >
-          New Strategies
-        </button>
-      </div>
+      <div style={{ color: 'var(--canvas-text-primary)', fontSize: 22, fontWeight: 700, lineHeight: 1.1 }}>Your Strategies</div>
 
       <DashboardCard
         style={{
@@ -747,6 +728,24 @@ export default function StrategiesContent() {
           </div>
         </div>
       </DashboardCard>
+
+      <FundsModalController mode={activeFundsModal} onClose={() => setActiveFundsModal(null)} />
     </div>
   )
+}
+
+const smallActionButtonStyle: React.CSSProperties = {
+  height: 34,
+  padding: '0 14px',
+  borderRadius: 999,
+  border: '1px solid var(--canvas-panel-divider)',
+  background: 'transparent',
+  color: 'var(--canvas-text-primary)',
+  cursor: 'pointer',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  fontFamily: 'var(--canvas-font-sans)',
+  fontSize: 11,
+  fontWeight: 600,
 }

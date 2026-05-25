@@ -1,10 +1,10 @@
 import DashboardLayout from '../dashboard-layout'
-import StocksContent from './stocks-content'
+import YieldContent from './yield-content'
 
 export default function DashboardYieldPage() {
   return (
-    <DashboardLayout activeItem="Stocks">
-      <StocksContent />
+    <DashboardLayout activeItem="Yield">
+      <YieldContent />
     </DashboardLayout>
   )
 }

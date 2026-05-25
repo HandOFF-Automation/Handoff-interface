@@ -8,37 +8,65 @@ import { StrategyOpportunityCard, type StrategyOpportunityCardData, type Strateg
 import { DashboardCard } from '../../../components/card/dashboard-card'
 import { TradeTokenMiniChart } from '../../../components/chart/trade-token-mini-chart'
 import DropdownMenu, { type DropdownMenuItem } from '../../../components/dropdown/dropdown-menu'
-import TickerLogo from '../../../components/icon/ticker-logo'
-import { ExploreBannerSlider } from '../../../components/market/explore-banner-slider'
 import { MarketTickerCarousel } from '../../../components/market/market-ticker-carousel'
 
-type ExploreAssetFilterId = 'yield'
-type ExploreTableFilterId = 'all' | 'gainers' | 'losers' | 'stable' | 'megacap'
+type YieldFilterId = 'all' | 'rwa' | 'staking' | 'stable'
 type SortField = 'price' | 'change24h' | 'marketCap' | 'volume' | 'miniChart'
 type SortDirection = 'asc' | 'desc'
-type ExplorePageSize = 5 | 10 | 20
+type YieldPageSize = 5 | 10 | 20
 
-type ExploreRow = {
+type YieldTokenRow = {
   id: string
-  symbol: string
+  rank: number
+  symbol: 'USDC' | 'MNT' | 'USDY' | 'mETH' | 'WETH' | 'WBTC' | 'DAI' | 'USDT' | 'wstETH' | 'MNT-LP' | 'Mantle-LSP'
   name: string
   price: string
   change24h: string
   marketCap: string
   volume: string
   chartValues: number[]
-  assetType: 'crypto' | 'stock' | 'yield'
-  filterCategory: Exclude<ExploreTableFilterId, 'all'>
+  filterCategory: Exclude<YieldFilterId, 'all'>
 }
 
-const PAGE_SIZE_OPTIONS: ExplorePageSize[] = [5, 10, 20]
+const PAGE_SIZE_OPTIONS: YieldPageSize[] = [5, 10, 20]
+
+const yieldDataset = {
+  marketTickers: [
+    { symbol: 'USDC', price: '$1.00', changePercent: 0.01 },
+    { symbol: 'MNT', price: '$1.09', changePercent: 3.42 },
+    { symbol: 'USDY', price: '$1.00', changePercent: 0.02 },
+    { symbol: 'mETH', price: '$3,542.10', changePercent: 1.85 },
+    { symbol: 'WETH', price: '$3,542.10', changePercent: 1.85 },
+    { symbol: 'WBTC', price: '$68,421.22', changePercent: 1.39 },
+  ] as const,
+  title: 'All Yield Assets',
+  filters: [
+    { id: 'all', label: 'All' },
+    { id: 'rwa', label: 'RWA' },
+    { id: 'staking', label: 'Staking' },
+    { id: 'stable', label: 'Stable' },
+  ] as Array<{ id: YieldFilterId; label: string }>,
+  strategiesTitle: 'Strategies',
+  strategies: [
+    { id: 'yield-strategy-1', title: 'RWA Yield Stack', totalApr: '+4.82%', tokens: ['USDY', 'mETH', 'USDC'] },
+    { id: 'yield-strategy-2', title: 'Staking Rewards Flow', totalApr: '+6.14%', tokens: ['MNT', 'wstETH', 'Mantle-LSP'] },
+    { id: 'yield-strategy-3', title: 'Stable Diversification', totalApr: '+2.24%', tokens: ['USDC', 'DAI', 'USDT'] },
+    { id: 'yield-strategy-4', title: 'Wrapped Asset Blend', totalApr: '+3.36%', tokens: ['WETH', 'WBTC', 'mETH'] },
+    { id: 'yield-strategy-5', title: 'Mantle Ecosystem Yield', totalApr: '+5.92%', tokens: ['MNT', 'USDY', 'MNT-LP'] },
+    { id: 'yield-strategy-6', title: 'RWA Risk Management', totalApr: '+2.08%', tokens: ['USDC', 'mETH', 'wstETH'] },
+  ] as StrategyOpportunityCardData[],
+  rows: [
+    { id: 'yield-1', rank: 1, symbol: 'USDY', name: 'Ondo US Dollar Yield', price: '$1.00', change24h: '+0.02%', marketCap: '$2.4B', volume: '$180M', chartValues: [50, 50, 50, 50, 50, 50, 50], filterCategory: 'rwa' },
+    { id: 'yield-2', rank: 2, symbol: 'mETH', name: 'Mantle Ether', price: '$3,542.10', change24h: '+1.85%', marketCap: '$1.8B', volume: '$120M', chartValues: [48, 50, 52, 54, 56, 58, 60], filterCategory: 'rwa' },
+    { id: 'yield-3', rank: 3, symbol: 'MNT', name: 'Mantle', price: '$1.09', change24h: '+3.42%', marketCap: '$3.6B', volume: '$214M', chartValues: [24, 26, 28, 29, 33, 35, 39], filterCategory: 'staking' },
+    { id: 'yield-4', rank: 4, symbol: 'USDC', name: 'USD Coin', price: '$1.00', change24h: '+0.01%', marketCap: '$32.9B', volume: '$5.4B', chartValues: [50, 50, 50, 50, 50, 50, 50], filterCategory: 'stable' },
+    { id: 'yield-5', rank: 5, symbol: 'wstETH', name: 'Wrapped Staked ETH', price: '$3,850.42', change24h: '+2.15%', marketCap: '$28.4B', volume: '$450M', chartValues: [45, 47, 49, 51, 53, 55, 57], filterCategory: 'staking' },
+    { id: 'yield-6', rank: 6, symbol: 'Mantle-LSP', name: 'Mantle Liquid Staking', price: '$1.12', change24h: '+2.84%', marketCap: '$890M', volume: '$65M', chartValues: [40, 42, 44, 46, 48, 50, 52], filterCategory: 'staking' },
+  ] as YieldTokenRow[],
+}
 
 const iconBySymbol = {
-  BTC: tokenIcons.TokenBTC,
-  ETH: tokenIcons.TokenETH,
-  SOL: tokenIcons.TokenSOL,
   USDC: tokenIcons.TokenUSDC,
-  ARB: tokenIcons.TokenARB,
   MNT: tokenIcons.TokenMNT,
   USDY: tokenIcons.TokenUSDC,
   mETH: tokenIcons.TokenETH,
@@ -47,109 +75,131 @@ const iconBySymbol = {
   DAI: tokenIcons.TokenDAI,
   USDT: tokenIcons.TokenUSDT,
   wstETH: tokenIcons.TokenETH,
+  'MNT-LP': tokenIcons.TokenMNT,
+  'Mantle-LSP': tokenIcons.TokenMNT,
 } as const
 
-const exploreDataset = {
-  marketTickers: [
-    { symbol: 'BTC', price: '$68,421.22', changePercent: 1.39 },
-    { symbol: 'ETH', price: '$3,542.10', changePercent: -1.39 },
-    { symbol: 'SOL', price: '$178.14', changePercent: 2.18 },
-    { symbol: 'AAPL', price: '$211.26', changePercent: 1.24, assetType: 'stock' },
-    { symbol: 'NVDA', price: '$1,086.92', changePercent: 2.91, assetType: 'stock' },
-    { symbol: 'TSLA', price: '$177.29', changePercent: -1.12, assetType: 'stock' },
-  ] as const,
-  banners: [
-    {
-      id: 'banner-1',
-      eyebrow: 'Market Discovery',
-      title: 'Explore high-signal templates built for crypto and equities.',
-      description: 'Browse strategy blueprints across liquid tokens and major US stocks inside one dashboard surface.',
-    },
-    {
-      id: 'banner-2',
-      eyebrow: 'Builder Flow',
-      title: 'Compare setups across asset classes without leaving the same market workflow.',
-      description: 'Review crypto and stock strategies side-by-side before moving into trading or longer-term portfolio actions.',
-    },
-    {
-      id: 'banner-3',
-      eyebrow: 'Unified Scan',
-      title: 'Use one market table to switch between all assets, crypto only, or stock only.',
-      description: 'Keep filtering, sorting, and chart review consistent while scanning multiple opportunity sets.',
-    },
-  ] as const,
-  strategiesTitle: 'Strategies',
-  strategies: [
-    { id: 'strategy-1', title: 'RWA Yield Stack', totalApr: '+4.82%', tokens: ['USDY', 'mETH', 'USDC'] },
-    { id: 'strategy-2', title: 'Staking Rewards Flow', totalApr: '+6.14%', tokens: ['MNT', 'wstETH'] },
-    { id: 'strategy-3', title: 'Stable Diversification', totalApr: '+2.24%', tokens: ['USDC', 'DAI', 'USDT'] },
-    { id: 'strategy-4', title: 'Mantle Ecosystem Yield', totalApr: '+5.92%', tokens: ['MNT', 'USDY'] },
-    { id: 'strategy-5', title: 'Wrapped Asset Blend', totalApr: '+3.36%', tokens: ['WETH', 'WBTC', 'mETH'] },
-    { id: 'strategy-6', title: 'RWA Risk Management', totalApr: '+2.08%', tokens: ['USDC', 'mETH', 'wstETH'] },
-  ] as StrategyOpportunityCardData[],
-  title: 'All',
-  assetFilters: [
-    { id: 'yield', label: 'Yield' },
-  ] as Array<{ id: ExploreAssetFilterId; label: string }>,
-  filters: [
-    { id: 'all', label: 'All' },
-    { id: 'gainers', label: 'Gainers' },
-    { id: 'losers', label: 'Losers' },
-    { id: 'stable', label: 'Stable' },
-    { id: 'megacap', label: 'Megacap' },
-  ] as Array<{ id: ExploreTableFilterId; label: string }>,
-  rows: [
-    { id: 'yield-1', symbol: 'USDY', name: 'Ondo US Dollar Yield', price: '$1.00', change24h: '+0.02%', marketCap: '$2.4B', volume: '$180M', chartValues: [50, 50, 50, 50, 50, 50, 50], filterCategory: 'stable', assetType: 'yield' },
-    { id: 'yield-2', symbol: 'mETH', name: 'Mantle Ether', price: '$3,542.10', change24h: '+1.85%', marketCap: '$1.8B', volume: '$120M', chartValues: [48, 50, 52, 54, 56, 58, 60], filterCategory: 'gainers', assetType: 'yield' },
-    { id: 'yield-3', symbol: 'wstETH', name: 'Wrapped Staked ETH', price: '$3,850.42', change24h: '+2.15%', marketCap: '$28.4B', volume: '$450M', chartValues: [45, 47, 49, 51, 53, 55, 57], filterCategory: 'gainers', assetType: 'yield' },
-    { id: 'yield-4', symbol: 'DAI', name: 'Dai Stablecoin', price: '$1.00', change24h: '+0.00%', marketCap: '$5.2B', volume: '$280M', chartValues: [50, 50, 50, 50, 50, 50, 50], filterCategory: 'stable', assetType: 'yield' },
-    { id: 'yield-5', symbol: 'USDT', name: 'Tether', price: '$1.00', change24h: '+0.01%', marketCap: '$118.5B', volume: '$68B', chartValues: [50, 50, 50, 50, 50, 50, 50], filterCategory: 'stable', assetType: 'yield' },
-    { id: 'yield-6', symbol: 'WETH', name: 'Wrapped Ether', price: '$3,542.10', change24h: '+1.85%', marketCap: '$425.7B', volume: '$16.8B', chartValues: [48, 50, 52, 54, 56, 58, 60], filterCategory: 'gainers', assetType: 'yield' },
-  ] as ExploreRow[],
-}
-
 const tokenDetailBySymbol: Record<StrategyOpportunityTokenDetail['symbol'], StrategyOpportunityTokenDetail> = {
-  BTC: { symbol: 'BTC', name: 'Bitcoin', price: '$68,421.22', change24h: '+1.39%', description: 'Digital store-of-value asset with the largest market capitalization in crypto.', marketCap: '$1.34T', chartValues: [58, 60, 61, 63, 62, 66, 68] },
-  ETH: { symbol: 'ETH', name: 'Ethereum', price: '$3,542.10', change24h: '-1.39%', description: 'Smart-contract network powering onchain apps, DeFi protocols, and rollups.', marketCap: '$425.7B', chartValues: [70, 69, 67, 66, 64, 63, 61] },
-  SOL: { symbol: 'SOL', name: 'Solana', price: '$178.14', change24h: '+2.18%', description: 'High-throughput ecosystem token used across trading, payments, and apps.', marketCap: '$82.1B', chartValues: [38, 40, 39, 43, 46, 48, 51] },
-  USDC: { symbol: 'USDC', name: 'USD Coin', price: '$1.00', change24h: '+0.01%', description: 'Dollar-backed stablecoin widely used for settlement, treasury, and trading pairs.', marketCap: '$32.9B', chartValues: [50, 50, 50, 50, 50, 50, 50] },
-  ARB: { symbol: 'ARB', name: 'Arbitrum', price: '$1.27', change24h: '-0.84%', description: 'Layer 2 governance token tied to Ethereum scaling activity and ecosystem growth.', marketCap: '$4.3B', chartValues: [62, 61, 60, 59, 58, 58, 57] },
-  MNT: { symbol: 'MNT', name: 'Mantle', price: '$1.09', change24h: '+3.42%', description: 'Ecosystem token for the Mantle network with treasury and governance utility.', marketCap: '$3.6B', chartValues: [24, 26, 28, 29, 33, 35, 39] },
-  AAPL: { symbol: 'AAPL', name: 'Apple', price: '$211.26', change24h: '+1.24%', description: 'Consumer technology leader across devices, services, and ecosystem monetization.', marketCap: '$3.23T', chartValues: [58, 59, 61, 62, 64, 66, 68], assetType: 'stock' },
-  MSFT: { symbol: 'MSFT', name: 'Microsoft', price: '$447.81', change24h: '+0.82%', description: 'Enterprise software and cloud platform leader with broad AI distribution advantage.', marketCap: '$3.33T', chartValues: [62, 62, 63, 64, 65, 66, 67], assetType: 'stock' },
-  NVDA: { symbol: 'NVDA', name: 'NVIDIA', price: '$1,086.92', change24h: '+2.91%', description: 'Semiconductor and accelerated computing leader at the center of AI infrastructure demand.', marketCap: '$2.67T', chartValues: [44, 47, 49, 53, 57, 61, 66], assetType: 'stock' },
-  AMZN: { symbol: 'AMZN', name: 'Amazon', price: '$183.54', change24h: '-0.44%', description: 'E-commerce and cloud giant with diversified revenue across retail, logistics, and AWS.', marketCap: '$1.91T', chartValues: [68, 67, 67, 66, 65, 64, 63], assetType: 'stock' },
-  GOOGL: { symbol: 'GOOGL', name: 'Alphabet', price: '$176.38', change24h: '+0.68%', description: 'Search, advertising, cloud, and AI platform exposure through one of the largest digital ecosystems.', marketCap: '$2.18T', chartValues: [52, 53, 54, 54, 55, 56, 57], assetType: 'stock' },
-  TSLA: { symbol: 'TSLA', name: 'Tesla', price: '$177.29', change24h: '-1.12%', description: 'Electric vehicle and energy platform company with higher volatility and growth sensitivity.', marketCap: '$565.8B', chartValues: [71, 69, 67, 64, 62, 60, 58], assetType: 'stock' },
-  USDY: { symbol: 'USDY', name: 'Ondo US Dollar Yield', price: '$1.00', change24h: '+0.02%', description: 'RWA stablecoin with yield, backed by US Treasury bills and short-term bonds.', marketCap: '$2.4B', chartValues: [50, 50, 50, 50, 50, 50, 50] },
-  mETH: { symbol: 'mETH', name: 'Mantle Ether', price: '$3,542.10', change24h: '+1.85%', description: 'RWA asset representing real-world ETH exposure on Mantle with yield generation.', marketCap: '$1.8B', chartValues: [48, 50, 52, 54, 56, 58, 60] },
-  wstETH: { symbol: 'wstETH', name: 'Wrapped Staked ETH', price: '$3,850.42', change24h: '+2.15%', description: 'Liquid staking token for ETH with yield generation from staking rewards.', marketCap: '$28.4B', chartValues: [45, 47, 49, 51, 53, 55, 57] },
-  DAI: { symbol: 'DAI', name: 'Dai Stablecoin', price: '$1.00', change24h: '+0.00%', description: 'Decentralized stablecoin alternative for settlement and yield.', marketCap: '$5.2B', chartValues: [50, 50, 50, 50, 50, 50, 50] },
-  USDT: { symbol: 'USDT', name: 'Tether', price: '$1.00', change24h: '+0.01%', description: 'Stablecoin alternative for trading and settlement on Mantle.', marketCap: '$118.5B', chartValues: [50, 50, 50, 50, 50, 50, 50] },
-  WETH: { symbol: 'WETH', name: 'Wrapped Ether', price: '$3,542.10', change24h: '+1.85%', description: 'Wrapped ETH on Mantle for DeFi composability and trading.', marketCap: '$425.7B', chartValues: [48, 50, 52, 54, 56, 58, 60] },
+  USDC: {
+    symbol: 'USDC',
+    name: 'USD Coin',
+    price: '$1.00',
+    change24h: '+0.01%',
+    description: 'Stablecoin backed by USD reserves, primary settlement asset on Mantle.',
+    marketCap: '$32.9B',
+    chartValues: [50, 50, 50, 50, 50, 50, 50],
+  },
+  MNT: {
+    symbol: 'MNT',
+    name: 'Mantle',
+    price: '$1.09',
+    change24h: '+3.42%',
+    description: 'Native token of Mantle network, used for gas and staking rewards.',
+    marketCap: '$3.6B',
+    chartValues: [24, 26, 28, 29, 33, 35, 39],
+  },
+  USDY: {
+    symbol: 'USDY',
+    name: 'Ondo US Dollar Yield',
+    price: '$1.00',
+    change24h: '+0.02%',
+    description: 'RWA stablecoin with yield, backed by US Treasury bills and short-term bonds.',
+    marketCap: '$2.4B',
+    chartValues: [50, 50, 50, 50, 50, 50, 50],
+  },
+  mETH: {
+    symbol: 'mETH',
+    name: 'Mantle Ether',
+    price: '$3,542.10',
+    change24h: '+1.85%',
+    description: 'RWA asset representing real-world ETH exposure on Mantle with yield generation.',
+    marketCap: '$1.8B',
+    chartValues: [48, 50, 52, 54, 56, 58, 60],
+  },
+  WETH: {
+    symbol: 'WETH',
+    name: 'Wrapped Ether',
+    price: '$3,542.10',
+    change24h: '+1.85%',
+    description: 'Wrapped ETH on Mantle for DeFi composability and trading.',
+    marketCap: '$425.7B',
+    chartValues: [48, 50, 52, 54, 56, 58, 60],
+  },
+  WBTC: {
+    symbol: 'WBTC',
+    name: 'Wrapped Bitcoin',
+    price: '$68,421.22',
+    change24h: '+1.39%',
+    description: 'Wrapped BTC on Mantle for diversification and collateral.',
+    marketCap: '$1.34T',
+    chartValues: [58, 60, 61, 63, 62, 66, 68],
+  },
+  DAI: {
+    symbol: 'DAI',
+    name: 'Dai Stablecoin',
+    price: '$1.00',
+    change24h: '+0.00%',
+    description: 'Decentralized stablecoin alternative for settlement and yield.',
+    marketCap: '$5.2B',
+    chartValues: [50, 50, 50, 50, 50, 50, 50],
+  },
+  USDT: {
+    symbol: 'USDT',
+    name: 'Tether',
+    price: '$1.00',
+    change24h: '+0.01%',
+    description: 'Stablecoin alternative for trading and settlement on Mantle.',
+    marketCap: '$118.5B',
+    chartValues: [50, 50, 50, 50, 50, 50, 50],
+  },
+  wstETH: {
+    symbol: 'wstETH',
+    name: 'Wrapped Staked ETH',
+    price: '$3,850.42',
+    change24h: '+2.15%',
+    description: 'Liquid staking token for ETH with yield generation from staking rewards.',
+    marketCap: '$28.4B',
+    chartValues: [45, 47, 49, 51, 53, 55, 57],
+  },
+  BTC: {
+    symbol: 'BTC',
+    name: 'Bitcoin',
+    price: '$68,421.22',
+    change24h: '+1.39%',
+    description: 'Digital store-of-value asset with the largest market capitalization in crypto.',
+    marketCap: '$1.34T',
+    chartValues: [58, 60, 61, 63, 62, 66, 68],
+  },
+  ETH: {
+    symbol: 'ETH',
+    name: 'Ethereum',
+    price: '$3,542.10',
+    change24h: '+1.85%',
+    description: 'Smart-contract network powering onchain apps, DeFi protocols, and rollups.',
+    marketCap: '$425.7B',
+    chartValues: [48, 50, 52, 54, 56, 58, 60],
+  },
 }
 
-export default function ExploreContent() {
-  const [activeAssetFilterId, setActiveAssetFilterId] = useState<ExploreAssetFilterId>('all')
-  const [activeFilterId, setActiveFilterId] = useState<ExploreTableFilterId>('all')
+export default function YieldContent() {
+  const [activeFilterId, setActiveFilterId] = useState<YieldFilterId>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [sortField, setSortField] = useState<SortField>('change24h')
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
   const [currentPage, setCurrentPage] = useState(1)
-  const [pageSize, setPageSize] = useState<ExplorePageSize>(5)
+  const [pageSize, setPageSize] = useState<YieldPageSize>(5)
   const [isPageSizeMenuOpen, setIsPageSizeMenuOpen] = useState(false)
 
   const normalizedQuery = searchQuery.trim().toLowerCase()
 
   const filteredRows = useMemo(() => {
-    return exploreDataset.rows.filter((row) => {
-      const matchesAsset = activeAssetFilterId === 'all' ? true : row.assetType === activeAssetFilterId
+    return yieldDataset.rows.filter((row) => {
       const matchesFilter = activeFilterId === 'all' ? true : row.filterCategory === activeFilterId
       const matchesSearch = normalizedQuery.length === 0 ? true : row.name.toLowerCase().includes(normalizedQuery) || row.symbol.toLowerCase().includes(normalizedQuery) || row.price.toLowerCase().includes(normalizedQuery)
 
-      return matchesAsset && matchesFilter && matchesSearch
+      return matchesFilter && matchesSearch
     })
-  }, [activeAssetFilterId, activeFilterId, normalizedQuery])
+  }, [activeFilterId, normalizedQuery])
 
   const sortedRows = useMemo(() => {
     return [...filteredRows].sort((left, right) => {
@@ -157,7 +207,7 @@ export default function ExploreContent() {
       const rightValue = getSortableValue(right, sortField)
 
       if (leftValue === rightValue) {
-        return left.name.localeCompare(right.name)
+        return left.rank - right.rank
       }
 
       return sortDirection === 'asc' ? leftValue - rightValue : rightValue - leftValue
@@ -190,7 +240,7 @@ export default function ExploreContent() {
     const handlePointerDown = (event: PointerEvent) => {
       const target = event.target as HTMLElement | null
 
-      if (target?.closest('[data-explore-page-size-menu-root="true"]')) {
+      if (target?.closest('[data-trade-page-size-menu-root="true"]')) {
         return
       }
 
@@ -215,7 +265,7 @@ export default function ExploreContent() {
   }
 
   const handlePageSizeMenuClick = (item: DropdownMenuItem) => {
-    const nextPageSize = Number(item.value) as ExplorePageSize
+    const nextPageSize = Number(item.value) as TradePageSize
 
     if (PAGE_SIZE_OPTIONS.includes(nextPageSize)) {
       setPageSize(nextPageSize)
@@ -227,12 +277,11 @@ export default function ExploreContent() {
 
   return (
     <div style={{ display: 'grid', gap: 18 }}>
-      <MarketTickerCarousel items={exploreDataset.marketTickers} />
-      <ExploreBannerSlider slides={exploreDataset.banners} />
+      <MarketTickerCarousel items={yieldDataset.marketTickers} />
 
       <div style={{ display: 'grid', gap: 10 }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-          <div style={{ color: 'var(--canvas-text-primary)', fontSize: 24, fontWeight: 700, lineHeight: 1.05 }}>{exploreDataset.strategiesTitle}</div>
+          <div style={{ color: 'var(--canvas-text-primary)', fontSize: 24, fontWeight: 700, lineHeight: 1.05 }}>{yieldDataset.strategiesTitle}</div>
           <span
             style={{
               display: 'inline-flex',
@@ -251,7 +300,18 @@ export default function ExploreContent() {
               gap: 8,
             }}
           >
-            <img src={handoffIcon} alt="Handoff" style={{ width: 16, height: 16, borderRadius: '999px', display: 'block', objectFit: 'cover', flex: 'none' }} />
+            <img
+              src={handoffIcon}
+              alt="Handoff"
+              style={{
+                width: 16,
+                height: 16,
+                borderRadius: '999px',
+                display: 'block',
+                objectFit: 'cover',
+                flex: 'none',
+              }}
+            />
             <span>By Handoff</span>
           </span>
         </div>
@@ -265,56 +325,14 @@ export default function ExploreContent() {
             alignItems: 'stretch',
           }}
         >
-          {exploreDataset.strategies.map((strategy) => (
+          {yieldDataset.strategies.map((strategy) => (
             <StrategyOpportunityCard key={strategy.id} strategy={strategy} tokenDetails={tokenDetailBySymbol} />
           ))}
         </DashboardCard>
       </div>
 
       <div style={{ display: 'grid', gap: 20 }}>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-          <div style={{ color: 'var(--canvas-text-primary)', fontSize: 24, fontWeight: 700, lineHeight: 1.05 }}>{exploreDataset.title}</div>
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 4,
-              padding: 4,
-              borderRadius: 999,
-              border: '1px solid var(--canvas-panel-divider)',
-              background: 'var(--canvas-surface-soft)',
-            }}
-          >
-            {exploreDataset.assetFilters.map((filter) => {
-              const active = filter.id === activeAssetFilterId
-
-              return (
-                <button
-                  key={filter.id}
-                  type="button"
-                  onClick={() => {
-                    setActiveAssetFilterId(filter.id)
-                    setCurrentPage(1)
-                  }}
-                  style={{
-                    height: 28,
-                    padding: '0 12px',
-                    border: 'none',
-                    borderRadius: 999,
-                    background: active ? 'var(--canvas-accent)' : 'transparent',
-                    color: active ? 'var(--canvas-text-on-accent)' : 'var(--canvas-text-tertiary)',
-                    cursor: 'pointer',
-                    fontSize: 11,
-                    fontWeight: 600,
-                    fontFamily: 'var(--canvas-font-sans)',
-                  }}
-                >
-                  {filter.label}
-                </button>
-              )
-            })}
-          </div>
-        </div>
+        <div style={{ color: 'var(--canvas-text-primary)', fontSize: 24, fontWeight: 700, lineHeight: 1.05 }}>{yieldDataset.title}</div>
 
         <DashboardCard
           style={{
@@ -375,7 +393,7 @@ export default function ExploreContent() {
                 background: 'var(--canvas-surface-soft)',
               }}
             >
-              {exploreDataset.filters.map((filter) => {
+              {yieldDataset.filters.map((filter) => {
                 const active = filter.id === activeFilterId
 
                 return (
@@ -410,7 +428,7 @@ export default function ExploreContent() {
             <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
               <thead>
                 <tr style={{ background: 'var(--canvas-surface-soft)' }}>
-                  <th style={tableHeaderCellStyle}>Asset</th>
+                  <th style={tableHeaderCellStyle}>Token</th>
                   <th style={tableHeaderCellStyle}>{renderSortableHeader('Price', sortField === 'price', sortDirection, () => handleSort('price'))}</th>
                   <th style={tableHeaderCellStyle}>{renderSortableHeader('24h', sortField === 'change24h', sortDirection, () => handleSort('change24h'))}</th>
                   <th style={tableHeaderCellStyle}>{renderSortableHeader('Marketcap', sortField === 'marketCap', sortDirection, () => handleSort('marketCap'))}</th>
@@ -432,21 +450,15 @@ export default function ExploreContent() {
             >
               <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
                 <tbody>
-                  {paginatedRows.map((row) => {
-                    const Icon = iconBySymbol[row.symbol as keyof typeof iconBySymbol]
+                  {paginatedRows.map((row, index) => {
+                    const Icon = iconBySymbol[row.symbol]
                     const isPositive = parsePercent(row.change24h) >= 0
 
                     return (
                       <tr key={row.id} className="interactiveTableRow" style={{ borderTop: '1px solid var(--canvas-panel-divider)' }}>
                         <td style={tableBodyCellStyle}>
                           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                            {row.assetType === 'stock' ? (
-                              <span style={{ width: 18, height: 18, borderRadius: '999px', overflow: 'hidden', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
-                                <TickerLogo ticker={row.symbol} size={18} alt={`${row.name} logo`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                              </span>
-                            ) : Icon ? (
-                              <Icon width={18} height={18} />
-                            ) : null}
+                            <Icon width={18} height={18} />
                             <span>{row.name}</span>
                           </span>
                         </td>
@@ -455,7 +467,13 @@ export default function ExploreContent() {
                         <td style={tableBodyCellStyle}>{row.marketCap}</td>
                         <td style={tableBodyCellStyle}>{row.volume}</td>
                         <td style={{ ...tableBodyCellStyle, paddingTop: 10, paddingBottom: 10, color: 'var(--canvas-text-secondary)' }}>
-                          <div style={{ width: '100%', height: 44, pointerEvents: 'none' }}>
+                          <div
+                            style={{
+                              width: '100%',
+                              height: 44,
+                              pointerEvents: 'none',
+                            }}
+                          >
                             <TradeTokenMiniChart values={row.chartValues} positive={isPositive} />
                           </div>
                         </td>
@@ -509,7 +527,7 @@ export default function ExploreContent() {
               </button>
             </div>
 
-            <div data-explore-page-size-menu-root="true" style={{ position: 'relative', justifySelf: 'end' }}>
+            <div data-yield-page-size-menu-root="true" style={{ position: 'relative', justifySelf: 'end' }}>
               <button
                 type="button"
                 onClick={() => setIsPageSizeMenuOpen((current) => !current)}
@@ -554,7 +572,7 @@ export default function ExploreContent() {
   )
 }
 
-function getSortableValue(row: ExploreRow, field: SortField) {
+function getSortableValue(row: YieldTokenRow, field: SortField) {
   if (field === 'miniChart') {
     return parsePercent(row.change24h)
   }

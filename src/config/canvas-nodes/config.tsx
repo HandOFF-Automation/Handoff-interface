@@ -23,6 +23,7 @@ export const canvasNodeConfigs: CanvasNodeConfig[] = [
   { type: 'exclude', label: 'Exclude', defaultEdgeLabel: 'Without matches' },
   { type: 'filter', label: 'Filter', defaultEdgeLabel: 'Filtered' },
   { type: 'portfolioCondition', label: 'Portfolio Condition', defaultEdgeLabel: 'Portfolio rule' },
+  { type: 'rethink', label: 'Rethink', defaultEdgeLabel: 'AI review' },
   { type: 'stock', label: 'Stock', defaultEdgeLabel: 'Asset' },
   { type: 'token', label: 'Token', defaultEdgeLabel: 'Asset' },
   { type: 'assetBasket', label: 'Asset Basket', defaultEdgeLabel: 'Basket assets' },

@@ -9,6 +9,8 @@ import { DashboardCard, DashboardMetricCard, DashboardSectionCard } from '../../
 import { StrategyPreviewCard } from '../../../components/card/strategy-preview-card'
 import { TradeTokenMiniChart } from '../../../components/chart/trade-token-mini-chart'
 import DropdownMenu, { type DropdownMenuItem } from '../../../components/dropdown/dropdown-menu'
+import FundsModalController from '../../../components/funds/funds-modal-controller'
+import type { FundsModalMode } from '../../../components/funds/funds-types'
 import { StrategyTrendChart } from '../../../components/chart/strategy-trend-chart'
 import DashboardLayout from '../../dashboard/dashboard-layout'
 
@@ -185,6 +187,7 @@ export default function StrategyStagingPage() {
   const [tablePageSize, setTablePageSize] = useState<StrategyTablePageSize>(5)
   const [isTablePageSizeMenuOpen, setIsTablePageSizeMenuOpen] = useState(false)
   const [hoveredTokenSymbol, setHoveredTokenSymbol] = useState<StrategyTokenSymbol | null>(null)
+  const [activeFundsModal, setActiveFundsModal] = useState<FundsModalMode | null>(null)
   const hoverCloseTimeoutRef = useRef<number | null>(null)
   const hoveredToken = hoveredTokenSymbol ? tokenDetails[hoveredTokenSymbol] : null
   const selectedPeriod = strategySummaryDataset.periods.find((period) => period.id === activePeriodId) ?? strategySummaryDataset.periods[0]
@@ -514,30 +517,6 @@ export default function StrategyStagingPage() {
           </div>
 
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-            <button
-              type="button"
-              style={{
-                height: 40,
-                padding: '0 16px',
-                borderRadius: 999,
-                border: '1px solid var(--canvas-accent)',
-                background: 'var(--canvas-accent)',
-                color: 'var(--canvas-text-on-accent)',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                cursor: 'pointer',
-                fontFamily: 'var(--canvas-font-sans)',
-                fontSize: 13,
-                fontWeight: 600,
-                boxSizing: 'border-box',
-              }}
-            >
-              <Coins size={16} weight="bold" />
-              <span>Deposit now</span>
-            </button>
-
             <button
               type="button"
               style={{
@@ -1129,6 +1108,8 @@ export default function StrategyStagingPage() {
             </div>
           </div>
         </DashboardCard>
+
+        <FundsModalController mode={activeFundsModal} onClose={() => setActiveFundsModal(null)} />
       </div>
     </DashboardLayout>
   )

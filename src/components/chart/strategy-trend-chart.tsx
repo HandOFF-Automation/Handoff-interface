@@ -13,30 +13,7 @@ export function StrategyTrendChart({ data, label = 'Total Value' }: StrategyTren
   const tooltipValueRef = useRef<HTMLDivElement | null>(null)
   const hoverMarkerRef = useRef<HTMLDivElement | null>(null)
 
-  const renderedChartData = useMemo(() => {
-    if (data.length < 2) {
-      return data
-    }
 
-    const firstPoint = data[0]
-    const secondPoint = data[1]
-    const lastPoint = data[data.length - 1]
-    const previousPoint = data[data.length - 2]
-    const leadingStep = Math.max(1, secondPoint.time - firstPoint.time)
-    const trailingStep = Math.max(1, lastPoint.time - previousPoint.time)
-
-    return [
-      {
-        time: (firstPoint.time - leadingStep) as UTCTimestamp,
-        value: firstPoint.value,
-      },
-      ...data,
-      {
-        time: (lastPoint.time + trailingStep) as UTCTimestamp,
-        value: lastPoint.value,
-      },
-    ]
-  }, [data])
 
   useEffect(() => {
     const container = chartContainerRef.current
@@ -85,9 +62,7 @@ export function StrategyTrendChart({ data, label = 'Total Value' }: StrategyTren
           labelVisible: false,
         },
         horzLine: {
-          color: 'var(--canvas-chart-accent-faint)',
-          width: 1,
-          labelVisible: false,
+          visible: false,
         },
       },
       handleScroll: false,
@@ -104,7 +79,7 @@ export function StrategyTrendChart({ data, label = 'Total Value' }: StrategyTren
       crosshairMarkerBackgroundColor: 'var(--canvas-chart-accent)',
     })
 
-    series.setData(renderedChartData)
+    series.setData(data)
 
     const applyChartSizing = (width: number, height: number) => {
       chart.applyOptions({
@@ -112,19 +87,14 @@ export function StrategyTrendChart({ data, label = 'Total Value' }: StrategyTren
         height,
       })
 
-      if (renderedChartData.length >= 2) {
-        chart.timeScale().setVisibleLogicalRange({
-          from: 1,
-          to: renderedChartData.length - 2,
-        })
-      }
+      chart.timeScale().fitContent()
     }
 
     applyChartSizing(container.clientWidth, container.clientHeight)
     chart.priceScale('right').applyOptions({
       scaleMargins: {
-        top: 0,
-        bottom: 0,
+        top: 0.12,
+        bottom: 0.08,
       },
     })
 
@@ -170,8 +140,9 @@ export function StrategyTrendChart({ data, label = 'Total Value' }: StrategyTren
 
       const priceValue = lineData.value
       const lineY = series.priceToCoordinate(priceValue)
+      const lineX = chart.timeScale().timeToCoordinate(param.time)
 
-      if (lineY === null) {
+      if (lineY === null || lineX === null) {
         tooltip.style.opacity = '0'
         hoverMarker.style.opacity = '0'
         return
@@ -181,11 +152,11 @@ export function StrategyTrendChart({ data, label = 'Total Value' }: StrategyTren
       const tooltipHeight = 56
       const margin = 14
 
-      let nextLeft = param.point.x + margin
+      let nextLeft = lineX + margin
       let nextTop = lineY - tooltipHeight - margin
 
       if (nextLeft + tooltipWidth > container.clientWidth) {
-        nextLeft = param.point.x - tooltipWidth - margin
+        nextLeft = lineX - tooltipWidth - margin
       }
 
       if (nextLeft < 0) {
@@ -206,7 +177,7 @@ export function StrategyTrendChart({ data, label = 'Total Value' }: StrategyTren
       updateTooltipPosition(nextLeft, nextTop)
 
       hoverMarker.style.opacity = '1'
-      hoverMarker.style.left = `${param.point.x}px`
+      hoverMarker.style.left = `${lineX}px`
       hoverMarker.style.top = `${lineY}px`
     })
 
@@ -222,7 +193,7 @@ export function StrategyTrendChart({ data, label = 'Total Value' }: StrategyTren
       container.removeEventListener('mouseleave', handleMouseLeave)
       chart.remove()
     }
-  }, [data, label, renderedChartData])
+  }, [data, label])
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
@@ -244,12 +215,13 @@ export function StrategyTrendChart({ data, label = 'Total Value' }: StrategyTren
         ref={hoverMarkerRef}
         style={{
           position: 'absolute',
-          width: 10,
-          height: 10,
+          zIndex: 10,
+          width: 6,
+          height: 6,
           borderRadius: '999px',
           background: 'var(--canvas-accent)',
-          border: '2px solid var(--canvas-chart-marker-border)',
-          boxShadow: '0 0 0 6px var(--canvas-chart-accent-glow)',
+          border: '1.5px solid var(--canvas-chart-marker-border)',
+          boxShadow: '0 0 0 3px var(--canvas-chart-accent-glow)',
           transform: 'translate(-50%, -50%)',
           opacity: 0,
           pointerEvents: 'none',
@@ -260,6 +232,7 @@ export function StrategyTrendChart({ data, label = 'Total Value' }: StrategyTren
         ref={tooltipRef}
         style={{
           position: 'absolute',
+          zIndex: 20,
           width: 118,
           minHeight: 56,
           pointerEvents: 'none',

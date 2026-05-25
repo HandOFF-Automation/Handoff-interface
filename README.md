@@ -57,6 +57,35 @@ The current implementation is strongest around the canvas editor and node system
 
 ---
 
+## Supported Assets
+
+Handoff interface supports the following assets on Mantle for strategy building and portfolio management:
+
+### Core Assets (MVP)
+| Asset | Type | Purpose |
+|-------|------|---------|
+| **USDC** | Stablecoin | Primary settlement and trading pair |
+| **MNT** | Native Token | Gas fees and native rewards |
+
+### RWA Assets (Differentiation)
+| Asset | Type | Purpose |
+|-------|------|---------|
+| **USDY** | RWA Stablecoin | Yield strategies and RWA focus |
+| **mETH** | RWA Asset | Risk management and collateral |
+
+### Extended Assets (Phase 2)
+| Asset | Type | Purpose |
+|-------|------|---------|
+| **WETH** | Wrapped ETH | Diversification and collateral |
+| **WBTC** | Wrapped BTC | Diversification and collateral |
+| **DAI** | Stablecoin | Alternative settlement |
+| **USDT** | Stablecoin | Alternative settlement |
+| **wstETH** | Liquid Staking | Yield and staking strategies |
+| **MNT LP Tokens** | DEX LP | Liquidity provision strategies |
+| **Mantle LSP** | Liquid Staking | Native staking yield |
+
+---
+
 ## Tech Stack
 
 | Layer | Technology |
@@ -105,6 +134,52 @@ The app exposes routes for the canvas workspace, strategy staging, and dashboard
 | 5 | `/strategies/:id` | Reserved strategy detail route pattern |
 | 6 | `/dashboard/...` | Dashboard workspace routes |
 
+### Staging Canvas Notes
+
+The staging canvas route contains extra test and preview-oriented behavior used to exercise the node system and canvas workflow.
+
+| No | Staging Behavior | Current Implementation |
+|---|---|---|
+| 1 | Default template preload | When the canvas graph is empty, `/canvas/staging` auto-loads the selected template snapshot. The default selected template is `realStrategy`. |
+| 2 | Template selector | A top-center `Template` selector allows replacing the current staging graph with any template from `src/config/canvas-template/config.tsx`. |
+| 3 | Editable canvas name | The staging page includes inline canvas renaming with `Enter` to commit and `Escape` to cancel. |
+| 4 | Loading sequence messages | The page drives staged loading messages: `Connecting to strategy workspace`, `Loading strategy graph`, `Syncing AI providers`, and `Preparing collaboration layer`. |
+| 5 | Full sidebar mounting test surface | The staging page mounts the full set of typed node sidebars so individual node configurations can be tested from one route. |
+| 6 | Filter source auto-selection | If a `Filter` node is selected and no source asset view is set yet, the page auto-selects the first connected incoming asset source. |
+| 7 | Start-node connected market discovery | When a `Start` node is selected, the page walks the downstream graph to collect connected market nodes for specific-percentage allocation editing. |
+
+### Canvas Overlay And Test Controls
+
+Canvas routes also mount extra overlay components outside the staging page body itself. These help with debugging, profile actions, test execution flows, and operator-facing information.
+
+| No | Overlay / Control Surface | Current Implementation |
+|---|---|---|
+| 1 | Debug panel | `CanvasDebugPanel` is mounted from `src/components/canvas/dock-app.tsx` and provides canvas validation visibility on canvas routes. |
+| 2 | Brand badge | `BrandBadge` is mounted as a canvas overlay on canvas routes. |
+| 3 | Profile panel | `ProfileAvatar` is mounted as a canvas overlay and acts as a profile, collaboration, and execution-test control surface. |
+| 4 | FAQ panel | `HelpFaq` is mounted on canvas routes for in-product help content. |
+| 5 | Keybindings panel | `HelpKeybindings` is mounted on canvas routes to expose shortcut information. |
+| 6 | Canvas dock | `CanvasDock` is mounted from `dock-app.tsx` as the primary canvas command surface. |
+
+### Profile Configurator And Test Information
+
+The profile overlay currently contains mock configuration and test-oriented execution controls. This is useful as a staging/configurator surface and should be treated as part of the current testable canvas experience.
+
+| No | Profile / Configurator Feature | Current Implementation |
+|---|---|---|
+| 1 | Start strategy menu | Provides `Start On-Chain Strategies`, `Start Real-Time Test`, and `Start Historical Backtest`. |
+| 2 | Execution state flow | Uses mock execution states: `idle`, `configuring`, `starting`, and `running`. |
+| 3 | Test mode selection | Supports mock mode selection between on-chain start, real-time test, and historical backtest. |
+| 4 | Historical backtest speed | Supports mock backtest speed options: `fast`, `mid`, and `low`. |
+| 5 | Real-time duration control | Supports configurable real-time test duration through `realtimeDuration`. |
+| 6 | Total duration tracking | Tracks mock total execution duration and remaining time during active test flows. |
+| 7 | Active duration ticker | Shows elapsed run duration while execution is in the `running` state. |
+| 8 | Collaborator invite flow | Includes mock collaborator invite controls with permission selection. |
+| 9 | Permission configurator | Supports collaborator permission states: `full-collaborate` and `view-only`. |
+| 10 | Wallet copy action | Includes wallet-address copy interaction from the profile surface. |
+| 11 | Profile menu actions | Includes profile-level actions such as `Settings` and `Disconnected`. |
+| 12 | Strategy running UI state | Toggles a body-level `strategies-running` class while the mock running state is active. |
+
 ---
 
 ## Canvas Interaction Model
@@ -142,7 +217,7 @@ The dock is the primary control surface for working on the canvas. Menus are gro
 |---|---|---|---|
 | 1 | `Pointer` | Canvas interaction tools | `Click`, `Hand` |
 | 2 | `Flow` | Entry, loop, and exit flow nodes | `Start`, `Loop`, `End` |
-| 3 | `Logic` | Conditions and set-logic nodes | `If`, `Else`, `All Of`, `Any Of`, `Not`, `Only One`, `Portfolio Condition`, `Match All`, `Match Any`, `Exclude`, `Filter` |
+| 3 | `Logic` | Conditions, AI review, and set-logic nodes | `If`, `Else`, `All Of`, `Any Of`, `Not`, `Only One`, `Portfolio Condition`, `Rethink`, `Match All`, `Match Any`, `Exclude`, `Filter` |
 | 4 | `Asset Type` | Asset source nodes | `Stock`, `Token`, `Asset Basket` |
 | 5 | `Execution` | Actions, portfolio actions, risk, and timing nodes | `Buy`, `Sell`, `Rebalance`, `Allocate`, `Scale Out`, `Cash Reserve`, `Take Profit`, `Stop Loss`, `Position Limit`, `Exposure Limit`, `Cooldown`, `Wait`, `Pause Trading`, `Position Count Limit` |
 | 6 | `Zoom` | Dock utility menu for view controls | `Zoom`, `Zoom In`, `Zoom Out`, `Zoom to 100%`, `Zoom to Fit` |
@@ -153,7 +228,7 @@ The `Logic` menu is split so it stays readable and does not become crowded.
 
 | Group | Items |
 |---|---|
-| `Conditions` | `If`, `Else`, `All Of`, `Any Of`, `Not`, `Only One`, `Portfolio Condition` |
+| `Conditions` | `If`, `Else`, `All Of`, `Any Of`, `Not`, `Only One`, `Portfolio Condition`, `Rethink` |
 | `Set Logic` | `Match All`, `Match Any`, `Exclude`, `Filter` |
 
 ### Execution Dropdown Groups
@@ -185,27 +260,28 @@ Nodes are the building blocks of each strategy graph. The current implementation
 | 8 | `Not` | Logic / Conditions | Inverts a condition path |
 | 9 | `Only One` (`xor`) | Logic / Conditions | Passes only one matching condition path |
 | 10 | `Portfolio Condition` | Logic / Conditions | Branches on portfolio-level state instead of market-only state |
-| 11 | `Match All` (`intersect`) | Logic / Set Logic | Keeps only assets shared across incoming filtered sets |
-| 12 | `Match Any` (`union`) | Logic / Set Logic | Merges incoming asset sets |
-| 13 | `Exclude` | Logic / Set Logic | Removes one asset set from another |
-| 14 | `Filter` | Logic / Set Logic | Ranks and narrows incoming assets or baskets before continuing |
-| 15 | `Stock` | Asset | Equity asset source node |
-| 16 | `Token` | Asset | Crypto or token asset source node |
-| 17 | `Asset Basket` | Asset | Groups multiple connected assets into one basket target |
-| 18 | `Buy` | Execution / Actions | Opens or increases a position |
-| 19 | `Sell` | Execution / Actions | Reduces or exits a position |
-| 20 | `Rebalance` | Execution / Actions | Re-aligns portfolio or branch allocation |
-| 21 | `Allocate` | Execution / Portfolio | Routes a defined allocation amount into the next path |
-| 22 | `Scale Out` | Execution / Portfolio | Reduces exposure in staged or gradual form |
-| 23 | `Cash Reserve` | Execution / Portfolio | Preserves a configured cash buffer |
-| 24 | `Take Profit` | Execution / Risk | Applies upside exit or partial-profit logic |
-| 25 | `Stop Loss` | Execution / Risk | Applies downside protection logic |
-| 26 | `Position Limit` | Execution / Risk | Caps exposure per position or branch asset |
-| 27 | `Exposure Limit` | Execution / Risk | Caps exposure by portfolio, basket, or asset class |
-| 28 | `Cooldown` | Execution / Timing & Limits | Pauses repeated action for a cooldown window |
-| 29 | `Wait` | Execution / Timing & Limits | Inserts a time-based wait stage |
-| 30 | `Pause Trading` | Execution / Timing & Limits | Temporarily suspends execution or trading flow |
-| 31 | `Position Count Limit` | Execution / Timing & Limits | Caps how many positions may remain open |
+| 11 | `Rethink` | Logic / AI Review | Adds an AI review step before the next branch or action continues |
+| 12 | `Match All` (`intersect`) | Logic / Set Logic | Keeps only assets shared across incoming filtered sets |
+| 13 | `Match Any` (`union`) | Logic / Set Logic | Merges incoming asset sets |
+| 14 | `Exclude` | Logic / Set Logic | Removes one asset set from another |
+| 15 | `Filter` | Logic / Set Logic | Ranks and narrows incoming assets or baskets before continuing |
+| 16 | `Stock` | Asset | Equity asset source node |
+| 17 | `Token` | Asset | Crypto or token asset source node |
+| 18 | `Asset Basket` | Asset | Groups multiple connected assets into one basket target |
+| 19 | `Buy` | Execution / Actions | Opens or increases a position |
+| 20 | `Sell` | Execution / Actions | Reduces or exits a position |
+| 21 | `Rebalance` | Execution / Actions | Re-aligns portfolio or branch allocation |
+| 22 | `Allocate` | Execution / Portfolio | Routes a defined allocation amount into the next path |
+| 23 | `Scale Out` | Execution / Portfolio | Reduces exposure in staged or gradual form |
+| 24 | `Cash Reserve` | Execution / Portfolio | Preserves a configured cash buffer |
+| 25 | `Take Profit` | Execution / Risk | Applies upside exit or partial-profit logic |
+| 26 | `Stop Loss` | Execution / Risk | Applies downside protection logic |
+| 27 | `Position Limit` | Execution / Risk | Caps exposure per position or branch asset |
+| 28 | `Exposure Limit` | Execution / Risk | Caps exposure by portfolio, basket, or asset class |
+| 29 | `Cooldown` | Execution / Timing & Limits | Pauses repeated action for a cooldown window |
+| 30 | `Wait` | Execution / Timing & Limits | Inserts a time-based wait stage |
+| 31 | `Pause Trading` | Execution / Timing & Limits | Temporarily suspends execution or trading flow |
+| 32 | `Position Count Limit` | Execution / Timing & Limits | Caps how many positions may remain open |
 
 ---
 
@@ -237,6 +313,7 @@ Shared sidebar implementations used by multiple nodes:
 | `Else` | informational sections only | No editable functions. Shows branch role and behavior guidance. | `Else` is a fallback branch node, not a second condition editor. |
 | `Filter` | `Asset View`, `Primary Rule`, `Primary Rule Period`, `Rule Operator`, `Secondary Rule`, `Secondary Rule Period`, `Keep Results`, `Result Mode`, `How Many` | Rules: `Current Price`, `Current Market Cap`, `Volume`, `Percent Gain`, `SMA`, `EMA`, `RSI`, `MACD Histogram`, `ATR`. Operator: `AND`, `OR`. Keep results: `Top`, `Bottom`. Result mode: `Top 1`, `Top N`, `All Matches`. | Filter config is stored per selected `Asset View`, so each connected asset input can keep its own filter setup. Period fields only appear for rule types that need them: `SMA`, `EMA`, `RSI`, `ATR`. `How Many` is currently still visible even when `Result Mode` implies a single or all-match result. |
 | `Portfolio Condition` | `Portfolio Metric`, `Comparator`, `Target Value` | Metrics: `Cash %`, `Portfolio Exposure %`, `Open Positions`, `Unrealized PnL %`, `Drawdown %`, `Position Size %`. Comparators: `>`, `<`, `>=`, `<=`, `=`. | Portfolio-level branching node. No metric-specific conditional UI is implemented yet. |
+| `Rethink` | `Review Focus`, `Suggested Outcome`, `Operator Note` | Focus: `Yield`, `Risk`, `Allocation`, `Portfolio`. Outcome: `Continue`, `Adjust`, `Pause`. | AI evaluation node for yield/risk/allocation review before the next branch or action continues. Current summary pattern uses bridge text plus badges, e.g. `Rethink before [Adjust] for [Risk]`. |
 | `All Of` (`and`) | informational sections only | No editable functions. Behavior: all connected conditions must pass. | Shared informational sidebar from `canvas-logic-aggregator-sidebar.tsx`. |
 | `Any Of` (`or`) | informational sections only | No editable functions. Behavior: any connected condition may pass. | Shared informational sidebar from `canvas-logic-aggregator-sidebar.tsx`. |
 | `Not` | informational sections only | No editable functions. Behavior: invert a connected condition result. | Shared informational sidebar from `canvas-logic-aggregator-sidebar.tsx`. |
@@ -343,7 +420,7 @@ Implementation notes:
 |---|---|
 | `asset` | `stock`, `token` |
 | `assetSet` | `assetBasket`, `filter`, `intersect`, `union`, `exclude` |
-| `boolean` | `if`, `portfolioCondition`, `and`, `or`, `not`, `xor`, `else` |
+| `boolean` | `if`, `portfolioCondition`, `rethink`, `and`, `or`, `not`, `xor`, `else` |
 | `branch` | `start`, `loop` |
 | `execution` | `buy`, `sell`, `rebalance`, `allocate`, `scaleOut`, `takeProfit`, `stopLoss`, `positionLimit`, `positionCountLimit`, `exposureLimit`, `cashReserve`, `cooldown`, `wait`, `pauseTrading` |
 | `terminal` | `end` |
@@ -352,14 +429,15 @@ Implementation notes:
 
 | Source Node | Allowed Target Types / Categories | Connector Rules |
 |---|---|---|
-| `Start` | `stock`, `token`, `assetBasket`, `filter`, `portfolioCondition` | Source side limited to `right` and `bottom`. Max outgoing `2`. Max per side: `right = 1`, `bottom = 1`. |
-| `Stock`, `Token` | `assetBasket`, `filter`, `if`, `portfolioCondition`, `intersect`, `union`, `exclude` | No extra max-count rule beyond the shared validator. |
-| `Filter`, `Asset Basket`, `Match All`, `Match Any`, `Exclude` | `filter`, `if`, `portfolioCondition`, `intersect`, `union`, `exclude`, plus target category `execution` | These nodes drive asset-set pipelines into more filtering, branching, or execution. |
-| `If`, `Portfolio Condition`, `All Of`, `Any Of`, `Not`, `Only One` | `and`, `or`, `not`, `xor`, `else`, plus target category `execution` | `If` specifically is limited to source sides `right` and `bottom`, max outgoing `2`, max per side `1`. |
-| `Else` | `end`, `loop`, `filter`, `if`, `portfolioCondition`, plus target category `execution` | Source side limited to `right`. Max outgoing `1`. |
-| `Loop` | `end`, `loop`, `filter`, `if`, `portfolioCondition`, plus target category `execution` | Can connect from all four sides. |
-| `Cooldown`, `Wait`, `Pause Trading` | `end`, `loop`, `filter`, `if`, `portfolioCondition`, plus target category `execution` | Timing/suspension nodes continue into evaluation, execution, loop, or end stages. |
-| `Buy`, `Sell`, `Rebalance`, `Allocate`, `Scale Out`, `Take Profit`, `Stop Loss`, `Position Limit`, `Position Count Limit`, `Exposure Limit`, `Cash Reserve` | `loop`, `end`, `cooldown`, `wait`, `pauseTrading`, plus target category `execution` | Execution chains can continue into execution, timing, loop, or terminal nodes. |
+| `Start` | `stock`, `token`, `assetBasket`, `filter`, `portfolioCondition`, `rethink` | Source side limited to `right` and `bottom`. Max outgoing `2`. Max per side: `right = 1`, `bottom = 1`. |
+| `Stock`, `Token` | `assetBasket`, `filter`, `if`, `portfolioCondition`, `rethink`, `intersect`, `union`, `exclude` | No extra max-count rule beyond the shared validator. |
+| `Filter`, `Asset Basket`, `Match All`, `Match Any`, `Exclude` | `filter`, `if`, `portfolioCondition`, `rethink`, `intersect`, `union`, `exclude`, plus target category `execution` | These nodes drive asset-set pipelines into more filtering, branching, AI review, or execution. |
+| `If`, `Portfolio Condition`, `All Of`, `Any Of`, `Not`, `Only One` | `and`, `or`, `not`, `xor`, `else`, `rethink`, plus target category `execution` | `If` specifically is limited to source sides `right` and `bottom`, max outgoing `2`, max per side `1`. |
+| `Rethink` | `and`, `or`, `not`, `xor`, `else`, plus target category `execution` | AI evaluation node that can continue into logic branching or execution after reviewing yield, risk, allocation, or portfolio posture. |
+| `Else` | `end`, `loop`, `filter`, `if`, `portfolioCondition`, `rethink`, plus target category `execution` | Source side limited to `right`. Max outgoing `1`. |
+| `Loop` | `end`, `loop`, `filter`, `if`, `portfolioCondition`, `rethink`, plus target category `execution` | Can connect from all four sides. |
+| `Cooldown`, `Wait`, `Pause Trading` | `end`, `loop`, `filter`, `if`, `portfolioCondition`, `rethink`, plus target category `execution` | Timing/suspension nodes continue into evaluation, AI review, execution, loop, or end stages. |
+| `Buy`, `Sell`, `Rebalance`, `Allocate`, `Scale Out`, `Take Profit`, `Stop Loss`, `Position Limit`, `Position Count Limit`, `Exposure Limit`, `Cash Reserve` | `loop`, `end`, `cooldown`, `wait`, `pauseTrading`, `rethink`, plus target category `execution` | Execution chains can continue into execution, AI review, timing, loop, or terminal nodes. |
 
 ### Target-Side Rules
 

@@ -71,6 +71,7 @@ export const canvasLogicMenuItems: CanvasDockMenuItemConfig[] = [
   { label: 'Exclude', value: 'exclude', shortcut: 'U' },
   { label: 'Filter', value: 'filter', shortcut: 'F' },
   { label: 'Portfolio Condition', value: 'portfolioCondition', shortcut: 'P' },
+  { label: 'Rethink', value: 'rethink', shortcut: 'R' },
 ]
 
 export const canvasAssetTypeMenuItems: CanvasDockMenuItemConfig[] = [

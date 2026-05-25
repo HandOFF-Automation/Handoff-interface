@@ -80,6 +80,9 @@ export type CanvasNodeRecord = {
   portfolioMetric?: CanvasPortfolioMetric
   portfolioComparator?: CanvasIfComparator
   portfolioValue?: string
+  rethinkFocus?: CanvasRethinkFocus
+  rethinkAction?: CanvasRethinkAction
+  rethinkNote?: string
   cooldownDuration?: string
   cooldownUnit?: CanvasTimeUnit
   cooldownScope?: CanvasCooldownScope
@@ -143,6 +146,8 @@ export type CanvasRiskComparator = '>' | '<' | '>=' | '<='
 export type CanvasTakeProfitMode = 'single' | 'partial' | 'ladder' | 'atrBased'
 export type CanvasStopLossMode = 'fixed' | 'trailing' | 'breakEven' | 'atrBased'
 export type CanvasPortfolioMetric = 'cashPercent' | 'portfolioExposure' | 'openPositions' | 'unrealizedPnl' | 'drawdownPercent' | 'positionSizePercent'
+export type CanvasRethinkFocus = 'yield' | 'risk' | 'allocation' | 'portfolio'
+export type CanvasRethinkAction = 'continue' | 'adjust' | 'pause'
 export type CanvasCooldownScope = 'branch' | 'strategy'
 export type CanvasPauseTradingMode = 'duration' | 'untilCondition'
 export type CanvasLimitMode = 'percentage' | 'value'
@@ -532,6 +537,23 @@ export function updateCanvasRiskConfig(
 export function updateCanvasPortfolioConditionConfig(
   nodeId: string,
   config: Partial<Pick<CanvasNodeRecord, 'portfolioMetric' | 'portfolioComparator' | 'portfolioValue'>>,
+) {
+  commitCanvasGraphMutation((current) => ({
+    ...current,
+    nodes: current.nodes.map((node) =>
+      node.id === nodeId
+        ? {
+            ...node,
+            ...config,
+          }
+        : node,
+    ),
+  }))
+}
+
+export function updateCanvasRethinkConfig(
+  nodeId: string,
+  config: Partial<Pick<CanvasNodeRecord, 'rethinkFocus' | 'rethinkAction' | 'rethinkNote'>>,
 ) {
   commitCanvasGraphMutation((current) => ({
     ...current,

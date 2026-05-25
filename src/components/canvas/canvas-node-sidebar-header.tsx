@@ -83,7 +83,8 @@ export default function CanvasNodeSidebarHeader({
                 style={{
                   position: 'absolute',
                   top: 'calc(100% + 10px)',
-                  left: 0,
+                  left: '50%',
+                  transform: 'translateX(-50%)',
                   width: 220,
                   padding: 12,
                   borderRadius: 14,

@@ -3,7 +3,9 @@ import { tokenIcons } from '@web3icons/react'
 import { useMemo, useState } from 'react'
 
 import { DashboardCard } from '../../../components/card/dashboard-card'
+import FundsModalController from '../../../components/funds/funds-modal-controller'
 import { DataTable, type DataTableColumn, type DataTableFilterOption, sharedTableBodyCellStyle } from '../../../components/table/data-table'
+import type { FundsModalMode } from '../../../components/funds/funds-types'
 
 type InvestingHistoryType = 'deposit' | 'withdrawal' | 'transfer'
 
@@ -15,6 +17,15 @@ type InvestingHistoryRow = {
   from: string
   to: string
   createdAt: string
+}
+
+type AssetRow = {
+  id: string
+  asset: string
+  symbol: string
+  balance: string
+  value: string
+  change24h: string
 }
 
 const investingAccountDataset = {
@@ -42,6 +53,14 @@ const investingAccountDataset = {
       },
     ],
   },
+  assetsTable: {
+    title: 'Your Assets',
+    description: 'View your current asset holdings and their values.',
+    rows: [
+      { id: 'asset-1', asset: 'USDC', symbol: 'USDC', balance: '12,840.00', value: '$12,840.00', change24h: '+0.00%' },
+      { id: 'asset-2', asset: 'MNT', symbol: 'MNT', balance: '0.00', value: '$0.00', change24h: '+0.00%' },
+    ] as AssetRow[],
+  },
   historyTable: {
     title: 'History',
     description: 'Track your latest deposit, withdrawal, and transfer activity.',
@@ -67,6 +86,7 @@ export default function InvestingAccountContent() {
   const [searchQuery, setSearchQuery] = useState('')
   const [activeFilter, setActiveFilter] = useState<'all' | InvestingHistoryType>('all')
   const [copiedFieldId, setCopiedFieldId] = useState<string | null>(null)
+  const [activeFundsModal, setActiveFundsModal] = useState<FundsModalMode | null>(null)
 
   const actionIconByType = {
     withdraw: <UploadSimple size={14} weight="bold" />,
@@ -81,6 +101,13 @@ export default function InvestingAccountContent() {
     { id: 'transfer', label: 'Transfer' },
   ]
 
+  const assetsColumns: DataTableColumn[] = [
+    { id: 'asset', header: 'Asset' },
+    { id: 'balance', header: 'Balance' },
+    { id: 'value', header: 'Value' },
+    { id: 'change24h', header: '24h Change' },
+  ]
+
   const historyColumns: DataTableColumn[] = [
     { id: 'type', header: 'Type' },
     { id: 'amount', header: 'Amount' },
@@ -91,6 +118,7 @@ export default function InvestingAccountContent() {
   ]
 
   const UsdcIcon = tokenIcons.TokenUSDC
+  const MntIcon = tokenIcons.TokenMNT
 
   const normalizedQuery = searchQuery.trim().toLowerCase()
 
@@ -179,6 +207,7 @@ export default function InvestingAccountContent() {
               <button
                 key={action.id}
                 type="button"
+                onClick={() => setActiveFundsModal(action.id as FundsModalMode)}
                 style={{
                   height: 34,
                   padding: '0 14px',
@@ -202,6 +231,36 @@ export default function InvestingAccountContent() {
           </div>
         </div>
       </DashboardCard>
+
+      <DataTable
+        title={investingAccountDataset.assetsTable.title}
+        description={investingAccountDataset.assetsTable.description}
+        rows={investingAccountDataset.assetsTable.rows}
+        columns={assetsColumns}
+        emptyTitle="No assets yet"
+        emptyDescription="Your assets will appear here once you deposit funds."
+        renderRow={(row) => (
+          <tr key={row.id} className="interactiveTableRow" style={{ borderTop: '1px solid var(--canvas-panel-divider)' }}>
+            <td style={sharedTableBodyCellStyle}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                {row.symbol === 'USDC' ? <UsdcIcon width={16} height={16} /> : row.symbol === 'MNT' ? <MntIcon width={16} height={16} /> : null}
+                <span>{row.asset}</span>
+              </span>
+            </td>
+            <td style={sharedTableBodyCellStyle}>{row.balance}</td>
+            <td style={sharedTableBodyCellStyle}>{row.value}</td>
+            <td style={sharedTableBodyCellStyle}>
+              <span
+                style={{
+                  color: row.change24h.startsWith('+') ? 'var(--canvas-accent)' : row.change24h.startsWith('-') ? 'var(--canvas-negative)' : 'var(--canvas-text-primary)',
+                }}
+              >
+                {row.change24h}
+              </span>
+            </td>
+          </tr>
+        )}
+      />
 
       <DataTable
         title={investingAccountDataset.historyTable.title}
@@ -251,6 +310,8 @@ export default function InvestingAccountContent() {
           </tr>
         )}
       />
+
+      <FundsModalController mode={activeFundsModal} onClose={() => setActiveFundsModal(null)} />
     </div>
   )
 }

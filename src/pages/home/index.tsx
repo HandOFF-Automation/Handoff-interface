@@ -111,7 +111,7 @@ export default function HomePage() {
       setWalletState('connected')
       // Drive the wormhole animation from 0 → 1 with custom duration and smooth easing
       animate(scrollProgress, 1, {
-        duration: 2.2,
+        duration: 3.2,
         ease: 'easeInOut'
       })
     }, 1200)

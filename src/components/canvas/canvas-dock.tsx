@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowCircleDownRight, ArrowCircleUpRight, ArrowsClockwise, ArrowsSplit, CaretDown, ChartPieSlice, ChatCircleDots, ClockCountdown, Coin, Cursor, FlagCheckered, FunnelSimple, Hand, Moon, Path, Percent, Play, ShieldWarning, Sun, TrendDown, TrendUp, Wallet } from '@phosphor-icons/react'
+import { ArrowCircleDownRight, ArrowCircleUpRight, ArrowsClockwise, ArrowsSplit, CaretDown, ChartPieSlice, ChatCircleDots, ClockCountdown, Coin, Cursor, FlagCheckered, FunnelSimple, Hand, Moon, Path, Percent, Play, ShieldWarning, Sun, TrendDown, TrendUp, Wallet, WaveSine } from '@phosphor-icons/react'
 import { executeCanvasZoomAction, setCanvasNodeType, useCanvasNodeType, useCanvasScale, type CanvasTool } from '../../state/canvas-tool-store'
 import { toggleCanvasTheme, useCanvasTheme } from '../../state/theme-store'
 import * as canvasKeybindings from '../../config/keybinding/canvas-keybindings'
@@ -20,7 +20,7 @@ export default function CanvasDock({ activeTool, onToolChange }: CanvasDockProps
   const activeToolIcon = activeTool === 'hand' ? <Hand size={16} weight="fill" /> : <Cursor size={16} weight="fill" />
   const isNodeToolActive = activeTool === 'node'
   const isFlowNodeType = activeNodeType === 'start' || activeNodeType === 'loop' || activeNodeType === 'end'
-  const isLogicNodeType = activeNodeType === 'if' || activeNodeType === 'else' || activeNodeType === 'and' || activeNodeType === 'or' || activeNodeType === 'not' || activeNodeType === 'xor' || activeNodeType === 'intersect' || activeNodeType === 'union' || activeNodeType === 'exclude' || activeNodeType === 'filter' || activeNodeType === 'portfolioCondition'
+  const isLogicNodeType = activeNodeType === 'if' || activeNodeType === 'else' || activeNodeType === 'and' || activeNodeType === 'or' || activeNodeType === 'not' || activeNodeType === 'xor' || activeNodeType === 'intersect' || activeNodeType === 'union' || activeNodeType === 'exclude' || activeNodeType === 'filter' || activeNodeType === 'portfolioCondition' || activeNodeType === 'rethink'
   const isAssetNodeType = activeNodeType === 'stock' || activeNodeType === 'token' || activeNodeType === 'assetBasket'
   const activeNodeIcon = activeNodeType === 'end' ? <FlagCheckered size={16} weight="fill" /> : activeNodeType === 'loop' ? <ArrowsClockwise size={16} weight="bold" /> : <Play size={16} weight="fill" />
   const logicGlyph = (kind: 'and' | 'or' | 'not' | 'xor' | 'intersect' | 'union' | 'exclude') => (
@@ -66,7 +66,7 @@ export default function CanvasDock({ activeTool, onToolChange }: CanvasDockProps
       )}
     </span>
   )
-  const activeLogicNodeIcon = activeNodeType === 'if' ? <ArrowsSplit size={16} weight="fill" /> : activeNodeType === 'else' ? <Path size={16} weight="fill" /> : activeNodeType === 'and' ? logicGlyph('and') : activeNodeType === 'or' ? logicGlyph('or') : activeNodeType === 'not' ? logicGlyph('not') : activeNodeType === 'xor' ? logicGlyph('xor') : activeNodeType === 'intersect' ? logicGlyph('intersect') : activeNodeType === 'union' ? logicGlyph('union') : activeNodeType === 'exclude' ? logicGlyph('exclude') : activeNodeType === 'portfolioCondition' ? <Wallet size={16} weight="fill" /> : <FunnelSimple size={16} weight="fill" />
+  const activeLogicNodeIcon = activeNodeType === 'if' ? <ArrowsSplit size={16} weight="fill" /> : activeNodeType === 'else' ? <Path size={16} weight="fill" /> : activeNodeType === 'and' ? logicGlyph('and') : activeNodeType === 'or' ? logicGlyph('or') : activeNodeType === 'not' ? logicGlyph('not') : activeNodeType === 'xor' ? logicGlyph('xor') : activeNodeType === 'intersect' ? logicGlyph('intersect') : activeNodeType === 'union' ? logicGlyph('union') : activeNodeType === 'exclude' ? logicGlyph('exclude') : activeNodeType === 'portfolioCondition' ? <Wallet size={16} weight="fill" /> : activeNodeType === 'rethink' ? <WaveSine size={16} weight="duotone" /> : <FunnelSimple size={16} weight="fill" />
   const activeAssetTypeIcon = activeNodeType === 'stock' ? <TrendUp size={16} weight="bold" /> : activeNodeType === 'assetBasket' ? <ChartPieSlice size={16} weight="fill" /> : <Coin size={16} weight="fill" />
   const toolMenuShortcut = canvasKeybindings.canvasDockMenuShortcuts.find((item) => item.menu === 'tool')?.shortcut ?? 'P'
   const nodeMenuShortcut = canvasKeybindings.canvasDockMenuShortcuts.find((item) => item.menu === 'node')?.shortcut ?? 'N'
@@ -111,7 +111,7 @@ export default function CanvasDock({ activeTool, onToolChange }: CanvasDockProps
     () => [
       {
         heading: 'Conditions',
-        items: canvasKeybindings.canvasLogicMenuItems.filter((item) => item.value === 'if' || item.value === 'else' || item.value === 'and' || item.value === 'or' || item.value === 'not' || item.value === 'xor' || item.value === 'portfolioCondition').map<DropdownMenuItem>((item) => ({
+        items: canvasKeybindings.canvasLogicMenuItems.filter((item) => item.value === 'if' || item.value === 'else' || item.value === 'and' || item.value === 'or' || item.value === 'not' || item.value === 'xor' || item.value === 'portfolioCondition' || item.value === 'rethink').map<DropdownMenuItem>((item) => ({
           ...item,
           icon: item.value === 'if'
             ? <ArrowsSplit size={16} weight="fill" />
@@ -133,6 +133,8 @@ export default function CanvasDock({ activeTool, onToolChange }: CanvasDockProps
                             ? logicGlyph('exclude')
                             : item.value === 'portfolioCondition'
                               ? <Wallet size={16} weight="fill" />
+                              : item.value === 'rethink'
+                                ? <WaveSine size={16} weight="duotone" />
                               : <FunnelSimple size={16} weight="fill" />,
           active: activeNodeType === item.value,
           trailingIcon: activeNodeType === item.value ? '✓' : undefined,
@@ -272,7 +274,7 @@ export default function CanvasDock({ activeTool, onToolChange }: CanvasDockProps
   }
 
   const handleLogicItemClick = (item: DropdownMenuItem) => {
-    if (item.value === 'if' || item.value === 'else' || item.value === 'and' || item.value === 'or' || item.value === 'not' || item.value === 'xor' || item.value === 'intersect' || item.value === 'union' || item.value === 'exclude' || item.value === 'filter' || item.value === 'portfolioCondition') {
+    if (item.value === 'if' || item.value === 'else' || item.value === 'and' || item.value === 'or' || item.value === 'not' || item.value === 'xor' || item.value === 'intersect' || item.value === 'union' || item.value === 'exclude' || item.value === 'filter' || item.value === 'portfolioCondition' || item.value === 'rethink') {
       setCanvasNodeType(item.value)
       onToolChange('node')
     }

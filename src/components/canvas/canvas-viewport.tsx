@@ -23,6 +23,7 @@ import PortfolioConditionNode from '../nodes/portfolio-condition/portfolio-condi
 import PositionLimitNode from '../nodes/position-limit/position-limit-node'
 import PositionCountLimitNode from '../nodes/position-count-limit/position-count-limit-node'
 import RebalanceNode from '../nodes/rebalance/rebalance-node'
+import RethinkNode from '../nodes/rethink/rethink-node'
 import ScaleOutNode from '../nodes/scale-out/scale-out-node'
 import SellNode from '../nodes/sell/sell-node'
 import StartNode from '../nodes/start/start-node'
@@ -2507,6 +2508,19 @@ export default function CanvasViewport() {
                     icon={<Wallet size={18} weight="fill" />}
                     {...getCommonNodeProps(node.id)}
                   />
+                ) : node.type === 'rethink' ? (
+                  <RethinkNode
+                    labelSegments={[
+                      { kind: 'text', text: 'Rethink' },
+                      { kind: 'text', text: 'before' },
+                      { kind: 'badge', text: node.rethinkAction === 'adjust' ? 'Adjust' : node.rethinkAction === 'pause' ? 'Pause' : 'Continue' },
+                      { kind: 'text', text: 'for' },
+                      { kind: 'badge', text: node.rethinkFocus === 'risk' ? 'Risk' : node.rethinkFocus === 'allocation' ? 'Allocation' : node.rethinkFocus === 'portfolio' ? 'Portfolio' : 'Yield' },
+                      ...(node.rethinkNote?.trim() ? [{ kind: 'badge' as const, text: node.rethinkNote.trim() }] : []),
+                    ]}
+                    icon={<WaveSine size={18} weight="duotone" />}
+                    {...getCommonNodeProps(node.id)}
+                  />
                 ) : node.type === 'cooldown' ? (
                   <CooldownNode
                     labelSegments={[
@@ -2694,6 +2708,7 @@ export default function CanvasViewport() {
                   />
                   <path
                     d={geometry.path}
+                    className="canvas-edge-line"
                     stroke={selectedEdgeIds.includes(edge.id) || isConnectedToSelectedNode ? 'var(--canvas-accent)' : 'var(--canvas-panel-divider)'}
                     strokeWidth={selectedEdgeIds.includes(edge.id) ? '3' : isConnectedToSelectedNode ? '2.5' : '2'}
                     strokeLinecap="round"
@@ -3020,6 +3035,10 @@ export default function CanvasViewport() {
 
     if (type === 'cashReserve') {
       return { ...baseNode, cashReservePercent: '20', cashReserveLabel: 'Reserve Buffer' }
+    }
+
+    if (type === 'rethink') {
+      return { ...baseNode, rethinkFocus: 'risk', rethinkAction: 'adjust', rethinkNote: 'Review risk posture' }
     }
 
     if (type === 'assetBasket') {

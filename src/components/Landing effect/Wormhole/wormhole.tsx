@@ -455,8 +455,9 @@ export function Wormhole({ progress, theme = 'dark' }: WormholeProps) {
             // Update shader time for zipping pulses
             radialMaterial.uniforms.uTime.value = performance.now() * 0.001
 
-            // Map progress 0→1 to spline parameter 0→0.95
-            const t = Math.min(prog * 0.95, 0.95)
+            // Map progress 0→1 to spline parameter 0→0.95 quadratically.
+            // This slows down the beginning phase (above the hole) and simulates gravity acceleration.
+            const t = Math.pow(prog, 2.0) * 0.95
             const tLook = Math.min(t + 0.04, 1.0)
 
             const camPos = new THREE.Vector3()

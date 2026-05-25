@@ -13,6 +13,7 @@ import CanvasIfSidebar from '../../../components/canvas/canvas-if-sidebar'
 import CanvasLogicAggregatorSidebar from '../../../components/canvas/canvas-logic-aggregator-sidebar'
 import CanvasLoopSidebar from '../../../components/canvas/canvas-loop-sidebar'
 import CanvasPortfolioConditionSidebar from '../../../components/canvas/canvas-portfolio-condition-sidebar'
+import CanvasRethinkSidebar from '../../../components/canvas/canvas-rethink-sidebar'
 import CanvasPositionCountLimitSidebar from '../../../components/canvas/canvas-position-count-limit-sidebar'
 import CanvasPositionLimitSidebar from '../../../components/canvas/canvas-position-limit-sidebar'
 import CanvasPauseTradingSidebar from '../../../components/canvas/canvas-pause-trading-sidebar'
@@ -31,7 +32,7 @@ import { appLoadingController } from '../../../state/app-loading-store'
 import { setCanvasAiSidebarOpen, useCanvasAiSidebarOpen } from '../../../state/canvas-ai-sidebar-store'
 import { useCanvasEdges } from '../../../state/canvas-edge-store'
 import { replaceCanvasGraph } from '../../../state/canvas-graph-store'
-import { setCanvasFilterAssetNodeId, updateCanvasActionConfig, updateCanvasAllocateConfig, updateCanvasAssetBasketConfig, updateCanvasCashReserveConfig, updateCanvasCooldownConfig, updateCanvasEndConfig, updateCanvasEndType, updateCanvasExposureLimitConfig, updateCanvasFilterConfig, updateCanvasIfConfig, updateCanvasLoopConfig, updateCanvasLoopType, updateCanvasNodeAsset, updateCanvasPauseTradingConfig, updateCanvasPortfolioConditionConfig, updateCanvasPositionCountLimitConfig, updateCanvasPositionLimitConfig, updateCanvasRebalanceConfig, updateCanvasRiskConfig, updateCanvasScaleOutConfig, updateCanvasStartConfig, updateCanvasStartSpecificPercentage, updateCanvasStartWeightingType, updateCanvasWaitConfig, useCanvasNodes } from '../../../state/canvas-node-store'
+import { setCanvasFilterAssetNodeId, updateCanvasActionConfig, updateCanvasAllocateConfig, updateCanvasAssetBasketConfig, updateCanvasCashReserveConfig, updateCanvasCooldownConfig, updateCanvasEndConfig, updateCanvasEndType, updateCanvasExposureLimitConfig, updateCanvasFilterConfig, updateCanvasIfConfig, updateCanvasLoopConfig, updateCanvasLoopType, updateCanvasNodeAsset, updateCanvasPauseTradingConfig, updateCanvasPortfolioConditionConfig, updateCanvasPositionCountLimitConfig, updateCanvasPositionLimitConfig, updateCanvasRebalanceConfig, updateCanvasRethinkConfig, updateCanvasRiskConfig, updateCanvasScaleOutConfig, updateCanvasStartConfig, updateCanvasStartSpecificPercentage, updateCanvasStartWeightingType, updateCanvasWaitConfig, useCanvasNodes } from '../../../state/canvas-node-store'
 
 export default function StagingCanvasPage() {
   const { nodes, selectedNodeIds } = useCanvasNodes()
@@ -61,6 +62,7 @@ export default function StagingCanvasPage() {
   const isExcludeNodeSelected = selectedNode?.type === 'exclude'
   const isFilterNodeSelected = selectedNode?.type === 'filter'
   const isPortfolioConditionNodeSelected = selectedNode?.type === 'portfolioCondition'
+  const isRethinkNodeSelected = selectedNode?.type === 'rethink'
   const isAssetNodeSelected = selectedNode?.type === 'stock' || selectedNode?.type === 'token'
   const isAssetBasketNodeSelected = selectedNode?.type === 'assetBasket'
   const isBuyNodeSelected = selectedNode?.type === 'buy'
@@ -85,6 +87,7 @@ export default function StagingCanvasPage() {
   const isLogicAggregatorSidebarActive = isSelectionSidebarEnabled && hasSelectedNodes && (isAndNodeSelected || isOrNodeSelected || isNotNodeSelected || isXorNodeSelected || isIntersectNodeSelected || isUnionNodeSelected || isExcludeNodeSelected)
   const isFilterSidebarActive = isSelectionSidebarEnabled && hasSelectedNodes && isFilterNodeSelected
   const isPortfolioConditionSidebarActive = isSelectionSidebarEnabled && hasSelectedNodes && isPortfolioConditionNodeSelected
+  const isRethinkSidebarActive = isSelectionSidebarEnabled && hasSelectedNodes && isRethinkNodeSelected
   const isAssetSidebarActive = isSelectionSidebarEnabled && hasSelectedNodes && isAssetNodeSelected
   const isAssetBasketSidebarActive = isSelectionSidebarEnabled && hasSelectedNodes && isAssetBasketNodeSelected
   const isBuySidebarActive = isSelectionSidebarEnabled && hasSelectedNodes && isBuyNodeSelected
@@ -649,6 +652,33 @@ export default function StagingCanvasPage() {
           }
 
           updateCanvasPortfolioConditionConfig(selectedNode.id, { portfolioValue: value })
+        }}
+      />
+
+      <CanvasRethinkSidebar
+        active={isRethinkSidebarActive}
+        node={selectedNode}
+        onClose={() => setIsSelectionSidebarEnabled(false)}
+        onFocusChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'rethink') {
+            return
+          }
+
+          updateCanvasRethinkConfig(selectedNode.id, { rethinkFocus: value })
+        }}
+        onActionChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'rethink') {
+            return
+          }
+
+          updateCanvasRethinkConfig(selectedNode.id, { rethinkAction: value })
+        }}
+        onNoteChange={(value) => {
+          if (!selectedNode || selectedNode.type !== 'rethink') {
+            return
+          }
+
+          updateCanvasRethinkConfig(selectedNode.id, { rethinkNote: value })
         }}
       />
 

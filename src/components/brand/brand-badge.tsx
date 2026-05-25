@@ -1,20 +1,22 @@
-import { DotsThree } from '@phosphor-icons/react'
+import { DotsThree, Check } from '@phosphor-icons/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import darkBrandImage from '../../assets/icon with text/icon-text-no-bg.png'
 import lightBrandImage from '../../assets/icon with text/icon-text-no-bg-dark-txt.png'
 import { useCanvasTheme } from '../../state/theme-store'
+import { navigateTo } from '../../state/location-store'
 
 export default function BrandBadge() {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const activeTheme = useCanvasTheme()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [query, setQuery] = useState('')
+  const [isAutosaveActive, setIsAutosaveActive] = useState(true)
 
   const groupedItems = useMemo(
     () => [
       {
         key: 'group-1',
-        items: ['Go to Dashboard'],
+        items: ['Go to Dashboard', 'Save as Draft', 'Autosave'],
       },
       {
         key: 'group-2',
@@ -38,6 +40,23 @@ export default function BrandBadge() {
       }))
       .filter((group) => group.items.length > 0)
   }, [groupedItems, query])
+
+  const handleItemClick = (item: string) => {
+    if (item === 'Go to Dashboard') {
+      navigateTo('/dashboard')
+      setIsMenuOpen(false)
+      setQuery('')
+    } else if (item === 'Your Account') {
+      navigateTo('/dashboard/settings')
+      setIsMenuOpen(false)
+      setQuery('')
+    } else if (item === 'Autosave') {
+      setIsAutosaveActive((current) => !current)
+    } else {
+      setIsMenuOpen(false)
+      setQuery('')
+    }
+  }
 
   useEffect(() => {
     if (!isMenuOpen) {
@@ -182,20 +201,33 @@ export default function BrandBadge() {
                     key={item}
                     type="button"
                     className="brandMenuItem"
+                    onClick={() => handleItemClick(item)}
                     style={{
                       width: '100%',
                       border: 'none',
                       borderRadius: 12,
                       background: 'transparent',
                       color: 'var(--canvas-text-primary)',
-                      textAlign: 'left',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
                       padding: '10px 12px',
                       fontFamily: 'var(--canvas-font-sans)',
                       fontSize: 12,
                       cursor: 'pointer',
                     }}
                   >
-                    {item}
+                    <span>{item}</span>
+                    {item === 'Autosave' && isAutosaveActive ? (
+                      <Check
+                        size={14}
+                        weight="bold"
+                        style={{
+                          color: 'inherit',
+                          flex: 'none',
+                        }}
+                      />
+                    ) : null}
                   </button>
                 ))}
 

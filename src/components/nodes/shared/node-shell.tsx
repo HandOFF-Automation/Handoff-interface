@@ -77,6 +77,7 @@ export default function NodeShell({ icon, label, labelBadge, labelBadges, labelS
   return (
     <div
       ref={rootRef}
+      className="canvas-node-shell"
       style={{
         position: 'relative',
         width: 'fit-content',

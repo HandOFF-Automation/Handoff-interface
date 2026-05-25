@@ -33,7 +33,7 @@ const faqItems: FaqItem[] = [
   },
   {
     question: 'How do I save my current setup?',
-    answer: 'Use the Save as Draft button in the top-right area to store the current strategy state before starting execution.',
+    answer: 'Use the Save as Draft option in the top-left menu (under the three dots) to store the current strategy state before starting execution.',
   },
   {
     question: 'Can I invite other collaborators?',

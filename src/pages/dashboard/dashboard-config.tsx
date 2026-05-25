@@ -11,7 +11,7 @@ import {
   UsersThree,
 } from '@phosphor-icons/react'
 
-export type DashboardActiveItem = 'Strategies' | 'Investing Account' | 'Explore' | 'Community' | 'Leaderboard' | 'Invite Friend' | 'Point' | 'Trade' | 'Stocks' | 'Settings'
+export type DashboardActiveItem = 'Strategies' | 'Investing Account' | 'Explore' | 'Yield' | 'Community' | 'Leaderboard' | 'Invite Friend' | 'Point' | 'Settings'
 
 export type DashboardSidebarItem = {
   label: DashboardActiveItem
@@ -42,8 +42,7 @@ export const dashboardSidebarGroups: DashboardSidebarGroup[] = [
     heading: 'Markets',
     items: [
       { label: 'Explore', href: '/dashboard/overview', icon: <GlobeHemisphereWest size={20} weight="regular" /> },
-      { label: 'Trade', href: '/dashboard/trade', icon: <CurrencyCircleDollar size={20} weight="regular" /> },
-      { label: 'Stocks', href: '/dashboard/yield', icon: <Drop size={20} weight="regular" /> },
+      { label: 'Yield', href: '/dashboard/yield', icon: <Drop size={20} weight="regular" /> },
     ],
   },
   {
@@ -69,8 +68,6 @@ export const dashboardProfile = {
   balanceLabel: 'Balance Mantle: 12.84 MNT',
   disconnectLabel: 'Disconnected',
   strategiesHeaderActions: [
-    { id: 'deposit', label: 'Deposit', variant: 'primary' },
-    { id: 'withdrawal', label: 'Withdrawal', variant: 'secondary' },
-    { id: 'transfer', label: 'Transfer', variant: 'secondary' },
+    { id: 'new-strategies', label: 'New Strategies', variant: 'primary' },
   ] satisfies DashboardHeaderAction[],
 }
