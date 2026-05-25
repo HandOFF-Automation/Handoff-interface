@@ -81,6 +81,7 @@ Handoff interface supports the following assets on Mantle for strategy building 
 | **USDe** | Synthetic Dollar | Delta-neutral yield (Ethena integration) |
 | **USDT** | Stablecoin | Alternative settlement |
 | **cmETH** | Restaked ETH | Advanced yield and restaking strategies |
+| **COOK** | Governance Token | Mantle LSP reward harvesting and auto-compounding |
 | **wstETH** | Liquid Staking | Yield and staking strategies |
 | **MNT LP Tokens** | DEX LP | Liquidity provision strategies |
 | **Mantle LSP** | Liquid Staking | Native staking yield |
