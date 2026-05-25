@@ -77,9 +77,10 @@ Handoff interface supports the following assets on Mantle for strategy building 
 | Asset | Type | Purpose |
 |-------|------|---------|
 | **WETH** | Wrapped ETH | Diversification and collateral |
-| **WBTC** | Wrapped BTC | Diversification and collateral |
-| **DAI** | Stablecoin | Alternative settlement |
+| **FBTC** | Omnichain BTC | Mantle's core Bitcoin yield integration |
+| **USDe** | Synthetic Dollar | Delta-neutral yield (Ethena integration) |
 | **USDT** | Stablecoin | Alternative settlement |
+| **cmETH** | Restaked ETH | Advanced yield and restaking strategies |
 | **wstETH** | Liquid Staking | Yield and staking strategies |
 | **MNT LP Tokens** | DEX LP | Liquidity provision strategies |
 | **Mantle LSP** | Liquid Staking | Native staking yield |

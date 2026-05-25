@@ -75,8 +75,7 @@ export const canvasLogicMenuItems: CanvasDockMenuItemConfig[] = [
 ]
 
 export const canvasAssetTypeMenuItems: CanvasDockMenuItemConfig[] = [
-  { label: 'Stock', value: 'stock', shortcut: 'S' },
-  { label: 'Token', value: 'token', shortcut: 'T' },
+  { label: 'Yield', value: 'stock', shortcut: 'Y' },
   { label: 'Asset Basket', value: 'assetBasket', shortcut: 'B' },
 ]
 

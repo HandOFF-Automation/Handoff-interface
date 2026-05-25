@@ -1,9 +1,8 @@
 import { ArrowSquareOut, ChartPieSlice, Coins } from '@phosphor-icons/react'
-import { tokenIcons } from '@web3icons/react'
 import { useRef, useState } from 'react'
 
 import { TradeTokenMiniChart } from '../chart/trade-token-mini-chart'
-import TickerLogo from '../icon/ticker-logo'
+import BrandedAssetLogo from '../icon/branded-asset-logo'
 import { DashboardCard } from './dashboard-card'
 
 type StrategyOpportunitySymbol = 'BTC' | 'ETH' | 'SOL' | 'USDC' | 'ARB' | 'MNT' | 'AAPL' | 'MSFT' | 'NVDA' | 'AMZN' | 'GOOGL' | 'TSLA'
@@ -31,14 +30,7 @@ type StrategyOpportunityCardProps = {
   tokenDetails: Record<StrategyOpportunitySymbol, StrategyOpportunityTokenDetail>
 }
 
-const iconBySymbol = {
-  BTC: tokenIcons.TokenBTC,
-  ETH: tokenIcons.TokenETH,
-  SOL: tokenIcons.TokenSOL,
-  USDC: tokenIcons.TokenUSDC,
-  ARB: tokenIcons.TokenARB,
-  MNT: tokenIcons.TokenMNT,
-} as const
+// Icons are rendered via BrandedAssetLogo for consistent styling across dashboard.
 
 function parsePercent(value: string) {
   return Number(value.replace('%', '')) || 0
@@ -93,7 +85,6 @@ export function StrategyOpportunityCard({ strategy, tokenDetails }: StrategyOppo
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', position: 'relative' }}>
             {strategy.tokens.map((symbol, index) => {
-              const Icon = iconBySymbol[symbol]
               const detail = tokenDetails[symbol]
               const isStock = detail?.assetType === 'stock'
 
@@ -109,23 +100,17 @@ export function StrategyOpportunityCard({ strategy, tokenDetails }: StrategyOppo
                     width: 30,
                     height: 30,
                     borderRadius: '999px',
-                    overflow: 'hidden',
+                    overflow: 'visible',
                     display: 'inline-flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    marginLeft: index === 0 ? 0 : -10,
+                    marginLeft: index === 0 ? 0 : -8,
                     flex: 'none',
                     position: 'relative',
                     zIndex: hoveredTokenSymbol === symbol ? 3 : index + 1,
                   }}
                 >
-                  {isStock ? (
-                    <TickerLogo ticker={symbol} size={30} alt={`${symbol} logo`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  ) : Icon ? (
-                    <Icon width={30} height={30} />
-                  ) : (
-                    <TickerLogo ticker={symbol} size={30} alt={`${symbol} logo`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  )}
+                  <BrandedAssetLogo symbol={symbol} assetType={isStock ? 'stock' : 'crypto'} size={30} />
                 </span>
               )
             })}
@@ -164,17 +149,8 @@ export function StrategyOpportunityCard({ strategy, tokenDetails }: StrategyOppo
                 />
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                    <span style={{ width: 34, height: 34, borderRadius: '999px', overflow: 'hidden', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
-                      {(() => {
-                        const HoveredIcon = iconBySymbol[hoveredToken.symbol]
-                        return hoveredToken.assetType === 'stock' ? (
-                          <TickerLogo ticker={hoveredToken.symbol} size={34} alt={`${hoveredToken.symbol} logo`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        ) : HoveredIcon ? (
-                          <HoveredIcon width={34} height={34} />
-                        ) : (
-                          <TickerLogo ticker={hoveredToken.symbol} size={34} alt={`${hoveredToken.symbol} logo`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        )
-                      })()}
+                    <span style={{ width: 34, height: 34, borderRadius: '999px', overflow: 'visible', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
+                      <BrandedAssetLogo symbol={hoveredToken.symbol} assetType={hoveredToken.assetType === 'stock' ? 'stock' : 'crypto'} size={34} />
                     </span>
                     <div style={{ minWidth: 0, display: 'grid', gap: 2 }}>
                       <div style={{ color: 'var(--canvas-text-primary)', fontSize: 14, fontWeight: 700, lineHeight: 1.2 }}>{hoveredToken.name}</div>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowCircleDownRight, ArrowCircleUpRight, ArrowsClockwise, ArrowsSplit, CaretDown, ChartPieSlice, ChatCircleDots, ClockCountdown, Coin, Cursor, FlagCheckered, FunnelSimple, Hand, Moon, Path, Percent, Play, ShieldWarning, Sun, TrendDown, TrendUp, Wallet, WaveSine } from '@phosphor-icons/react'
+import { ArrowCircleDownRight, ArrowCircleUpRight, ArrowsClockwise, ArrowsSplit, CaretDown, ChartPieSlice, ChatCircleDots, ClockCountdown, Coin, Cursor, Drop, FlagCheckered, FunnelSimple, Hand, Moon, Path, Percent, Play, ShieldWarning, Sun, TrendDown, TrendUp, Wallet, WaveSine } from '@phosphor-icons/react'
 import { executeCanvasZoomAction, setCanvasNodeType, useCanvasNodeType, useCanvasScale, type CanvasTool } from '../../state/canvas-tool-store'
 import { toggleCanvasTheme, useCanvasTheme } from '../../state/theme-store'
 import * as canvasKeybindings from '../../config/keybinding/canvas-keybindings'
@@ -205,7 +205,7 @@ export default function CanvasDock({ activeTool, onToolChange }: CanvasDockProps
         heading: 'Asset Type',
         items: canvasKeybindings.canvasAssetTypeMenuItems.map<DropdownMenuItem>((item) => ({
           ...item,
-          icon: item.value === 'stock' ? <TrendUp size={16} weight="bold" /> : item.value === 'assetBasket' ? <ChartPieSlice size={16} weight="fill" /> : <Coin size={16} weight="fill" />,
+          icon: item.value === 'stock' ? <Drop size={16} weight="fill" /> : item.value === 'assetBasket' ? <ChartPieSlice size={16} weight="fill" /> : null,
           active: activeNodeType === item.value,
         })),
       },
@@ -292,7 +292,7 @@ export default function CanvasDock({ activeTool, onToolChange }: CanvasDockProps
   }
 
   const handleAssetTypeItemClick = (item: DropdownMenuItem) => {
-    if (item.value === 'stock' || item.value === 'token' || item.value === 'assetBasket') {
+    if (item.value === 'stock' || item.value === 'assetBasket') {
       setCanvasNodeType(item.value)
       onToolChange('node')
     }

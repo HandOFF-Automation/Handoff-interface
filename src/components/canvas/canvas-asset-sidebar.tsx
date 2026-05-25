@@ -1,4 +1,4 @@
-import { CaretDown, Coin, MagnifyingGlass, TrendUp } from '@phosphor-icons/react'
+import { CaretDown, Coin, Drop, MagnifyingGlass } from '@phosphor-icons/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import type { CanvasNodeRecord } from '../../state/canvas-node-store'
@@ -19,7 +19,7 @@ export default function CanvasAssetSidebar({ active, node, onClose, onAssetChang
   const assetTriggerRef = useRef<HTMLButtonElement | null>(null)
   const [isAssetMenuOpen, setIsAssetMenuOpen] = useState(false)
   const [assetSearch, setAssetSearch] = useState('')
-  const assetType = node?.type === 'stock' || node?.type === 'token' ? node.type : null
+  const assetType = node?.type === 'token' ? 'token' : node?.type === 'stock' ? 'yield' : node?.type === 'yield' ? 'yield' : null
   const options = useMemo(() => (assetType ? getCanvasAssetOptions(assetType) : []), [assetType])
   const selectedAsset = options.find((option) => option.symbol === node?.assetSymbol) ?? null
   const filteredOptions = useMemo(() => {
@@ -53,7 +53,7 @@ export default function CanvasAssetSidebar({ active, node, onClose, onAssetChang
     ],
     [assetType, filteredOptions, selectedAsset?.symbol],
   )
-  const defaultIcon = assetType === 'stock' ? <TrendUp size={18} weight="bold" /> : assetType === 'token' ? <Coin size={18} weight="fill" /> : null
+  const defaultIcon = assetType === 'yield' ? <Drop size={18} weight="fill" /> : assetType === 'token' ? <Coin size={18} weight="fill" /> : null
 
   useEffect(() => {
     if (!active) {
@@ -114,16 +114,16 @@ export default function CanvasAssetSidebar({ active, node, onClose, onAssetChang
       }}
     >
       <CanvasNodeSidebarHeader
-        title="Asset Node"
-        description={assetType ? `Choose the ${assetType} used by this node.` : 'Choose the asset used by this node.'}
-        helpTitle="Asset Node"
-        helpBody="Asset nodes represent the tradable stock or token used in the strategy flow. Use this panel to select which market asset this node points to."
-        closeLabel="Close asset sidebar"
+        title="Yield Asset Node"
+        description={assetType ? `Choose the ${assetType} asset used by this node.` : 'Choose the asset used by this node.'}
+        helpTitle="Yield Asset Node"
+        helpBody="Yield asset nodes represent RWA and yield-generating assets used in the strategy flow. Use this panel to select which yield asset this node points to."
+        closeLabel="Close yield asset sidebar"
         onClose={onClose}
       />
 
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <CanvasSidebarFieldSection title="Asset" description={assetType ? `Choose the ${assetType} used by this node.` : 'Choose the asset used by this node.'} showDivider={false}>
+        <CanvasSidebarFieldSection title="Yield Asset" description={assetType ? `Choose the ${assetType} asset used by this node.` : 'Choose the asset used by this node.'} showDivider={false}>
           <div ref={containerRef} style={{ position: 'relative' }}>
             <button
               ref={assetTriggerRef}

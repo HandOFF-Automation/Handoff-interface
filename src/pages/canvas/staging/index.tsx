@@ -691,7 +691,9 @@ export default function StagingCanvasPage() {
             return
           }
 
-          const asset = getCanvasAssetOptions(selectedNode.type).find((option) => option.symbol === symbol)
+          // Map stock nodes to use yield option set
+          const optionType = selectedNode.type === 'stock' ? 'yield' : selectedNode.type
+          const asset = getCanvasAssetOptions(optionType as 'stock' | 'token' | 'yield').find((option) => option.symbol === symbol)
 
           if (!asset) {
             return

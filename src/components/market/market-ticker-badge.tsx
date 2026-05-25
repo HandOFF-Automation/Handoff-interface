@@ -1,6 +1,4 @@
-import { tokenIcons } from '@web3icons/react'
-
-import TickerLogo from '../icon/ticker-logo'
+import BrandedAssetLogo from '../icon/branded-asset-logo'
 
 type MarketTickerBadgeProps = {
   symbol: string
@@ -14,19 +12,9 @@ function formatPercentChange(value: number) {
   return `${sign}${Math.abs(value).toFixed(2)}%`
 }
 
-const iconBySymbol = {
-  BTC: tokenIcons.TokenBTC,
-  ETH: tokenIcons.TokenETH,
-  SOL: tokenIcons.TokenSOL,
-  USDC: tokenIcons.TokenUSDC,
-  ARB: tokenIcons.TokenARB,
-  MNT: tokenIcons.TokenMNT,
-} as const
-
 export function MarketTickerBadge({ symbol, price, changePercent, assetType = 'crypto' }: MarketTickerBadgeProps) {
   const isPositive = changePercent >= 0
   const isStock = assetType === 'stock'
-  const Icon = iconBySymbol[symbol as keyof typeof iconBySymbol]
 
   return (
     <button
@@ -47,24 +35,7 @@ export function MarketTickerBadge({ symbol, price, changePercent, assetType = 'c
         cursor: 'pointer',
       }}
     >
-      <span
-        style={{
-          width: 28,
-          height: 28,
-          borderRadius: '999px',
-          overflow: 'hidden',
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flex: 'none',
-        }}
-      >
-        {isStock ? (
-          <TickerLogo ticker={symbol} size={28} alt={`${symbol} logo`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-        ) : (
-          Icon ? <Icon width={28} height={28} /> : <TickerLogo ticker={symbol} size={28} alt={`${symbol} logo`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-        )}
-      </span>
+      <BrandedAssetLogo symbol={symbol} assetType={assetType} size={28} />
       <span style={{ color: 'var(--canvas-text-primary)', fontSize: 12, fontWeight: 700 }}>{symbol}</span>
       <span style={{ color: 'var(--canvas-text-secondary)', fontSize: 12, fontWeight: 600 }}>{price}</span>
       <span style={{ color: isPositive ? 'var(--canvas-accent)' : 'var(--canvas-negative)', fontSize: 12, fontWeight: 600 }}>{formatPercentChange(changePercent)}</span>

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 
 import handoffIcon from '../../../assets/icon/icon handoff.png'
+import BrandedAssetLogo from '../../../components/icon/branded-asset-logo'
 import { StrategyOpportunityCard, type StrategyOpportunityCardData, type StrategyOpportunityTokenDetail } from '../../../components/card/strategy-opportunity-card'
 import { DashboardCard } from '../../../components/card/dashboard-card'
 import { TradeTokenMiniChart } from '../../../components/chart/trade-token-mini-chart'
@@ -457,8 +458,8 @@ export default function YieldContent() {
                     return (
                       <tr key={row.id} className="interactiveTableRow" style={{ borderTop: '1px solid var(--canvas-panel-divider)' }}>
                         <td style={tableBodyCellStyle}>
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                            <Icon width={18} height={18} />
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+                            <BrandedAssetLogo symbol={row.symbol} assetType="crypto" size={32} />
                             <span>{row.name}</span>
                           </span>
                         </td>

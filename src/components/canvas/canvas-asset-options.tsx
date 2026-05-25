@@ -1,7 +1,4 @@
-import { tokenIcons } from '@web3icons/react'
-
-import CryptoLogo from '../icon/crypto-logo'
-import TickerLogo from '../icon/ticker-logo'
+import BrandedAssetLogo from '../icon/branded-asset-logo'
 
 export type CanvasAssetOption = {
   symbol: string
@@ -22,48 +19,32 @@ export const canvasTokenOptions: CanvasAssetOption[] = [
   { symbol: 'USDC', name: 'USD Coin' },
 ]
 
-const tokenIconBySymbol = {
-  BTC: tokenIcons.TokenBTC,
-  ETH: tokenIcons.TokenETH,
-  SOL: tokenIcons.TokenSOL,
-  USDC: tokenIcons.TokenUSDC,
-} as const
+export const canvasYieldOptions: CanvasAssetOption[] = [
+  { symbol: 'USDC', name: 'USD Coin' },
+  { symbol: 'MNT', name: 'Mantle' },
+  { symbol: 'USDY', name: 'Ondo US Dollar Yield' },
+  { symbol: 'mETH', name: 'Mantle Ether' },
+  { symbol: 'WETH', name: 'Wrapped Ether' },
+  { symbol: 'WBTC', name: 'Wrapped Bitcoin' },
+  { symbol: 'DAI', name: 'Dai Stablecoin' },
+  { symbol: 'USDT', name: 'Tether' },
+  { symbol: 'wstETH', name: 'Wrapped Staked ETH' },
+  { symbol: 'MNT-LP', name: 'Mantle LP Tokens' },
+  { symbol: 'Mantle-LSP', name: 'Mantle Liquid Staking' },
+]
 
 type CanvasAssetLogoProps = {
-  assetType: 'stock' | 'token'
+  assetType: 'stock' | 'token' | 'yield'
   symbol: string
   size?: number
 }
 
 export function CanvasAssetLogo({ assetType, symbol, size = 28 }: CanvasAssetLogoProps) {
-  if (assetType === 'stock') {
-    return (
-      <span
-        style={{
-          width: size,
-          height: size,
-          borderRadius: '999px',
-          overflow: 'hidden',
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flex: 'none',
-        }}
-      >
-        <TickerLogo ticker={symbol} size={size} alt={`${symbol} logo`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-      </span>
-    )
-  }
-
-  const Icon = tokenIconBySymbol[symbol as keyof typeof tokenIconBySymbol]
-
-  if (Icon) {
-    return <Icon width={size} height={size} />
-  }
-
-  return <CryptoLogo symbol={symbol} size={size} alt={`${symbol} logo`} style={{ width: size, height: size, objectFit: 'contain' }} />
+  return <BrandedAssetLogo symbol={symbol} assetType={assetType === 'stock' ? 'stock' : 'crypto'} size={size} />
 }
 
-export function getCanvasAssetOptions(type: 'stock' | 'token') {
-  return type === 'stock' ? canvasStockOptions : canvasTokenOptions
+export function getCanvasAssetOptions(type: 'stock' | 'token' | 'yield') {
+  if (type === 'stock') return canvasStockOptions
+  if (type === 'yield') return canvasYieldOptions
+  return canvasTokenOptions
 }

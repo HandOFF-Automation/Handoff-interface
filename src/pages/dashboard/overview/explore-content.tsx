@@ -8,7 +8,7 @@ import { StrategyOpportunityCard, type StrategyOpportunityCardData, type Strateg
 import { DashboardCard } from '../../../components/card/dashboard-card'
 import { TradeTokenMiniChart } from '../../../components/chart/trade-token-mini-chart'
 import DropdownMenu, { type DropdownMenuItem } from '../../../components/dropdown/dropdown-menu'
-import TickerLogo from '../../../components/icon/ticker-logo'
+import BrandedAssetLogo from '../../../components/icon/branded-asset-logo'
 import { ExploreBannerSlider } from '../../../components/market/explore-banner-slider'
 import { MarketTickerCarousel } from '../../../components/market/market-ticker-carousel'
 
@@ -439,14 +439,8 @@ export default function ExploreContent() {
                     return (
                       <tr key={row.id} className="interactiveTableRow" style={{ borderTop: '1px solid var(--canvas-panel-divider)' }}>
                         <td style={tableBodyCellStyle}>
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                            {row.assetType === 'stock' ? (
-                              <span style={{ width: 18, height: 18, borderRadius: '999px', overflow: 'hidden', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
-                                <TickerLogo ticker={row.symbol} size={18} alt={`${row.name} logo`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                              </span>
-                            ) : Icon ? (
-                              <Icon width={18} height={18} />
-                            ) : null}
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+                            <BrandedAssetLogo symbol={row.symbol} assetType={row.assetType === 'stock' ? 'stock' : 'crypto'} size={32} />
                             <span>{row.name}</span>
                           </span>
                         </td>

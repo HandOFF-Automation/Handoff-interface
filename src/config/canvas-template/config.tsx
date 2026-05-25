@@ -10,9 +10,9 @@ export type CanvasTemplateDefinition = {
 export const logicShowcaseTemplate: CanvasGraphSnapshot = {
   nodes: [
     { id: 'start-1', type: 'start', x: 180, y: 360, startWeightingType: 'specificPercentage', startSpecificPercentages: { 'token-btc': '50', 'token-eth': '30', 'stock-nvda': '20' }, startStyle: 'standard', startReserveCashPercent: '20', startEntryLimit: '35' },
-    { id: 'token-btc', type: 'token', x: 600, y: 120, assetSymbol: 'BTC', assetName: 'Bitcoin' },
-    { id: 'token-eth', type: 'token', x: 600, y: 380, assetSymbol: 'ETH', assetName: 'Ethereum' },
-    { id: 'stock-nvda', type: 'stock', x: 600, y: 640, assetSymbol: 'NVDA', assetName: 'NVIDIA' },
+    { id: 'token-btc', type: 'stock', x: 600, y: 120, assetSymbol: 'USDY', assetName: 'Ondo US Dollar Yield' },
+    { id: 'token-eth', type: 'stock', x: 600, y: 380, assetSymbol: 'mETH', assetName: 'Mantle Ether' },
+    { id: 'stock-nvda', type: 'stock', x: 600, y: 640, assetSymbol: 'USDC', assetName: 'USD Coin' },
     { id: 'filter-1', type: 'filter', x: 1160, y: 380, filterAssetNodeId: 'token-btc', filterSortFunction: 'rsi', filterSortPeriod: '14', filterConditionOperator: 'and', filterSecondarySortFunction: 'volume', filterOrdering: 'top', filterHowMany: '2', filterResultMode: 'topN', filterConfigsByAssetNodeId: { 'token-btc': { filterSortFunction: 'rsi', filterSortPeriod: '14', filterConditionOperator: 'and', filterSecondarySortFunction: 'volume', filterOrdering: 'top', filterHowMany: '2', filterResultMode: 'topN' }, 'token-eth': { filterSortFunction: 'exponentialMovingAverage', filterSortPeriod: '20', filterConditionOperator: 'or', filterSecondarySortFunction: 'atr', filterSecondarySortPeriod: '14', filterOrdering: 'top', filterHowMany: '1', filterResultMode: 'topOne' }, 'stock-nvda': { filterSortFunction: 'currentPrice', filterConditionOperator: 'and', filterSecondarySortFunction: 'macdHistogram', filterOrdering: 'bottom', filterHowMany: '1', filterResultMode: 'allMatches' } } },
     { id: 'if-btc-1', type: 'if', x: 1760, y: 180, ifSourceType: 'market', ifConditionType: 'threshold', ifPrimaryFunction: 'rsi', ifPrimaryAssetNodeId: 'token-btc', ifPrimaryPeriod: '14', ifComparator: '<', ifComparisonValue: '30' },
     { id: 'if-nvda-1', type: 'if', x: 1760, y: 620, ifConditionType: 'threshold', ifPrimaryFunction: 'simpleMovingAverage', ifPrimaryAssetNodeId: 'stock-nvda', ifPrimaryPeriod: '20', ifComparator: '>', ifComparisonValue: '1100' },
@@ -101,9 +101,9 @@ export const realStrategyTemplate: CanvasGraphSnapshot = {
   nodes: [
     { id: 'start-real', type: 'start', x: 180, y: 300, startWeightingType: 'equal', startStyle: 'riskFirst', startReserveCashPercent: '25', startEntryLimit: '30' },
     { id: 'basket-core', type: 'assetBasket', x: 980, y: 300, assetBasketName: 'Core Growth' },
-    { id: 'token-btc-real', type: 'token', x: 540, y: 100, assetSymbol: 'BTC', assetName: 'Bitcoin' },
-    { id: 'token-eth-real', type: 'token', x: 540, y: 360, assetSymbol: 'ETH', assetName: 'Ethereum' },
-    { id: 'token-sol-real', type: 'token', x: 540, y: 500, assetSymbol: 'SOL', assetName: 'Solana' },
+    { id: 'token-btc-real', type: 'stock', x: 540, y: 100, assetSymbol: 'USDY', assetName: 'Ondo US Dollar Yield' },
+    { id: 'token-eth-real', type: 'stock', x: 540, y: 360, assetSymbol: 'mETH', assetName: 'Mantle Ether' },
+    { id: 'token-sol-real', type: 'stock', x: 540, y: 500, assetSymbol: 'USDC', assetName: 'USD Coin' },
     { id: 'filter-real', type: 'filter', x: 1500, y: 300, filterAssetNodeId: 'token-btc-real', filterSortFunction: 'rsi', filterSortPeriod: '14', filterConditionOperator: 'and', filterSecondarySortFunction: 'macdHistogram', filterOrdering: 'top', filterHowMany: '2', filterResultMode: 'topN' },
     { id: 'portfolio-real', type: 'portfolioCondition', x: 1660, y: 160, portfolioMetric: 'cashPercent', portfolioComparator: '>=', portfolioValue: '15' },
     { id: 'count-limit-real', type: 'positionCountLimit', x: 1660, y: 420, positionCountComparator: '<', positionCountValue: '5', positionCountScope: 'portfolio' },
@@ -166,7 +166,7 @@ export const portfolioGuardrailsTemplate: CanvasGraphSnapshot = {
 export const dipBuyWithRecheckTemplate: CanvasGraphSnapshot = {
   nodes: [
     { id: 'dip-start', type: 'start', x: 160, y: 240, startWeightingType: 'equal', startStyle: 'stagedEntry', startReserveCashPercent: '20', startEntryLimit: '25' },
-    { id: 'dip-btc', type: 'token', x: 560, y: 240, assetSymbol: 'BTC', assetName: 'Bitcoin' },
+    { id: 'dip-btc', type: 'stock', x: 560, y: 240, assetSymbol: 'USDY', assetName: 'Ondo US Dollar Yield' },
     { id: 'dip-if', type: 'if', x: 1040, y: 240, ifSourceType: 'market', ifConditionType: 'threshold', ifPrimaryFunction: 'rsi', ifPrimaryAssetNodeId: 'dip-btc', ifPrimaryPeriod: '14', ifComparator: '<', ifComparisonValue: '30' },
     { id: 'dip-buy', type: 'buy', x: 1520, y: 180, actionAssetNodeId: 'dip-btc', actionAmountMode: 'percentage', actionAmountValue: '15', buyType: 'add' },
     { id: 'dip-stop', type: 'stopLoss', x: 2000, y: 80, riskAssetNodeId: 'dip-btc', riskComparator: '<=', riskThresholdValue: '56000', stopLossMode: 'fixed' },
@@ -194,9 +194,9 @@ export const dipBuyWithRecheckTemplate: CanvasGraphSnapshot = {
 export const basketRotationTemplate: CanvasGraphSnapshot = {
   nodes: [
     { id: 'basket-start', type: 'start', x: 180, y: 280, startWeightingType: 'marketCap', startStyle: 'standard', startReserveCashPercent: '15', startEntryLimit: '40' },
-    { id: 'basket-a', type: 'token', x: 560, y: 80, assetSymbol: 'BTC', assetName: 'Bitcoin' },
-    { id: 'basket-b', type: 'token', x: 560, y: 280, assetSymbol: 'ETH', assetName: 'Ethereum' },
-    { id: 'basket-c', type: 'stock', x: 560, y: 480, assetSymbol: 'NVDA', assetName: 'NVIDIA' },
+    { id: 'basket-a', type: 'stock', x: 560, y: 80, assetSymbol: 'USDC', assetName: 'USD Coin' },
+    { id: 'basket-b', type: 'stock', x: 560, y: 280, assetSymbol: 'mETH', assetName: 'Mantle Ether' },
+    { id: 'basket-c', type: 'stock', x: 560, y: 480, assetSymbol: 'USDY', assetName: 'Ondo US Dollar Yield' },
     { id: 'basket-node', type: 'assetBasket', x: 1080, y: 280, assetBasketName: 'Rotation Basket' },
     { id: 'basket-filter', type: 'filter', x: 1680, y: 280, filterAssetNodeId: 'basket-a', filterSortFunction: 'volume', filterConditionOperator: 'and', filterSecondarySortFunction: 'rsi', filterOrdering: 'top', filterHowMany: '2', filterResultMode: 'topN' },
     { id: 'basket-allocate', type: 'allocate', x: 2140, y: 180, allocateWeightingMode: 'percentage', allocateAmountValue: '25', allocateStyle: 'targetWeight' },

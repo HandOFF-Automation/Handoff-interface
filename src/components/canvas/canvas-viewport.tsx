@@ -34,6 +34,7 @@ import TokenNode from '../nodes/token/token-node'
 import UnionNode from '../nodes/union/union-node'
 import WaitNode from '../nodes/wait/wait-node'
 import XorNode from '../nodes/xor/xor-node'
+import YieldNode from '../nodes/yield/yield-node'
 import CooldownNode from '../nodes/cooldown/cooldown-node'
 import ExposureLimitNode from '../nodes/exposure-limit/exposure-limit-node'
 import PauseTradingNode from '../nodes/pause-trading/pause-trading-node'
@@ -735,11 +736,15 @@ export default function CanvasViewport() {
     const linkedNode = getLinkedAssetNode(nodeId)
 
     if (linkedNode?.type === 'stock' && linkedNode.assetSymbol) {
-      return <CanvasAssetLogo assetType="stock" symbol={linkedNode.assetSymbol} size={14} />
+      return <CanvasAssetLogo assetType="yield" symbol={linkedNode.assetSymbol} size={14} />
     }
 
     if (linkedNode?.type === 'token' && linkedNode.assetSymbol) {
       return <CanvasAssetLogo assetType="token" symbol={linkedNode.assetSymbol} size={14} />
+    }
+
+    if (linkedNode?.type === 'yield' && linkedNode.assetSymbol) {
+      return <CanvasAssetLogo assetType="yield" symbol={linkedNode.assetSymbol} size={14} />
     }
 
     return undefined
@@ -2022,8 +2027,8 @@ export default function CanvasViewport() {
                       .map(([targetNodeId, value]) => {
                         const targetNode = placedNodes.find((placedNode) => placedNode.id === targetNodeId)
                         const targetLabel = targetNode?.assetSymbol ?? targetNode?.assetName ?? 'Asset'
-                        const targetIcon = targetNode?.type === 'stock' && targetNode.assetSymbol
-                          ? <CanvasAssetLogo assetType="stock" symbol={targetNode.assetSymbol} size={14} />
+                        const targetIcon = (targetNode?.type === 'stock' || targetNode?.type === 'yield') && targetNode.assetSymbol
+                          ? <CanvasAssetLogo assetType="yield" symbol={targetNode.assetSymbol} size={14} />
                           : targetNode?.type === 'token' && targetNode.assetSymbol
                             ? <CanvasAssetLogo assetType="token" symbol={targetNode.assetSymbol} size={14} />
                             : undefined
@@ -2185,7 +2190,7 @@ export default function CanvasViewport() {
                   const incomingAssetNodes = edges
                     .filter((edge) => edge.toNodeId === node.id)
                     .map((edge) => placedNodes.find((placedNode) => placedNode.id === edge.fromNodeId))
-                    .filter((placedNode): placedNode is CanvasNodeRecord => Boolean(placedNode && (placedNode.type === 'stock' || placedNode.type === 'token' || placedNode.type === 'assetBasket')))
+                    .filter((placedNode): placedNode is CanvasNodeRecord => Boolean(placedNode && (placedNode.type === 'stock' || placedNode.type === 'token' || placedNode.type === 'yield' || placedNode.type === 'assetBasket')))
                   const incomingAssetCount = incomingAssetNodes.length
                   const configuredAssetIds = Object.keys(node.filterConfigsByAssetNodeId ?? {})
                   const availableFilterAssetIds = Array.from(new Set([...incomingAssetNodes.map((assetNode) => assetNode.id), ...configuredAssetIds]))
@@ -2196,8 +2201,8 @@ export default function CanvasViewport() {
                     : incomingAssetCount > 1
                       ? `${incomingAssetCount} assets`
                       : ''
-                  const targetIcon = incomingAssetCount === 1 && incomingAssetNodes[0]?.type === 'stock' && incomingAssetNodes[0].assetSymbol
-                    ? <CanvasAssetLogo assetType="stock" symbol={incomingAssetNodes[0].assetSymbol} size={14} />
+                  const targetIcon = incomingAssetCount === 1 && (incomingAssetNodes[0]?.type === 'stock' || incomingAssetNodes[0]?.type === 'yield') && incomingAssetNodes[0].assetSymbol
+                    ? <CanvasAssetLogo assetType="yield" symbol={incomingAssetNodes[0].assetSymbol} size={14} />
                     : incomingAssetCount === 1 && incomingAssetNodes[0]?.type === 'token' && incomingAssetNodes[0].assetSymbol
                       ? <CanvasAssetLogo assetType="token" symbol={incomingAssetNodes[0].assetSymbol} size={14} />
                       : undefined
@@ -2285,18 +2290,20 @@ export default function CanvasViewport() {
 
                     const filterAssetOptions = availableFilterAssetIds
                       .map((assetNodeId) => placedNodes.find((placedNode) => placedNode.id === assetNodeId))
-                      .filter((placedNode): placedNode is CanvasNodeRecord => Boolean(placedNode && (placedNode.type === 'stock' || placedNode.type === 'token' || placedNode.type === 'assetBasket')))
+                      .filter((placedNode): placedNode is CanvasNodeRecord => Boolean(placedNode && (placedNode.type === 'stock' || placedNode.type === 'token' || placedNode.type === 'yield' || placedNode.type === 'assetBasket')))
                     const activeAssetLabel = activeConfigAsset?.assetSymbol ?? activeConfigAsset?.assetName ?? activeConfigAsset?.assetBasketName ?? 'Asset'
                     const activeAssetIcon = activeConfigAsset?.type === 'stock' && activeConfigAsset.assetSymbol
-                      ? <CanvasAssetLogo assetType="stock" symbol={activeConfigAsset.assetSymbol} size={12} />
+                      ? <CanvasAssetLogo assetType="yield" symbol={activeConfigAsset.assetSymbol} size={12} />
                       : activeConfigAsset?.type === 'token' && activeConfigAsset.assetSymbol
                         ? <CanvasAssetLogo assetType="token" symbol={activeConfigAsset.assetSymbol} size={12} />
-                        : undefined
+                        : activeConfigAsset?.type === 'yield' && activeConfigAsset.assetSymbol
+                          ? <CanvasAssetLogo assetType="yield" symbol={activeConfigAsset.assetSymbol} size={12} />
+                          : undefined
                     const assetMenuItems: DropdownMenuItem[] = filterAssetOptions.map((assetNode) => ({
                       label: assetNode.assetSymbol ?? assetNode.assetName ?? assetNode.assetBasketName ?? 'Asset',
                       value: assetNode.id,
                       active: assetNode.id === node.filterAssetNodeId,
-                      icon: assetNode.assetSymbol && (assetNode.type === 'stock' || assetNode.type === 'token') ? <CanvasAssetLogo assetType={assetNode.type} symbol={assetNode.assetSymbol} size={16} /> : null,
+                      icon: assetNode.assetSymbol && (assetNode.type === 'stock' || assetNode.type === 'token' || assetNode.type === 'yield') ? <CanvasAssetLogo assetType={assetNode.type === 'stock' ? 'yield' : assetNode.type} symbol={assetNode.assetSymbol} size={16} /> : null,
                       trailingIcon: assetNode.id === node.filterAssetNodeId ? '✓' : undefined,
                     }))
 
@@ -2609,7 +2616,7 @@ export default function CanvasViewport() {
                     {...getCommonNodeProps(node.id)}
                   />
                 ) : node.type === 'stock' ? (
-                  <StockNode label={node.assetSymbol ?? 'Select asset'} icon={node.assetSymbol ? <CanvasAssetLogo assetType="stock" symbol={node.assetSymbol} size={24} /> : undefined} selected={selectedNodeIds.includes(node.id)} activeConnectorSide={connectorDragStateRef.current?.fromNodeId === node.id ? connectorDragStateRef.current.fromSide : connectorHoverTarget?.nodeId === node.id ? connectorHoverTarget.side : null} onConnectorPointerDown={(side, event) => handleConnectorPointerDown(event, node.id, side)} onMeasure={(size) => {
+                  <StockNode label={node.assetSymbol ?? 'Select asset'} icon={node.assetSymbol ? <CanvasAssetLogo assetType="yield" symbol={node.assetSymbol} size={40} /> : undefined} selected={selectedNodeIds.includes(node.id)} activeConnectorSide={connectorDragStateRef.current?.fromNodeId === node.id ? connectorDragStateRef.current.fromSide : connectorHoverTarget?.nodeId === node.id ? connectorHoverTarget.side : null} onConnectorPointerDown={(side, event) => handleConnectorPointerDown(event, node.id, side)} onMeasure={(size) => {
                     setNodeSizes((current) => {
                       const previous = current[node.id]
 
@@ -2624,7 +2631,22 @@ export default function CanvasViewport() {
                     })
                   }} />
                 ) : node.type === 'token' ? (
-                  <TokenNode label={node.assetSymbol ?? 'Select asset'} icon={node.assetSymbol ? <CanvasAssetLogo assetType="token" symbol={node.assetSymbol} size={24} /> : undefined} selected={selectedNodeIds.includes(node.id)} activeConnectorSide={connectorDragStateRef.current?.fromNodeId === node.id ? connectorDragStateRef.current.fromSide : connectorHoverTarget?.nodeId === node.id ? connectorHoverTarget.side : null} onConnectorPointerDown={(side, event) => handleConnectorPointerDown(event, node.id, side)} onMeasure={(size) => {
+                  <TokenNode label={node.assetSymbol ?? 'Select asset'} icon={node.assetSymbol ? <CanvasAssetLogo assetType="token" symbol={node.assetSymbol} size={40} /> : undefined} selected={selectedNodeIds.includes(node.id)} activeConnectorSide={connectorDragStateRef.current?.fromNodeId === node.id ? connectorDragStateRef.current.fromSide : connectorHoverTarget?.nodeId === node.id ? connectorHoverTarget.side : null} onConnectorPointerDown={(side, event) => handleConnectorPointerDown(event, node.id, side)} onMeasure={(size) => {
+                    setNodeSizes((current) => {
+                      const previous = current[node.id]
+
+                      if (previous && previous.width === size.width && previous.height === size.height) {
+                        return current
+                      }
+
+                      return {
+                        ...current,
+                        [node.id]: size,
+                      }
+                    })
+                  }} />
+                ) : node.type === 'yield' ? (
+                  <YieldNode label={node.assetSymbol ?? 'Select asset'} icon={node.assetSymbol ? <CanvasAssetLogo assetType="yield" symbol={node.assetSymbol} size={40} /> : undefined} selected={selectedNodeIds.includes(node.id)} activeConnectorSide={connectorDragStateRef.current?.fromNodeId === node.id ? connectorDragStateRef.current.fromSide : connectorHoverTarget?.nodeId === node.id ? connectorHoverTarget.side : null} onConnectorPointerDown={(side, event) => handleConnectorPointerDown(event, node.id, side)} onMeasure={(size) => {
                     setNodeSizes((current) => {
                       const previous = current[node.id]
 
