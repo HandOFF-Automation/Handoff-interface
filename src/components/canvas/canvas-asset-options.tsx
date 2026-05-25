@@ -40,7 +40,7 @@ type CanvasAssetLogoProps = {
 }
 
 export function CanvasAssetLogo({ assetType, symbol, size = 28 }: CanvasAssetLogoProps) {
-  return <BrandedAssetLogo symbol={symbol} assetType={assetType === 'stock' ? 'stock' : 'crypto'} size={size} />
+  return <BrandedAssetLogo symbol={symbol} assetType="crypto" size={size} />
 }
 
 export function getCanvasAssetOptions(type: 'stock' | 'token' | 'yield') {

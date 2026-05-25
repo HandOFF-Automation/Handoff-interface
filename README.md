@@ -57,6 +57,16 @@ The current implementation is strongest around the canvas editor and node system
 
 ---
 
+## Architecture: Account Abstraction & Capital Flow
+
+Handoff uses an **Account Abstraction (ERC-4337) Smart Account architecture** rather than direct wallet manipulation or global liquidity pools. This means:
+
+1. **Smart Account Deposits:** Users deposit their starting capital (e.g., USDC, MNT) into their dedicated **AA Smart Account (Vault)** via the dashboard. 
+2. **Canvas Execution (Start Node):** There is no "Deposit" or "Wallet" node on the canvas. Instead, the strategy begins with the **Start Node**. The Start Node acts as the entry point, distributing the Smart Account's capital into the downstream branches based on the configured initial weighting.
+3. **Gasless & Automated:** The canvas (strategy) gives instructions to the Smart Account via **Session Keys** or automated paymasters. This enables secure, *gasless*, and automated executions without requiring repeated wallet signatures from the user—drastically lowering the barrier for Web2 users.
+
+---
+
 ## Supported Assets
 
 Handoff interface supports the following assets on Mantle for strategy building and portfolio management:

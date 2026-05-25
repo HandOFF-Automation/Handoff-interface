@@ -1,4 +1,11 @@
 import type { FundsSharedFormState } from './funds-types'
+import FundsAssetDropdown from './funds-asset-dropdown'
+
+const standardOptions = [
+  { symbol: 'USDC', label: 'USDC (USD Coin)' },
+  { symbol: 'USDY', label: 'USDY (Ondo Yield)' },
+  { symbol: 'mETH', label: 'mETH (Mantle Staked ETH)' },
+]
 
 type DepositModalContentProps = {
   form: FundsSharedFormState
@@ -9,11 +16,11 @@ export default function DepositModalContent({ form, onChange }: DepositModalCont
   return (
     <>
       <FundsField label="Asset" description="Choose which asset you want to deposit into your investing account.">
-        <select value={form.assetSymbol} onChange={(event) => onChange({ ...form, assetSymbol: event.target.value })} style={inputStyle}>
-          <option value="USDC">USDC</option>
-          <option value="USDY">USDY</option>
-          <option value="mETH">mETH</option>
-        </select>
+        <FundsAssetDropdown
+          value={form.assetSymbol}
+          options={standardOptions}
+          onChange={(value) => onChange({ ...form, assetSymbol: value })}
+        />
       </FundsField>
 
       <FundsField label="Amount" description="Enter how much you want to move into your investing account.">

@@ -4,6 +4,7 @@ import DepositModalContent from './deposit-modal-content'
 import FundsModalShell from './funds-modal-shell'
 import TransferModalContent from './transfer-modal-content'
 import WithdrawModalContent from './withdraw-modal-content'
+import ClaimModalContent from './claim-modal-content'
 import type { FundsModalMode, FundsSharedFormState, FundsTransferFormState } from './funds-types'
 
 type FundsModalControllerProps = {
@@ -26,6 +27,7 @@ export default function FundsModalController({ mode, onClose }: FundsModalContro
   const [depositForm, setDepositForm] = useState<FundsSharedFormState>(defaultSharedFormState)
   const [withdrawForm, setWithdrawForm] = useState<FundsSharedFormState>(defaultSharedFormState)
   const [transferForm, setTransferForm] = useState<FundsTransferFormState>(defaultTransferFormState)
+  const [claimForm, setClaimForm] = useState<FundsSharedFormState>({ ...defaultSharedFormState, assetSymbol: 'MNT' })
 
   const modalCopy = useMemo(() => {
     if (mode === 'deposit') {
@@ -41,6 +43,14 @@ export default function FundsModalController({ mode, onClose }: FundsModalContro
         title: 'Withdraw Funds',
         description: 'Move assets out of the investing account back to your connected wallet.',
         ctaLabel: 'Confirm Withdrawal',
+      }
+    }
+
+    if (mode === 'claim') {
+      return {
+        title: 'Claim Rewards',
+        description: 'Harvest yield and protocol rewards directly into your investing account.',
+        ctaLabel: 'Confirm Claim',
       }
     }
 
@@ -67,6 +77,7 @@ export default function FundsModalController({ mode, onClose }: FundsModalContro
       {mode === 'deposit' ? <DepositModalContent form={depositForm} onChange={setDepositForm} /> : null}
       {mode === 'withdraw' ? <WithdrawModalContent form={withdrawForm} onChange={setWithdrawForm} /> : null}
       {mode === 'transfer' ? <TransferModalContent form={transferForm} onChange={setTransferForm} /> : null}
+      {mode === 'claim' ? <ClaimModalContent form={claimForm} onChange={setClaimForm} /> : null}
     </FundsModalShell>
   )
 }

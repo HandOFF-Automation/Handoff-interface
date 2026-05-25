@@ -732,8 +732,8 @@ export default function CanvasViewport() {
     return linkedNode?.assetSymbol ?? linkedNode?.assetName ?? 'Asset'
   }
 
-  const getLinkedAssetIcon = (nodeId?: string) => {
-    const linkedNode = getLinkedAssetNode(nodeId)
+  const getLinkedAssetIcon = (nodeId: string | undefined | null) => {
+    const linkedNode = getLinkedAssetNode(nodeId ?? undefined)
 
     if (linkedNode?.type === 'stock' && linkedNode.assetSymbol) {
       return <CanvasAssetLogo assetType="yield" symbol={linkedNode.assetSymbol} size={14} />
@@ -745,6 +745,32 @@ export default function CanvasViewport() {
 
     if (linkedNode?.type === 'yield' && linkedNode.assetSymbol) {
       return <CanvasAssetLogo assetType="yield" symbol={linkedNode.assetSymbol} size={14} />
+    }
+
+    if (linkedNode?.type === 'assetBasket') {
+      return <ChartPieSlice size={14} weight="fill" />
+    }
+
+    return undefined
+  }
+
+  const getLinkedAssetMainIcon = (nodeId: string | undefined | null) => {
+    const linkedNode = getLinkedAssetNode(nodeId ?? undefined)
+
+    if (linkedNode?.type === 'stock' && linkedNode.assetSymbol) {
+      return <CanvasAssetLogo assetType="yield" symbol={linkedNode.assetSymbol} size={40} />
+    }
+
+    if (linkedNode?.type === 'token' && linkedNode.assetSymbol) {
+      return <CanvasAssetLogo assetType="token" symbol={linkedNode.assetSymbol} size={40} />
+    }
+
+    if (linkedNode?.type === 'yield' && linkedNode.assetSymbol) {
+      return <CanvasAssetLogo assetType="yield" symbol={linkedNode.assetSymbol} size={40} />
+    }
+
+    if (linkedNode?.type === 'assetBasket') {
+      return <ChartPieSlice size={40} weight="fill" />
     }
 
     return undefined
@@ -2404,7 +2430,7 @@ export default function CanvasViewport() {
                         { kind: 'badge' as const, text: node.actionAmountMode === 'value' ? `$${amountValue}` : `${amountValue}%` },
                       ]
                     })()}
-                    icon={<ArrowCircleDownRight size={18} weight="fill" />}
+                    icon={getLinkedAssetMainIcon(node.actionAssetNodeId) ?? <ArrowCircleDownRight size={18} weight="fill" />}
                     {...getCommonNodeProps(node.id)}
                   />
                 ) : node.type === 'sell' ? (
@@ -2424,7 +2450,7 @@ export default function CanvasViewport() {
                         { kind: 'badge' as const, text: node.actionAmountMode === 'value' ? `$${amountValue}` : `${amountValue}%` },
                       ]
                     })()}
-                    icon={<ArrowCircleUpRight size={18} weight="fill" />}
+                    icon={getLinkedAssetMainIcon(node.actionAssetNodeId) ?? <ArrowCircleUpRight size={18} weight="fill" />}
                     {...getCommonNodeProps(node.id)}
                   />
                 ) : node.type === 'rebalance' ? (

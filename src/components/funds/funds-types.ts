@@ -1,4 +1,4 @@
-export type FundsModalMode = 'deposit' | 'withdraw' | 'transfer'
+export type FundsModalMode = 'deposit' | 'withdraw' | 'transfer' | 'claim'
 
 export type FundsSharedFormState = {
   assetSymbol: string

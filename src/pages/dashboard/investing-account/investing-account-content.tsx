@@ -1,4 +1,4 @@
-import { ArrowsLeftRight, Check, Copy, DownloadSimple, UploadSimple } from '@phosphor-icons/react'
+import { ArrowsLeftRight, Check, Copy, DownloadSimple, Gift, UploadSimple } from '@phosphor-icons/react'
 import { tokenIcons } from '@web3icons/react'
 import { useMemo, useState } from 'react'
 
@@ -7,7 +7,7 @@ import FundsModalController from '../../../components/funds/funds-modal-controll
 import { DataTable, type DataTableColumn, type DataTableFilterOption, sharedTableBodyCellStyle } from '../../../components/table/data-table'
 import type { FundsModalMode } from '../../../components/funds/funds-types'
 
-type InvestingHistoryType = 'deposit' | 'withdrawal' | 'transfer'
+type InvestingHistoryType = 'deposit' | 'withdrawal' | 'transfer' | 'claim'
 
 type InvestingHistoryRow = {
   id: string
@@ -51,6 +51,11 @@ const investingAccountDataset = {
         label: 'Transfer',
         icon: 'transfer',
       },
+      {
+        id: 'claim',
+        label: 'Claim',
+        icon: 'claim',
+      },
     ],
   },
   assetsTable: {
@@ -92,6 +97,7 @@ export default function InvestingAccountContent() {
     withdraw: <UploadSimple size={14} weight="bold" />,
     deposit: <DownloadSimple size={14} weight="bold" />,
     transfer: <ArrowsLeftRight size={14} weight="bold" />,
+    claim: <Gift size={14} weight="bold" />,
   } as const
 
   const historyFilterOptions: DataTableFilterOption[] = [
@@ -99,6 +105,7 @@ export default function InvestingAccountContent() {
     { id: 'deposit', label: 'Deposit' },
     { id: 'withdrawal', label: 'Withdrawal' },
     { id: 'transfer', label: 'Transfer' },
+    { id: 'claim', label: 'Claim' },
   ]
 
   const assetsColumns: DataTableColumn[] = [
